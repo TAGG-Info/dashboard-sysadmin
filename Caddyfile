@@ -1,4 +1,5 @@
-dashboard.internal.example.com {
+dashboard.tagginfo.fr {
+    tls /etc/caddy/certs/wildcard.crt /etc/caddy/certs/wildcard.key
     reverse_proxy dashboard:3000
     header {
         X-Content-Type-Options nosniff
