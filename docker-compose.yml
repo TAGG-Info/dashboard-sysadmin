@@ -9,6 +9,8 @@ services:
       - .env
     # IMPORTANT: Si REDIS_PASSWORD est défini dans .env,
     # REDIS_URL doit inclure le password : redis://:PASSWORD@redis:6379
+    volumes:
+      - ./data:/app/data
     networks:
       - dashboard
     depends_on:
