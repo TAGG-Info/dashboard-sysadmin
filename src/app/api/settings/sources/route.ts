@@ -167,7 +167,9 @@ export async function PUT(request: Request) {
     const fullConfig = { ...existing, [srcKey]: existingInstances } as any;
     await writeConfig(fullConfig);
 
-    return NextResponse.json({ success: true });
+    // Return instanceId so the client can auto-expand the new instance
+    const resolvedId = instanceId || existingInstances[existingInstances.length - 1]?.id;
+    return NextResponse.json({ success: true, instanceId: resolvedId });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to save config' },

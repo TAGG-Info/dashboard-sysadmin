@@ -321,9 +321,15 @@ export function SourceConfigs() {
                           source={key}
                           config={null}
                           isNew
-                          onSave={async () => {
+                          onSave={async (newInstanceId?: string) => {
                             await handleSave();
                             cancelAddingInstance(key);
+                            if (newInstanceId) {
+                              setExpandedInstances((prev) => ({
+                                ...prev,
+                                [`${key}-${newInstanceId}`]: true,
+                              }));
+                            }
                           }}
                         />
                       </div>

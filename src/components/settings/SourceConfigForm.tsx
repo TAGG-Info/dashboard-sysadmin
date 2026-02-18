@@ -25,8 +25,8 @@ export interface SourceConfigFormProps {
   instanceId?: string;
   /** Instance name (pre-filled for existing, user-provided for new) */
   instanceName?: string;
-  /** Called after a successful save or delete */
-  onSave: () => void;
+  /** Called after a successful save or delete. For new instances, receives the generated instanceId. */
+  onSave: (newInstanceId?: string) => void;
   /** Called when user clicks delete and confirms */
   onDelete?: () => void;
   /** Whether this is a new instance being created */
@@ -217,8 +217,9 @@ export function SourceConfigForm({
         body: JSON.stringify(body),
       });
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         setSaveResult({ success: true, message: 'Configuration sauvegardee' });
-        onSave();
+        onSave(data.instanceId);
       } else {
         const data = await res.json().catch(() => ({}));
         setSaveResult({

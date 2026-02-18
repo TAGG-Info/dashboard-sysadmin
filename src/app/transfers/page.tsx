@@ -18,21 +18,14 @@ export default function TransfersPage() {
         actions={<RefreshButton onRefresh={handleRefresh} loading={loading} />}
       />
 
-      {/* Split layout : sidebar (stats + certs) a gauche, table des logs a droite */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr] lg:items-start">
+      {/* Stats cards */}
+      <TransferStats key={`stats-${refreshKey}`} />
 
-        {/* Sidebar — sticky sur desktop pour rester visible en scrollant */}
-        <div className="flex flex-col gap-6 lg:sticky lg:top-4">
-          <TransferStats key={`stats-${refreshKey}`} compact />
-          <TransferList key={`list-${refreshKey}`} />
-        </div>
+      {/* Certificats */}
+      <TransferList key={`list-${refreshKey}`} />
 
-        {/* Table principale */}
-        <div className="min-w-0">
-          <TransferLogTable refreshSignal={refreshKey} />
-        </div>
-
-      </div>
+      {/* Table principale */}
+      <TransferLogTable refreshSignal={refreshKey} />
     </div>
   );
 }

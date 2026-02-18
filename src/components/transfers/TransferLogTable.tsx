@@ -14,8 +14,8 @@ import { useTransferLogs } from '@/hooks/useTransfers';
 
 const PAGE_SIZE = 25;
 
-// Default column widths in pixels: Date, Compte, Fichier, Taille, Partenaire, Proto, Sens, TLS, Statut, Durée
-const DEFAULT_WIDTHS = [120, 130, 200, 70, 140, 70, 50, 50, 110, 70];
+// Default column widths in pixels: Date, Compte, Fichier, Taille, Proto, Sens, TLS, Statut, Durée
+const DEFAULT_WIDTHS = [120, 130, 240, 70, 70, 50, 50, 110, 70];
 
 // Date range options (ms offset from now)
 const DATE_RANGES = [
@@ -46,7 +46,7 @@ function formatDate(dateStr: string): string {
   try {
     return new Date(dateStr).toLocaleString('fr-FR', {
       day: '2-digit', month: '2-digit',
-      hour: '2-digit', minute: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
     });
   } catch { return dateStr; }
 }
@@ -146,7 +146,6 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
     { label: 'Compte',     align: 'left'   },
     { label: 'Fichier',    align: 'left'   },
     { label: 'Taille',     align: 'right'  },
-    { label: 'Partenaire', align: 'left'   },
     { label: 'Proto',      align: 'left'   },
     { label: 'Sens',       align: 'center' },
     { label: 'TLS',        align: 'center' },
@@ -346,12 +345,6 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
                     </td>
                     <td className="px-3 py-1.5 text-right text-xs text-muted-foreground overflow-hidden">
                       <span className="block truncate">{formatBytes(t.filesize)}</span>
-                    </td>
-                    <td className="px-3 py-1.5 overflow-hidden">
-                      <span className="block truncate text-xs text-muted-foreground"
-                        title={t.remotePartner ?? t.site?.name ?? ''}>
-                        {t.remotePartner || t.site?.name || '—'}
-                      </span>
                     </td>
                     <td className="px-3 py-1.5 overflow-hidden">
                       <Badge variant="outline" className="text-xs uppercase font-mono">
