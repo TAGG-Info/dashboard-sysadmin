@@ -5,7 +5,7 @@ import { Building2 } from 'lucide-react';
 import type { InstanceMetadata } from '@/types/common';
 
 /** Group items by _instanceId, preserving order of first appearance */
-export function groupByInstance<T extends InstanceMetadata>(
+export function groupByInstance<T extends Partial<InstanceMetadata>>(
   items: T[]
 ): { instanceId: string; instanceName: string; items: T[] }[] {
   const map = new Map<string, { instanceName: string; items: T[] }>();
@@ -53,7 +53,7 @@ export function InstanceSectionHeader({ instanceName, className }: InstanceSecti
   );
 }
 
-interface InstanceGroupRendererProps<T extends InstanceMetadata> {
+interface InstanceGroupRendererProps<T extends Partial<InstanceMetadata>> {
   items: T[];
   renderItems: (items: T[], instanceId: string, instanceName: string) => ReactNode;
   className?: string;
@@ -63,7 +63,7 @@ interface InstanceGroupRendererProps<T extends InstanceMetadata> {
  * Renders items grouped by instance. If there is only one instance,
  * no section headers are shown (clean UX).
  */
-export function InstanceGroupRenderer<T extends InstanceMetadata>({
+export function InstanceGroupRenderer<T extends Partial<InstanceMetadata>>({
   items,
   renderItems,
   className,

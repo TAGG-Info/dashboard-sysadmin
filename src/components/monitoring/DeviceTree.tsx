@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Monitor } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ExternalLink } from '@/components/ui/ExternalLink';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,7 +12,6 @@ import { InstanceSectionHeader, groupByInstance, hasMultipleInstances } from '@/
 import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { prtgStatusToLevel } from '@/lib/status-mappers';
 import type { PRTGDevice } from '@/types/prtg';
-import type { PRTGDeviceWithInstance } from '@/hooks/usePRTG';
 import { cn } from '@/lib/utils';
 
 const statusColors: Record<string, string> = {

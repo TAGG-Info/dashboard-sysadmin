@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ExternalLink } from '@/components/ui/ExternalLink';
@@ -8,8 +8,10 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TimeAgo } from '@/components/ui/TimeAgo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { hasMultipleInstances as checkMultipleInstances } from '@/components/ui/InstanceGroup';
 import { TicketFilters, type TicketFilterValues } from './TicketFilters';
 import { useColumnResize } from '@/hooks/useColumnResize';
+import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { useTickets } from '@/hooks/useTickets';
 
 const STATUS_LABELS: Record<number, string> = {
@@ -69,9 +71,7 @@ const DEFAULT_WIDTHS = [70, 280, 120, 120, 100, 140, 120, 60];
 export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
   const { data: tickets, loading, error, refresh } = useTickets();
 
-  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  refreshRef.current = refresh;
-  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
+  useRefreshSignal(refreshSignal, refresh);
   const [filters, setFilters] = useState<TicketFilterValues>({
     status: 'all',
     priority: 'all',
@@ -110,11 +110,7 @@ export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
   }, [tickets, filters]);
 
   // Detect multiple instances
-  const hasMultipleInstances = useMemo(() => {
-    if (!tickets) return false;
-    const ids = new Set(tickets.map((t) => t._instanceId ?? 'default'));
-    return ids.size > 1;
-  }, [tickets]);
+  const multipleInstances = tickets ? checkMultipleInstances(tickets) : false;
 
   if (error && !tickets) {
     return (
@@ -173,11 +169,11 @@ export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-fixed text-sm" style={{ width: widths.reduce((a, b) => a + b, 0) + (multipleInstances ? 140 : 0) }}>
               <colgroup>
-                {widths.slice(0, 2).map((w, i) => <col key={i} style={{ minWidth: w, width: w }} />)}
-                {hasMultipleInstances && <col style={{ minWidth: 140, width: 140 }} />}
-                {widths.slice(2).map((w, i) => <col key={i + 2} style={{ minWidth: w, width: w }} />)}
+                {widths.slice(0, 2).map((w, i) => <col key={i} style={{ width: w }} />)}
+                {multipleInstances && <col style={{ width: 140 }} />}
+                {widths.slice(2).map((w, i) => <col key={i + 2} style={{ width: w }} />)}
               </colgroup>
               <thead>
                 <tr className="border-b border-border/50 bg-muted/20">
@@ -195,7 +191,7 @@ export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
                       </div>
                     </th>
                   ))}
-                  {hasMultipleInstances && (
+                  {multipleInstances && (
                     <th className="px-3 py-2 text-xs font-medium text-muted-foreground select-none text-left">
                       <span className="block overflow-hidden text-ellipsis whitespace-nowrap">Instance</span>
                     </th>
@@ -231,7 +227,7 @@ export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
                     <td className="px-3 py-1.5 overflow-hidden">
                       <span className="block truncate text-xs text-foreground">{ticket.name}</span>
                     </td>
-                    {hasMultipleInstances && (
+                    {multipleInstances && (
                       <td className="px-3 py-1.5 overflow-hidden">
                         <Badge variant="outline" className="text-xs text-muted-foreground border-border/50">
                           {ticket._instanceName || 'Default'}

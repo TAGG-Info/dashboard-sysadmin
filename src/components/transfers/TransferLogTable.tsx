@@ -1,21 +1,23 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import {
   ArrowDownToLine, ArrowUpFromLine, Shield, ShieldOff,
-  ChevronLeft, ChevronRight, Search, X, Loader2,
+  ChevronLeft, ChevronRight, Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useColumnResize } from '@/hooks/useColumnResize';
+import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { useTransferLogs } from '@/hooks/useTransfers';
+import { formatBytes, formatDateFR } from '@/lib/formatters';
+import { TransferFilters, type TransferFilterValues } from './TransferFilters';
 
 const PAGE_SIZE = 25;
-const DEFAULT_DATE_RANGE = 'today';
 
-// Default column widths in pixels: Date, Compte, Fichier, Taille, Proto, Sens, TLS, Statut, Durée
+// Default column widths in pixels: Date, Compte, Fichier, Taille, Proto, Sens, TLS, Statut, Duree
 const DEFAULT_WIDTHS = [120, 130, 240, 70, 70, 50, 50, 110, 70];
 
 const COLS = [
@@ -29,46 +31,6 @@ const COLS = [
   { label: 'Statut',     align: 'left'   },
   { label: 'Durée',      align: 'right'  },
 ] as const;
-
-// Date range options (ms offset from now)
-const DATE_RANGES = [
-  { label: "Aujourd'hui",      value: 'today'   },
-  { label: '7 derniers jours', value: '7d'      },
-  { label: '30 derniers jours',value: '30d'     },
-  { label: 'Tout',             value: 'all'     },
-] as const;
-
-// Arrondi à la fenêtre de 30s pour stabiliser l'URL entre les renders
-// → évite la boucle infinie (endDate change → URL change → fetch → re-render → repeat)
-// → la valeur ne change que toutes les ~30s, aligné avec le refresh interval
-const ROUND_MS = 30_000;
-const roundNow = () => Math.ceil(Date.now() / ROUND_MS) * ROUND_MS;
-
-function getDateRange(range: string): { startDate?: number; endDate?: number } {
-  const now = roundNow();
-  if (range === 'today') {
-    const start = new Date(); start.setHours(0, 0, 0, 0);
-    return { startDate: start.getTime(), endDate: now };
-  }
-  if (range === '7d')  return { startDate: now - 7  * 24 * 3600 * 1000, endDate: now };
-  if (range === '30d') return { startDate: now - 30 * 24 * 3600 * 1000, endDate: now };
-  return {};
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    return new Date(dateStr).toLocaleString('fr-FR', {
-      day: '2-digit', month: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    });
-  } catch { return dateStr; }
-}
 
 function StatusCell({ status }: { status: string }) {
   const cls =
@@ -87,73 +49,32 @@ function StatusCell({ status }: { status: string }) {
 }
 
 export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) {
-  // Visible filter inputs (updates immediately)
-  const [accountInput,  setAccountInput]  = useState('');
-  const [filenameInput, setFilenameInput] = useState('');
-  const [status,    setStatus]    = useState('');
-  const [incoming,  setIncoming]  = useState('');
-  const [protocol,  setProtocol]  = useState('');
-  const [dateRange, setDateRange] = useState<string>(DEFAULT_DATE_RANGE);
+  const [filters, setFilters] = useState<TransferFilterValues>({});
   const [page, setPage] = useState(0);
-
-  // Debounced text values (sent to API)
-  const [accountDebounced,  setAccountDebounced]  = useState('');
-  const [filenameDebounced, setFilenameDebounced] = useState('');
 
   // Column widths (resizable)
   const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);
 
-  useEffect(() => {
-    const t = setTimeout(() => { setAccountDebounced(accountInput);  setPage(0); }, 400);
-    return () => clearTimeout(t);
-  }, [accountInput]);
-
-  useEffect(() => {
-    const t = setTimeout(() => { setFilenameDebounced(filenameInput); setPage(0); }, 400);
-    return () => clearTimeout(t);
-  }, [filenameInput]);
-
-  // Reset page when selects change
-  useEffect(() => { setPage(0); }, [status, incoming, protocol, dateRange]);
-
-  // Stable ref for refresh — avoids stale closure in the refreshSignal effect
-  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
-
-  // Trigger refresh when parent signals a refresh (preserves filter state)
-  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
-
-  // Pas de useMemo : Date.now() doit être recalculé à chaque refresh cycle
-  const dateParams = getDateRange(dateRange);
+  const resetPage = useCallback(() => setPage(0), []);
 
   const { data, loading, error, refresh, isStale } = useTransferLogs({
-    account:   accountDebounced  || undefined,
-    filename:  filenameDebounced || undefined,
-    status:    status    || undefined,
-    incoming:  incoming === 'true' ? true : incoming === 'false' ? false : undefined,
-    protocol:  protocol  || undefined,
-    startDate: dateParams.startDate,
-    endDate:   dateParams.endDate,
+    account:   filters.account,
+    filename:  filters.filename,
+    status:    filters.status,
+    incoming:  filters.incoming,
+    protocol:  filters.protocol,
+    startDate: filters.startDate,
+    endDate:   filters.endDate,
     limit:  PAGE_SIZE,
     offset: page * PAGE_SIZE,
   });
 
-  // Keep refreshRef in sync with the latest refresh identity
-  refreshRef.current = refresh;
+  useRefreshSignal(refreshSignal, refresh);
 
   const transfers   = data?.transfers   ?? [];
   const totalCount  = data?.resultSet?.totalCount  ?? 0;
   const returnCount = data?.resultSet?.returnCount ?? 0;
   const totalPages  = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-
-  function clearFilters() {
-    setAccountInput('');  setAccountDebounced('');
-    setFilenameInput(''); setFilenameDebounced('');
-    setStatus(''); setIncoming(''); setProtocol('');
-    setDateRange(DEFAULT_DATE_RANGE);
-    setPage(0);
-  }
-
-  const hasFilters = accountInput || filenameInput || status || incoming || protocol || dateRange !== DEFAULT_DATE_RANGE;
 
   if (error && !data) {
     return (
@@ -191,15 +112,6 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
             )}
           </CardTitle>
           <div className="flex items-center gap-3">
-            {hasFilters && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="h-3 w-3" />
-                Réinitialiser
-              </button>
-            )}
             <button
               onClick={resetWidths}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -210,93 +122,16 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
           </div>
         </div>
 
-        {/* Filter bar */}
-        <div className="flex flex-wrap gap-2 pt-2">
-          {/* Account search */}
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Compte..."
-              value={accountInput}
-              onChange={e => setAccountInput(e.target.value)}
-              className="h-8 pl-7 pr-3 text-sm bg-muted/20 border border-border/50 rounded focus:outline-none focus:ring-1 focus:ring-ring w-36"
-            />
-          </div>
-
-          {/* Filename search */}
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Fichier..."
-              value={filenameInput}
-              onChange={e => setFilenameInput(e.target.value)}
-              className="h-8 pl-7 pr-3 text-sm bg-muted/20 border border-border/50 rounded focus:outline-none focus:ring-1 focus:ring-ring w-40"
-            />
-          </div>
-
-          {/* Direction */}
-          <select
-            value={incoming}
-            onChange={e => setIncoming(e.target.value)}
-            className="h-8 px-2 text-sm bg-muted/20 border border-border/50 rounded focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="">Tous sens</option>
-            <option value="true">↓ Entrant</option>
-            <option value="false">↑ Sortant</option>
-          </select>
-
-          {/* Protocol */}
-          <select
-            value={protocol}
-            onChange={e => setProtocol(e.target.value)}
-            className="h-8 px-2 text-sm bg-muted/20 border border-border/50 rounded focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="">Protocole</option>
-            <option value="ssh">SSH</option>
-            <option value="ftp">FTP</option>
-            <option value="https">HTTPS</option>
-            <option value="as2">AS2</option>
-            <option value="pesit">PeSIT</option>
-          </select>
-
-          {/* Status */}
-          <select
-            value={status}
-            onChange={e => setStatus(e.target.value)}
-            className="h-8 px-2 text-sm bg-muted/20 border border-border/50 rounded focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="">Statut</option>
-            <option value="Processed">Processed</option>
-            <option value="Failed">Failed</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Aborted">Aborted</option>
-            <option value="Paused">Paused</option>
-            <option value="Waiting">Waiting</option>
-            <option value="Pending receipt">Pending receipt</option>
-          </select>
-
-          {/* Date range */}
-          <select
-            value={dateRange}
-            onChange={e => setDateRange(e.target.value)}
-            className="h-8 px-2 text-sm bg-muted/20 border border-border/50 rounded focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            {DATE_RANGES.map(r => (
-              <option key={r.value} value={r.value}>{r.label}</option>
-            ))}
-          </select>
-        </div>
+        <TransferFilters onFilterChange={setFilters} onPageReset={resetPage} />
       </CardHeader>
 
       <CardContent className="p-0">
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table-fixed text-sm" style={{ width: widths.reduce((a, b) => a + b, 0) }}>
             <colgroup>
               {widths.map((w, i) => (
-                <col key={i} style={{ minWidth: w, width: w }} />
+                <col key={i} style={{ width: w }} />
               ))}
             </colgroup>
             <thead>
@@ -343,7 +178,7 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
                     className="border-b border-border/30 hover:bg-muted/10 transition-colors"
                   >
                     <td className="px-3 py-1.5 text-xs text-muted-foreground overflow-hidden">
-                      <span className="block truncate" title={t.startTime}>{formatDate(t.startTime)}</span>
+                      <span className="block truncate" title={t.startTime}>{formatDateFR(t.startTime)}</span>
                     </td>
                     <td className="px-3 py-1.5 text-xs font-medium text-foreground overflow-hidden">
                       <span className="block truncate" title={t.account}>{t.account}</span>

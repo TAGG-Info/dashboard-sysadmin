@@ -9,7 +9,9 @@ export function useRefreshSignal(
   refresh: (() => Promise<void>) | undefined,
 ) {
   const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  refreshRef.current = refresh;
+  useEffect(() => {
+    refreshRef.current = refresh;
+  });
   useEffect(() => {
     if (refreshSignal) refreshRef.current?.();
   }, [refreshSignal]);

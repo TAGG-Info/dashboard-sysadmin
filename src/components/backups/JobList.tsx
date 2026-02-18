@@ -11,7 +11,7 @@ import { TimeAgo } from '@/components/ui/TimeAgo';
 import { useColumnResize } from '@/hooks/useColumnResize';
 import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { resultToStatus, resultLabel } from '@/lib/status-mappers';
-import { useVeeamJobs, type VeeamJobWithInstance } from '@/hooks/useVeeam';
+import { useVeeamJobs } from '@/hooks/useVeeam';
 
 const COLS = [
   { label: 'Nom', align: 'left' as const },
@@ -39,6 +39,8 @@ export function JobList({ refreshSignal }: { refreshSignal?: number }) {
   }, [jobs]);
 
   const multipleInstances = jobs ? hasMultipleInstances(jobs) : false;
+
+  const tableWidth = widths.reduce((a, b) => a + b, 0);
 
   if (error && !jobs) {
     return (
@@ -78,9 +80,9 @@ export function JobList({ refreshSignal }: { refreshSignal?: number }) {
             <InstanceSectionHeader instanceName={instanceName} className="mb-2" />
           )}
           <div className="rounded-lg border border-border/50 overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-fixed text-sm" style={{ width: tableWidth }}>
               <colgroup>
-                {widths.map((w, i) => <col key={i} style={{ minWidth: w, width: w }} />)}
+                {widths.map((w, i) => <col key={i} style={{ width: w }} />)}
               </colgroup>
               <thead>
                 <tr className="border-b border-border/50 bg-muted/20">
@@ -164,9 +166,9 @@ export function JobList({ refreshSignal }: { refreshSignal?: number }) {
       {/* Show loading skeletons when no data */}
       {loading && !jobs && instanceGroups.length === 0 && (
         <div className="rounded-lg border border-border/50 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table-fixed text-sm" style={{ width: tableWidth }}>
             <colgroup>
-              {widths.map((w, i) => <col key={i} style={{ minWidth: w, width: w }} />)}
+              {widths.map((w, i) => <col key={i} style={{ width: w }} />)}
             </colgroup>
             <thead>
               <tr className="border-b border-border/50 bg-muted/20">

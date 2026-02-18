@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Select,
   SelectContent,
@@ -12,8 +12,11 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ExternalLink } from '@/components/ui/ExternalLink';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { InstanceSectionHeader } from '@/components/ui/InstanceGroup';
+import { InstanceSectionHeader, groupByInstance, hasMultipleInstances } from '@/components/ui/InstanceGroup';
 import { useColumnResize } from '@/hooks/useColumnResize';
+import { useRefreshSignal } from '@/hooks/useRefreshSignal';
+import { powerStateToStatus, powerStateLabel } from '@/lib/status-mappers';
+import { formatMemory } from '@/lib/formatters';
 import { useVCenterVMs, useVCenterHosts } from '@/hooks/useInfrastructure';
 
 const COLS = [
@@ -27,45 +30,10 @@ const COLS = [
 
 const DEFAULT_WIDTHS = [200, 100, 160, 80, 100, 80];
 
-function powerStateToStatus(state: string): 'healthy' | 'warning' | 'neutral' {
-  switch (state.toUpperCase()) {
-    case 'POWERED_ON':
-      return 'healthy';
-    case 'SUSPENDED':
-      return 'warning';
-    case 'POWERED_OFF':
-    default:
-      return 'neutral';
-  }
-}
-
-function powerStateLabel(state: string): string {
-  switch (state.toUpperCase()) {
-    case 'POWERED_ON':
-      return 'On';
-    case 'POWERED_OFF':
-      return 'Off';
-    case 'SUSPENDED':
-      return 'Suspended';
-    default:
-      return state;
-  }
-}
-
-function formatMemory(mib: number): string {
-  const gb = mib / 1024;
-  if (gb >= 1) {
-    return `${gb.toFixed(1)} Go`;
-  }
-  return `${mib} MiB`;
-}
-
 export function VMList({ refreshSignal }: { refreshSignal?: number }) {
   const { data: vms, loading, error, refresh } = useVCenterVMs();
 
-  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  refreshRef.current = refresh;
-  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
+  useRefreshSignal(refreshSignal, refresh);
   const { data: hosts } = useVCenterHosts();
   const [filterPower, setFilterPower] = useState<string>('all');
   const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);
@@ -94,19 +62,12 @@ export function VMList({ refreshSignal }: { refreshSignal?: number }) {
 
   // Group by instance
   const instanceGroups = useMemo(() => {
-    const map = new Map<string, { instanceName: string; vms: typeof filteredVMs }>();
-    for (const vm of filteredVMs) {
-      const id = vm._instanceId ?? 'default';
-      const name = vm._instanceName ?? '';
-      if (!map.has(id)) {
-        map.set(id, { instanceName: name, vms: [] });
-      }
-      map.get(id)!.vms.push(vm);
-    }
-    return Array.from(map.entries());
+    return groupByInstance(filteredVMs);
   }, [filteredVMs]);
 
-  const hasMultipleInstances = instanceGroups.length > 1;
+  const multipleInstances = hasMultipleInstances(filteredVMs);
+
+  const tableWidth = widths.reduce((a, b) => a + b, 0);
 
   if (error && !vms) {
     return (
@@ -153,15 +114,15 @@ export function VMList({ refreshSignal }: { refreshSignal?: number }) {
         </div>
       </div>
 
-      {instanceGroups.map(([instanceId, { instanceName, vms: groupVMs }]) => (
+      {instanceGroups.map(({ instanceId, instanceName, items: groupVMs }) => (
         <div key={instanceId}>
-          {hasMultipleInstances && (
+          {multipleInstances && (
             <InstanceSectionHeader instanceName={instanceName} className="mb-2" />
           )}
           <div className="rounded-lg border border-border/50 overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="table-fixed text-sm" style={{ width: tableWidth }}>
               <colgroup>
-                {widths.map((w, i) => <col key={i} style={{ minWidth: w, width: w }} />)}
+                {widths.map((w, i) => <col key={i} style={{ width: w }} />)}
               </colgroup>
               <thead>
                 <tr className="border-b border-border/50 bg-muted/20">
@@ -250,9 +211,9 @@ export function VMList({ refreshSignal }: { refreshSignal?: number }) {
       {/* Show loading skeletons when no data yet */}
       {loading && !vms && instanceGroups.length === 0 && (
         <div className="rounded-lg border border-border/50 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table-fixed text-sm" style={{ width: tableWidth }}>
             <colgroup>
-              {widths.map((w, i) => <col key={i} style={{ minWidth: w, width: w }} />)}
+              {widths.map((w, i) => <col key={i} style={{ width: w }} />)}
             </colgroup>
             <thead>
               <tr className="border-b border-border/50 bg-muted/20">
