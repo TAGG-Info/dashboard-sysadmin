@@ -2,14 +2,8 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import {
-  Activity,
-  Server,
-  Database,
-  Ticket,
-  ArrowUpDown,
-} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SourceLogo } from '@/components/ui/SourceLogo';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,22 +17,21 @@ interface OverviewCardProps {
   title: string;
   icon: React.ReactNode;
   href: string;
-  borderColor: string;
+  accentColor: string;
   children: React.ReactNode;
 }
 
-function OverviewCard({ title, icon, href, borderColor, children }: OverviewCardProps) {
+function OverviewCard({ title, icon, href, accentColor, children }: OverviewCardProps) {
   return (
     <Link href={href}>
-      <Card
-        className="transition-colors hover:bg-accent/50 cursor-pointer h-full"
-        style={{ borderLeftWidth: '3px', borderLeftColor: borderColor }}
-      >
+      <Card className="transition-all duration-200 hover:bg-white/[0.03] cursor-pointer h-full group">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {title}
           </CardTitle>
-          <div className="text-muted-foreground">{icon}</div>
+          <div style={{ color: accentColor }} className="opacity-60 group-hover:opacity-100 transition-opacity">
+            {icon}
+          </div>
         </CardHeader>
         <CardContent>{children}</CardContent>
       </Card>
@@ -220,7 +213,7 @@ function BackupsContent() {
             {stats.failures} echec(s)
           </p>
         ) : (
-          <p className="text-lg font-bold text-[#10b981]">
+          <p className="text-lg font-bold text-[#22c55e]">
             Tout OK
           </p>
         )}
@@ -358,12 +351,12 @@ export function OverviewCards() {
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-      {/* PRTG Monitoring - FUNCTIONAL */}
+      {/* PRTG Monitoring */}
       <OverviewCard
         title="Monitoring"
-        icon={<Activity className="h-4 w-4" />}
+        icon={<SourceLogo source="prtg" size={20} />}
         href="/monitoring"
-        borderColor="#2196F3"
+        accentColor="#3b82f6"
       >
         {loading && !alerts ? (
           <div className="space-y-2">
@@ -385,7 +378,7 @@ export function OverviewCards() {
                   {downCount} down
                 </p>
               ) : (
-                <p className="text-lg font-bold text-[#10b981]">
+                <p className="text-lg font-bold text-[#22c55e]">
                   Tout OK
                 </p>
               )}
@@ -401,42 +394,42 @@ export function OverviewCards() {
         )}
       </OverviewCard>
 
-      {/* Infrastructure - FUNCTIONAL */}
+      {/* Infrastructure */}
       <OverviewCard
         title="Infrastructure"
-        icon={<Server className="h-4 w-4" />}
+        icon={<SourceLogo source="vcenter" size={20} />}
         href="/infrastructure"
-        borderColor="#4CAF50"
+        accentColor="#22c55e"
       >
         <InfrastructureContent />
       </OverviewCard>
 
-      {/* Backups - FUNCTIONAL */}
+      {/* Backups */}
       <OverviewCard
         title="Backups"
-        icon={<Database className="h-4 w-4" />}
+        icon={<SourceLogo source="veeam" size={20} />}
         href="/backups"
-        borderColor="#00B336"
+        accentColor="#22c55e"
       >
         <BackupsContent />
       </OverviewCard>
 
-      {/* Tickets - FUNCTIONAL */}
+      {/* Tickets */}
       <OverviewCard
         title="Tickets"
-        icon={<Ticket className="h-4 w-4" />}
+        icon={<SourceLogo source="glpi" size={20} />}
         href="/tickets"
-        borderColor="#FEC72D"
+        accentColor="#f59e0b"
       >
         <TicketsContent />
       </OverviewCard>
 
-      {/* Transferts - FUNCTIONAL */}
+      {/* Transferts */}
       <OverviewCard
         title="Transferts"
-        icon={<ArrowUpDown className="h-4 w-4" />}
+        icon={<SourceLogo source="securetransport" size={20} />}
         href="/transfers"
-        borderColor="#FF6D00"
+        accentColor="#f97316"
       >
         <TransfersContent />
       </OverviewCard>

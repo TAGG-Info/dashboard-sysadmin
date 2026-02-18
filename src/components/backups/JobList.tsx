@@ -12,6 +12,7 @@ import { useColumnResize } from '@/hooks/useColumnResize';
 import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { resultToStatus, resultLabel } from '@/lib/status-mappers';
 import { useVeeamJobs } from '@/hooks/useVeeam';
+import { SourceLogo } from '@/components/ui/SourceLogo';
 
 const COLS = [
   { label: 'Nom', align: 'left' as const },
@@ -57,7 +58,8 @@ export function JobList({ refreshSignal }: { refreshSignal?: number }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <SourceLogo source="veeam" size={16} />
           Jobs de backup
           {jobs && (
             <span className="ml-2 text-sm text-muted-foreground font-normal">

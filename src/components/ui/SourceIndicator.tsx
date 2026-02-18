@@ -4,6 +4,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from '@/components/ui/tooltip';
+import { SourceLogo } from '@/components/ui/SourceLogo';
 
 type SourceName = 'prtg' | 'vcenter' | 'proxmox' | 'veeam' | 'glpi' | 'securetransport';
 
@@ -14,12 +15,12 @@ interface SourceIndicatorProps {
 }
 
 const sourceConfig: Record<SourceName, { color: string; label: string }> = {
-  prtg: { color: '#2196F3', label: 'PRTG' },
-  vcenter: { color: '#4CAF50', label: 'VMware' },
-  proxmox: { color: '#E87D0D', label: 'Proxmox' },
-  veeam: { color: '#00B336', label: 'Veeam' },
-  glpi: { color: '#FEC72D', label: 'GLPI' },
-  securetransport: { color: '#FF6D00', label: 'ST' },
+  prtg: { color: '#3b82f6', label: 'PRTG' },
+  vcenter: { color: '#22c55e', label: 'VMware' },
+  proxmox: { color: '#f97316', label: 'Proxmox' },
+  veeam: { color: '#22c55e', label: 'Veeam' },
+  glpi: { color: '#f59e0b', label: 'GLPI' },
+  securetransport: { color: '#f97316', label: 'ST' },
 };
 
 export function SourceIndicator({ source, connected, className }: SourceIndicatorProps) {
@@ -32,23 +33,11 @@ export function SourceIndicator({ source, connected, className }: SourceIndicato
       <TooltipTrigger asChild>
         <div
           className={cn(
-            'flex items-center gap-1.5 text-sm',
+            'flex items-center gap-1.5 text-xs',
             className
           )}
         >
-          <span
-            className={cn(
-              'h-2 w-2 rounded-full shrink-0',
-              !isConnected && !isUnknown && 'opacity-40'
-            )}
-            style={{
-              backgroundColor: isUnknown
-                ? '#6b7280'
-                : isConnected
-                  ? config.color
-                  : '#6b7280',
-            }}
-          />
+          <SourceLogo source={source} size={14} colored={isConnected || isUnknown} />
           <span
             className={cn(
               'text-muted-foreground',

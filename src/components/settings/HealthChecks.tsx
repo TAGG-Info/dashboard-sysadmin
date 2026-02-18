@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { Loader2, Activity, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { SourceLogo } from '@/components/ui/SourceLogo';
 
 import type { SourceName } from '@/types/common';
 
@@ -142,9 +143,12 @@ export function HealthChecks() {
               />
 
               {/* Source label */}
-              <span className="text-sm font-medium tracking-wider uppercase text-muted-foreground mb-3">
-                {label}
-              </span>
+              <div className="flex items-center gap-1.5 mb-3">
+                <SourceLogo source={key} size={16} />
+                <span className="text-sm font-medium tracking-wider uppercase text-muted-foreground">
+                  {label}
+                </span>
+              </div>
 
               {/* Status indicator */}
               {isTestingThis ? (

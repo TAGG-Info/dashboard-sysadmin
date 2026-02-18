@@ -14,6 +14,7 @@ import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { useTransferLogs } from '@/hooks/useTransfers';
 import { formatBytes, formatDateFR } from '@/lib/formatters';
 import { TransferFilters, type TransferFilterValues } from './TransferFilters';
+import { SourceLogo } from '@/components/ui/SourceLogo';
 
 const PAGE_SIZE = 25;
 
@@ -101,6 +102,7 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+            <SourceLogo source="securetransport" size={18} />
             Logs de transfert
             {totalCount > 0 && (
               <Badge variant="outline" className="text-xs text-muted-foreground">

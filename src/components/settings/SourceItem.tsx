@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SourceConfigForm } from '@/components/settings/SourceConfigForm';
 import { cn } from '@/lib/utils';
+import { SourceLogo } from '@/components/ui/SourceLogo';
 import type { SourceName } from '@/types/common';
 
 export interface SourceDef {
@@ -86,13 +87,7 @@ export function SourceItem({
               <ChevronRight className="h-3.5 w-3.5" style={{ color }} />
             )}
           </div>
-          <div
-            className="h-2 w-2 rounded-full shrink-0"
-            style={{
-              backgroundColor: isConfigured ? color : '#3f3f46',
-              boxShadow: isConfigured ? `0 0 8px ${color}40` : 'none',
-            }}
-          />
+          <SourceLogo source={key} size={18} colored={isConfigured} />
           <span className="text-sm font-semibold text-foreground">{label}</span>
         </button>
 

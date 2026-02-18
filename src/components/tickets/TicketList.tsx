@@ -13,6 +13,7 @@ import { TicketFilters, type TicketFilterValues } from './TicketFilters';
 import { useColumnResize } from '@/hooks/useColumnResize';
 import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { useTickets } from '@/hooks/useTickets';
+import { SourceLogo } from '@/components/ui/SourceLogo';
 
 const STATUS_LABELS: Record<number, string> = {
   1: 'Nouveau',
@@ -127,7 +128,8 @@ export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
     <Card className="bg-card border-border/50">
       <CardHeader className="pb-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-base font-semibold text-foreground">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+            <SourceLogo source="glpi" size={18} />
             Liste des tickets
             {tickets && (
               <span className="ml-2 text-sm font-normal text-muted-foreground">

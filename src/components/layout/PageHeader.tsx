@@ -1,19 +1,27 @@
 import { SourceIndicator } from '@/components/ui/SourceIndicator';
+import { SourceLogo } from '@/components/ui/SourceLogo';
 
 type SourceName = 'prtg' | 'vcenter' | 'proxmox' | 'veeam' | 'glpi' | 'securetransport';
 
 interface PageHeaderProps {
   title: string;
+  subtitle?: string;
   source?: SourceName;
   badge?: React.ReactNode;
   actions?: React.ReactNode;
 }
 
-export function PageHeader({ title, source, badge, actions }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, source, badge, actions }: PageHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+        {source && <SourceLogo source={source} size={28} />}
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+          {subtitle && (
+            <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
+          )}
+        </div>
         {source && <SourceIndicator source={source} connected />}
         {badge}
       </div>
