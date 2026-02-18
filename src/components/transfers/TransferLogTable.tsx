@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowDownToLine, ArrowUpFromLine, Shield, ShieldOff,
   ChevronLeft, ChevronRight, Search, X, Loader2,
@@ -101,7 +101,8 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (refreshSignal) refresh(); }, [refreshSignal]);
 
-  const dateParams = useMemo(() => getDateRange(dateRange), [dateRange]);
+  // Pas de useMemo : Date.now() doit être recalculé à chaque refresh cycle
+  const dateParams = getDateRange(dateRange);
 
   const { data, loading, error, refresh, isStale } = useTransferLogs({
     account:   accountDebounced  || undefined,
