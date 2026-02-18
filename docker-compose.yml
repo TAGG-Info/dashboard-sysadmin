@@ -6,8 +6,8 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     env_file:
-      - .env.local
-    # IMPORTANT: Si REDIS_PASSWORD est défini dans .env.local,
+      - .env
+    # IMPORTANT: Si REDIS_PASSWORD est défini dans .env,
     # REDIS_URL doit inclure le password : redis://:PASSWORD@redis:6379
     networks:
       - dashboard
