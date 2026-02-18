@@ -25,8 +25,14 @@ const DATE_RANGES = [
   { label: 'Tout',             value: 'all'     },
 ] as const;
 
+// Arrondi à la fenêtre de 30s pour stabiliser l'URL entre les renders
+// → évite la boucle infinie (endDate change → URL change → fetch → re-render → repeat)
+// → la valeur ne change que toutes les ~30s, aligné avec le refresh interval
+const ROUND_MS = 30_000;
+const roundNow = () => Math.ceil(Date.now() / ROUND_MS) * ROUND_MS;
+
 function getDateRange(range: string): { startDate?: number; endDate?: number } {
-  const now = Date.now();
+  const now = roundNow();
   if (range === 'today') {
     const start = new Date(); start.setHours(0, 0, 0, 0);
     return { startDate: start.getTime(), endDate: now };
