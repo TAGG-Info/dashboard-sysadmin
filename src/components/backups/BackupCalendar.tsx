@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,8 +44,12 @@ function getDayLabel(status: DayStatus): string {
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
-export function BackupCalendar() {
-  const { data: sessions, loading } = useVeeamSessions();
+export function BackupCalendar({ refreshSignal }: { refreshSignal?: number }) {
+  const { data: sessions, loading, refresh } = useVeeamSessions();
+
+  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  refreshRef.current = refresh;
+  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);

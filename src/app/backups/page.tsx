@@ -84,29 +84,29 @@ export default function BackupsPage() {
   const { refreshKey, loading, handleRefresh } = usePageRefresh();
 
   return (
-    <div className="space-y-6" key={`backups-${refreshKey}`}>
+    <div className="space-y-6">
       <PageHeader
         title="Backups Veeam"
         source="veeam"
         actions={<RefreshButton onRefresh={handleRefresh} loading={loading} />}
       />
 
-      {/* Stats cards */}
-      <BackupStats />
+      {/* Stats cards (stateless → key remount) */}
+      <BackupStats key={`stats-${refreshKey}`} />
 
-      {/* Job list */}
-      <JobList />
+      {/* Job list (has column resize state → refreshSignal) */}
+      <JobList refreshSignal={refreshKey} />
 
       {/* Session timeline + Calendar */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="bg-card border-border/50">
+        <Card key={`timeline-${refreshKey}`} className="bg-card border-border/50">
           <CardContent className="p-4">
             <SessionTimeline />
           </CardContent>
         </Card>
         <Card className="bg-card border-border/50">
           <CardContent className="p-4">
-            <BackupCalendar />
+            <BackupCalendar refreshSignal={refreshKey} />
           </CardContent>
         </Card>
       </div>

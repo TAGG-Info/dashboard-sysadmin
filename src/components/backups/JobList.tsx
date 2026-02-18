@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ExternalLink } from '@/components/ui/ExternalLink';
 import { Badge } from '@/components/ui/badge';
@@ -55,8 +55,12 @@ function resultLabel(result?: string): string {
   }
 }
 
-export function JobList() {
+export function JobList({ refreshSignal }: { refreshSignal?: number }) {
   const { data: jobs, loading, error, refresh } = useVeeamJobs();
+
+  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  refreshRef.current = refresh;
+  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
   const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);
 
   const veeamUrl = process.env.NEXT_PUBLIC_VEEAM_URL;

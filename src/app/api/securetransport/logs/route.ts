@@ -1,12 +1,10 @@
 import { createSummaryApiRoute, type InstanceResult } from '@/lib/api-handler';
 import { cacheGet, cacheSet } from '@/lib/cache';
+import { CACHE_TTL } from '@/lib/constants';
 import { getSTClient } from '@/lib/securetransport';
 import type { STTransferLog } from '@/types/securetransport';
 
 export const dynamic = 'force-dynamic';
-
-const LOGS_TTL  = 30_000;      // 30s — données complètes (beaucoup de transferts)
-const COUNT_TTL = 2  * 60_000; // 2 min — count seul, survit à l'expiration du cache data
 
 // Stabilise le cache key : arrondi à l'heure la plus proche
 const roundToHour = (ms: number) => Math.floor(ms / 3_600_000) * 3_600_000;
@@ -41,7 +39,7 @@ export const GET = createSummaryApiRoute<'securetransport', LogsRaw, LogsAggrega
     const offset = Math.max(Number(searchParams.get('offset') || 0), 0);
     return `dashboard:st:${instanceId}:logs:${limit}:${offset}:${buildFilterKey(searchParams)}`;
   },
-  ttlMs: LOGS_TTL,
+  ttlMs: CACHE_TTL.ST_LOGS,
   fetcher: async (instance, req) => {
     const { searchParams } = new URL(req.url);
     const limit  = Math.min(Number(searchParams.get('limit')  || 50), 200);
@@ -58,18 +56,17 @@ export const GET = createSummaryApiRoute<'securetransport', LogsRaw, LogsAggrega
       endDate:   searchParams.get('endDate')   ? Number(searchParams.get('endDate'))   : undefined,
     };
 
-    // Count cache: survit à l'expiration du cache data (10 min > 5 min)
-    // Quand le cache data expire, on récupère le count ici → 1 appel ST au lieu de 2
+    // Toujours faire le count frais pour la page 1 (offset=0) — sinon la reverse
+    // pagination rate les transferts récents quand le count caché est périmé.
+    // Pour les pages suivantes, le count caché est OK (navigation dans l'historique).
     const countKey = `dashboard:st:${instance.id}:logs:count:${buildFilterKey(searchParams)}`;
-    const cachedCount = await cacheGet<number>(countKey);
+    const cachedCount = offset === 0 ? null : await cacheGet<number>(countKey);
 
     const client = getSTClient(instance);
     const result = await client.getTransferLogs(limit, offset, filters, cachedCount ?? undefined);
 
-    // Persist count if it wasn't already cached
-    if (cachedCount === null) {
-      await cacheSet(countKey, result.resultSet.totalCount, COUNT_TTL);
-    }
+    // Toujours mettre à jour le count en cache (frais à chaque page 1)
+    await cacheSet(countKey, result.resultSet.totalCount, CACHE_TTL.ST_COUNT);
 
     return result as LogsRaw;
   },

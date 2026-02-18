@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { ChevronDown, ChevronRight, Monitor } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ExternalLink } from '@/components/ui/ExternalLink';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SensorCard } from './SensorCard';
-import { usePRTGDevices } from '@/hooks/usePRTG';
-import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { usePRTGDevices, usePRTGSensors } from '@/hooks/usePRTG';
 import { InstanceSectionHeader } from '@/components/ui/InstanceGroup';
 import type { PRTGDevice, PRTGSensor } from '@/types/prtg';
 import type { PRTGDeviceWithInstance } from '@/hooks/usePRTG';
@@ -41,11 +40,7 @@ function statusToLevel(status: string): 'healthy' | 'warning' | 'critical' | 'in
 }
 
 function DeviceSensors({ deviceId }: { deviceId: number }) {
-  const REFRESH = Math.max(10000, Number(process.env.NEXT_PUBLIC_REFRESH_PRTG) || 30000);
-  const { data: sensors, loading } = useAutoRefresh<PRTGSensor[]>({
-    url: `/api/prtg/sensors?deviceId=${deviceId}`,
-    interval: REFRESH,
-  });
+  const { data: sensors, loading } = usePRTGSensors(deviceId);
 
   if (loading && !sensors) {
     return (
@@ -178,8 +173,12 @@ function DeviceCard({ device }: { device: PRTGDevice }) {
   );
 }
 
-export function DeviceTree() {
-  const { data: devices, loading, error } = usePRTGDevices();
+export function DeviceTree({ refreshSignal }: { refreshSignal?: number }) {
+  const { data: devices, loading, error, refresh } = usePRTGDevices();
+
+  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  refreshRef.current = refresh;
+  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
 
   // Group devices by instance
   const instanceGroups = useMemo(() => {

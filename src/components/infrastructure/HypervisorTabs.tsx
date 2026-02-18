@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SourceIndicator } from '@/components/ui/SourceIndicator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,9 +35,20 @@ function groupByInstanceId<T extends { _instanceId?: string; _instanceName?: str
   }));
 }
 
-export function HypervisorTabs() {
+export function HypervisorTabs({ refreshSignal }: { refreshSignal?: number }) {
   const { data: hosts, loading: hostsLoading, error: hostsError, refresh: refreshHosts } = useVCenterHosts();
   const { data: nodes, loading: nodesLoading, error: nodesError, refresh: refreshNodes } = useProxmoxNodes();
+
+  const refreshHostsRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const refreshNodesRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  refreshHostsRef.current = refreshHosts;
+  refreshNodesRef.current = refreshNodes;
+  useEffect(() => {
+    if (refreshSignal) {
+      refreshHostsRef.current?.();
+      refreshNodesRef.current?.();
+    }
+  }, [refreshSignal]);
 
   const hostGroups = useMemo(() => {
     if (!hosts) return [];
@@ -117,8 +128,8 @@ export function HypervisorTabs() {
 
         {/* VM List + Datastores side by side */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <VMList />
-          <DatastoreList />
+          <VMList refreshSignal={refreshSignal} />
+          <DatastoreList key={refreshSignal} />
         </div>
       </TabsContent>
 
@@ -171,7 +182,7 @@ export function HypervisorTabs() {
         </div>
 
         {/* Proxmox VM Table */}
-        <ProxmoxVMTable />
+        <ProxmoxVMTable refreshSignal={refreshSignal} />
       </TabsContent>
     </Tabs>
   );

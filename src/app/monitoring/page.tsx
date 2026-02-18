@@ -24,8 +24,8 @@ export default function MonitoringPage() {
       {/* Alerts */}
       <AlertList key={`alerts-${refreshKey}`} />
 
-      {/* Device tree */}
-      <DeviceTree key={`devices-${refreshKey}`} />
+      {/* Device tree (has expand state → refreshSignal) */}
+      <DeviceTree refreshSignal={refreshKey} />
     </div>
   );
 }

@@ -15,7 +15,7 @@ export default function InfrastructurePage() {
         actions={<RefreshButton onRefresh={handleRefresh} loading={loading} />}
       />
 
-      <HypervisorTabs key={`infra-${refreshKey}`} />
+      <HypervisorTabs refreshSignal={refreshKey} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ArrowDownToLine, ArrowUpFromLine, Shield, ShieldOff,
   ChevronLeft, ChevronRight, Search, X, Loader2,
@@ -13,9 +13,22 @@ import { useColumnResize } from '@/hooks/useColumnResize';
 import { useTransferLogs } from '@/hooks/useTransfers';
 
 const PAGE_SIZE = 25;
+const DEFAULT_DATE_RANGE = 'today';
 
 // Default column widths in pixels: Date, Compte, Fichier, Taille, Proto, Sens, TLS, Statut, Durée
 const DEFAULT_WIDTHS = [120, 130, 240, 70, 70, 50, 50, 110, 70];
+
+const COLS = [
+  { label: 'Date',       align: 'left'   },
+  { label: 'Compte',     align: 'left'   },
+  { label: 'Fichier',    align: 'left'   },
+  { label: 'Taille',     align: 'right'  },
+  { label: 'Proto',      align: 'left'   },
+  { label: 'Sens',       align: 'center' },
+  { label: 'TLS',        align: 'center' },
+  { label: 'Statut',     align: 'left'   },
+  { label: 'Durée',      align: 'right'  },
+] as const;
 
 // Date range options (ms offset from now)
 const DATE_RANGES = [
@@ -80,7 +93,7 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
   const [status,    setStatus]    = useState('');
   const [incoming,  setIncoming]  = useState('');
   const [protocol,  setProtocol]  = useState('');
-  const [dateRange, setDateRange] = useState<string>('today');
+  const [dateRange, setDateRange] = useState<string>(DEFAULT_DATE_RANGE);
   const [page, setPage] = useState(0);
 
   // Debounced text values (sent to API)
@@ -103,9 +116,11 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
   // Reset page when selects change
   useEffect(() => { setPage(0); }, [status, incoming, protocol, dateRange]);
 
+  // Stable ref for refresh — avoids stale closure in the refreshSignal effect
+  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
+
   // Trigger refresh when parent signals a refresh (preserves filter state)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (refreshSignal) refresh(); }, [refreshSignal]);
+  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
 
   // Pas de useMemo : Date.now() doit être recalculé à chaque refresh cycle
   const dateParams = getDateRange(dateRange);
@@ -122,6 +137,9 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
     offset: page * PAGE_SIZE,
   });
 
+  // Keep refreshRef in sync with the latest refresh identity
+  refreshRef.current = refresh;
+
   const transfers   = data?.transfers   ?? [];
   const totalCount  = data?.resultSet?.totalCount  ?? 0;
   const returnCount = data?.resultSet?.returnCount ?? 0;
@@ -131,11 +149,11 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
     setAccountInput('');  setAccountDebounced('');
     setFilenameInput(''); setFilenameDebounced('');
     setStatus(''); setIncoming(''); setProtocol('');
-    setDateRange('7d');
+    setDateRange(DEFAULT_DATE_RANGE);
     setPage(0);
   }
 
-  const hasFilters = accountInput || filenameInput || status || incoming || protocol || dateRange !== '7d';
+  const hasFilters = accountInput || filenameInput || status || incoming || protocol || dateRange !== DEFAULT_DATE_RANGE;
 
   if (error && !data) {
     return (
@@ -147,18 +165,6 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
       />
     );
   }
-
-  const COLS = [
-    { label: 'Date',       align: 'left'   },
-    { label: 'Compte',     align: 'left'   },
-    { label: 'Fichier',    align: 'left'   },
-    { label: 'Taille',     align: 'right'  },
-    { label: 'Proto',      align: 'left'   },
-    { label: 'Sens',       align: 'center' },
-    { label: 'TLS',        align: 'center' },
-    { label: 'Statut',     align: 'left'   },
-    { label: 'Durée',      align: 'right'  },
-  ] as const;
 
   return (
     <div className="relative">
@@ -317,7 +323,7 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
               {loading && !data ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-border/30">
-                    {Array.from({ length: 10 }).map((_, j) => (
+                    {Array.from({ length: COLS.length }).map((_, j) => (
                       <td key={j} className="px-3 py-1.5">
                         <Skeleton className="h-3.5 w-full" />
                       </td>
@@ -326,7 +332,7 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
                 ))
               ) : transfers.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={COLS.length} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     Aucun transfert trouvé
                   </td>
                 </tr>

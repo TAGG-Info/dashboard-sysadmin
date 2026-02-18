@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ExternalLink } from '@/components/ui/ExternalLink';
@@ -66,8 +66,12 @@ const COLS = [
 
 const DEFAULT_WIDTHS = [70, 280, 120, 120, 100, 140, 120, 60];
 
-export function TicketList() {
+export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
   const { data: tickets, loading, error, refresh } = useTickets();
+
+  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  refreshRef.current = refresh;
+  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
   const [filters, setFilters] = useState<TicketFilterValues>({
     status: 'all',
     priority: 'all',

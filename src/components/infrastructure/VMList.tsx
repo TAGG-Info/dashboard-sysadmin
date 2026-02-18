@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Select,
   SelectContent,
@@ -60,8 +60,12 @@ function formatMemory(mib: number): string {
   return `${mib} MiB`;
 }
 
-export function VMList() {
+export function VMList({ refreshSignal }: { refreshSignal?: number }) {
   const { data: vms, loading, error, refresh } = useVCenterVMs();
+
+  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  refreshRef.current = refresh;
+  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
   const { data: hosts } = useVCenterHosts();
   const [filterPower, setFilterPower] = useState<string>('all');
   const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);

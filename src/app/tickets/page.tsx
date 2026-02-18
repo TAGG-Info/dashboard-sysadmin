@@ -10,7 +10,7 @@ export default function TicketsPage() {
   const { refreshKey, loading, handleRefresh } = usePageRefresh();
 
   return (
-    <div className="space-y-6" key={`tickets-${refreshKey}`}>
+    <div className="space-y-6">
       <PageHeader
         title="Tickets GLPI"
         source="glpi"
@@ -18,10 +18,10 @@ export default function TicketsPage() {
       />
 
       {/* Stats cards */}
-      <TicketStats />
+      <TicketStats key={`stats-${refreshKey}`} />
 
       {/* Ticket list with filters */}
-      <TicketList />
+      <TicketList refreshSignal={refreshKey} />
     </div>
   );
 }
