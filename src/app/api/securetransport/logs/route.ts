@@ -5,9 +5,8 @@ import type { STTransferLog } from '@/types/securetransport';
 
 export const dynamic = 'force-dynamic';
 
-const LOGS_TTL  = 5  * 60_000; // 5 min  — données complètes
-const COUNT_TTL = 10 * 60_000; // 10 min — count seul, survit à l'expiration du cache data
-// Quand cache data expire (T+5min), count encore valide → 1 appel ST au lieu de 2
+const LOGS_TTL  = 30_000;      // 30s — données complètes (beaucoup de transferts)
+const COUNT_TTL = 2  * 60_000; // 2 min — count seul, survit à l'expiration du cache data
 
 // Stabilise le cache key : arrondi à l'heure la plus proche
 const roundToHour = (ms: number) => Math.floor(ms / 3_600_000) * 3_600_000;
