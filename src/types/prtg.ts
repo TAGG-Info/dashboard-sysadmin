@@ -1,4 +1,4 @@
-export type PRTGStatus = 'Up' | 'Warning' | 'Down' | 'Paused' | 'Unusual' | 'Unknown';
+export type PRTGStatus = 'Up' | 'Warning' | 'Down' | 'Acknowledged' | 'Paused' | 'Unusual' | 'Unknown';
 
 export interface PRTGDevice {
   id: number;
@@ -56,6 +56,6 @@ export interface PRTGTimeseries {
 }
 
 export interface PRTGSummary {
-  sensors: { up: number; down: number; warning: number; paused: number; unusual: number; total: number };
+  sensors: { up: number; down: number; acknowledged: number; warning: number; paused: number; unusual: number; total: number };
   devices: { up: number; down: number; total: number };
 }

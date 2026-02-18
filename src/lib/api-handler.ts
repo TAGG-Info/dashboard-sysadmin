@@ -12,6 +12,17 @@ interface ApiRouteOptions<K extends SourceKey> {
   fetcher: (instance: SourceInstanceMap[K], req: NextRequest) => Promise<unknown[]>;
 }
 
+/** Per-instance result enriched with instance metadata. */
+export type InstanceResult<T> = T & { _instanceId: string; _instanceName: string; _stale?: boolean };
+
+interface SummaryApiRouteOptions<K extends SourceKey, TRaw, TAggregated> {
+  source: K;
+  getCacheKey: (instanceId: string, req: NextRequest) => string;
+  ttlMs: number;
+  fetcher: (instance: SourceInstanceMap[K], req: NextRequest) => Promise<TRaw>;
+  aggregator: (results: InstanceResult<TRaw>[], req: NextRequest) => TAggregated;
+}
+
 /**
  * Factory qui crée un handler GET Next.js App Router pour une source de données.
  * Gère automatiquement : auth, multi-instances, cache, stale fallback, métadonnées.
@@ -71,6 +82,75 @@ export function createApiRoute<K extends SourceKey>(options: ApiRouteOptions<K>)
       _source: options.source,
       _timestamp: Date.now(),
       _partial: hasErrors && data.length > 0,
+    });
+  };
+}
+
+/**
+ * Factory pour les routes qui agrègent les résultats de plusieurs instances
+ * en un seul objet (summaries, stats, logs fusionnés, etc.).
+ * Même boilerplate que createApiRoute : auth, multi-instances, cache, stale fallback.
+ */
+export function createSummaryApiRoute<K extends SourceKey, TRaw, TAggregated>(
+  options: SummaryApiRouteOptions<K, TRaw, TAggregated>,
+) {
+  return async function GET(req: NextRequest): Promise<NextResponse> {
+    const session = await auth();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const instances = await getSourceConfig(options.source);
+    if (!instances.length) {
+      return NextResponse.json(
+        { error: `No ${options.source} instances configured`, source: options.source },
+        { status: 502 },
+      );
+    }
+
+    const results = await Promise.allSettled(
+      instances.map(async (instance) => {
+        const cacheKey = options.getCacheKey(instance.id, req);
+
+        try {
+          const data = await cacheFetch<TRaw>(
+            cacheKey,
+            options.ttlMs,
+            () => options.fetcher(instance, req),
+          );
+          return {
+            ...data,
+            _instanceId: instance.id,
+            _instanceName: instance.name,
+          } as InstanceResult<TRaw>;
+        } catch {
+          const stale = await cacheGetStale<TRaw>(cacheKey);
+          if (stale) {
+            return {
+              ...stale,
+              _instanceId: instance.id,
+              _instanceName: instance.name,
+              _stale: true,
+            } as InstanceResult<TRaw>;
+          }
+          throw new Error(`${options.source}/${instance.id}: fetch failed`);
+        }
+      }),
+    );
+
+    const fulfilled = (results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<InstanceResult<TRaw>>[])
+      .map(r => r.value);
+    const hasErrors = results.some(r => r.status === 'rejected');
+    const isStale = fulfilled.some(r => r._stale === true);
+
+    const aggregated = options.aggregator(fulfilled, req);
+
+    return NextResponse.json({
+      data: aggregated,
+      _stale: isStale,
+      _source: options.source,
+      _timestamp: Date.now(),
+      _partial: hasErrors && fulfilled.length > 0,
     });
   };
 }

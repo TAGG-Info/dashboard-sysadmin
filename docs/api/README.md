@@ -142,6 +142,7 @@ Exemples :
 - `dashboard:prtg:prtg-prod:summary`
 - `dashboard:vcenter:vcenter-dc1:vms`
 - `dashboard:proxmox:proxmox-prod:nodes`
+- `dashboard:st:st-prod:logs:50:0:a:partner|p:SFTP`
 
 ### TTLs par source
 
@@ -153,8 +154,11 @@ Exemples :
 | Veeam           | 120 secondes   | 600 secondes    | `CACHE_TTL_VEEAM`         |
 | GLPI            | 60 secondes    | 300 secondes    | `CACHE_TTL_GLPI`          |
 | SecureTransport | 120 secondes   | 600 secondes    | `CACHE_TTL_ST`            |
+| ST logs         | 5 minutes      | 25 minutes      | (non configurable)        |
 
 Les valeurs des variables d'environnement sont exprimees en **secondes**.
+
+Note : les logs SecureTransport utilisent un TTL propre (5 min pour les donnees, 10 min pour le `totalCount` seul) car les logs historiques changent moins frequemment.
 
 ### Configuration de la source
 

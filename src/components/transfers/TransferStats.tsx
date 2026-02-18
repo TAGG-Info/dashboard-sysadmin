@@ -1,12 +1,17 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTransferSummary } from '@/hooks/useTransfers';
 
-export function TransferStats() {
+interface TransferStatsProps {
+  /** Compact mode : une seule carte avec des lignes, pour la sidebar */
+  compact?: boolean;
+}
+
+export function TransferStats({ compact = false }: TransferStatsProps) {
   const { data: summary, loading, error, refresh } = useTransferSummary();
 
   if (error && !summary) {
@@ -20,7 +25,25 @@ export function TransferStats() {
     );
   }
 
+  /* ── Loading ── */
   if (loading && !summary) {
+    if (compact) {
+      return (
+        <Card className="bg-card border-border/50">
+          <CardHeader className="pb-2">
+            <Skeleton className="h-3.5 w-20" />
+          </CardHeader>
+          <CardContent className="p-0">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between px-4 py-3 border-t border-border/30">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-4 w-12" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      );
+    }
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
@@ -39,6 +62,56 @@ export function TransferStats() {
 
   const expiringSoonCount = summary.certificates.expiringSoon?.length ?? 0;
 
+  /* ── Compact (sidebar) ── */
+  if (compact) {
+    return (
+      <Card className="bg-card border-border/50">
+        <CardHeader className="pb-2 pt-3 px-4">
+          <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Résumé
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {/* Comptes */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/30">
+            <span className="text-xs text-muted-foreground">Comptes actifs</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-semibold text-[#FF6D00]">
+                {summary.accounts.active}
+              </span>
+              <span className="text-xs text-muted-foreground/60">
+                / {summary.accounts.total}
+              </span>
+              {summary.accounts.disabled > 0 && (
+                <span className="text-xs text-muted-foreground/50">
+                  · {summary.accounts.disabled} désact.
+                </span>
+              )}
+            </div>
+          </div>
+          {/* Certificats */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/30">
+            <span className="text-xs text-muted-foreground">Certificats</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-semibold">{summary.certificates.total}</span>
+              {expiringSoonCount > 0 ? (
+                <span className="text-xs text-[#f59e0b]">⚠ {expiringSoonCount}</span>
+              ) : (
+                <span className="text-xs text-[#10b981]">✓</span>
+              )}
+            </div>
+          </div>
+          {/* Sites */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/30">
+            <span className="text-xs text-muted-foreground">Sites de transfert</span>
+            <span className="text-sm font-semibold">{summary.sites.total}</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  /* ── Normal (3 cartes) ── */
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       {/* Comptes actifs */}

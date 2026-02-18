@@ -112,8 +112,15 @@ function getDerivedKey(): Buffer {
   if (_derivedKey) return _derivedKey;
   const secret = process.env.NEXTAUTH_SECRET;
   if (!secret) throw new Error('NEXTAUTH_SECRET is required for config encryption');
-  const salt = process.env.CRYPTO_SALT || 'dashboard-tagg-config-salt';
-  _derivedKey = scryptSync(secret, salt, 32);
+  const salt = process.env.CRYPTO_SALT;
+  if (!salt) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('CRYPTO_SALT is required in production for secure config encryption');
+    }
+    console.warn('[config] CRYPTO_SALT not set — using insecure fallback salt. Set CRYPTO_SALT in .env.local for production.');
+  }
+  const effectiveSalt = salt || 'dashboard-tagg-config-salt';
+  _derivedKey = scryptSync(secret, effectiveSalt, 32);
   return _derivedKey;
 }
 

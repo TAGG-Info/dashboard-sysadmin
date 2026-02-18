@@ -82,8 +82,8 @@ export function SourceConfigs() {
     setExpandedInstances((prev) => ({ ...prev, [instanceKey]: !prev[instanceKey] }));
   }, []);
 
-  const handleSave = useCallback(() => {
-    fetchConfigs();
+  const handleSave = useCallback(async () => {
+    await fetchConfigs();
   }, [fetchConfigs]);
 
   const startAddingInstance = useCallback((sourceKey: string) => {
@@ -321,8 +321,8 @@ export function SourceConfigs() {
                           source={key}
                           config={null}
                           isNew
-                          onSave={() => {
-                            handleSave();
+                          onSave={async () => {
+                            await handleSave();
                             cancelAddingInstance(key);
                           }}
                         />

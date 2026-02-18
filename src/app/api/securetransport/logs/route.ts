@@ -1,89 +1,103 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { getSourceConfig } from '@/lib/config';
+import { createSummaryApiRoute, type InstanceResult } from '@/lib/api-handler';
+import { cacheGet, cacheSet } from '@/lib/cache';
 import { getSTClient } from '@/lib/securetransport';
-import { cacheGet, cacheSet, cacheGetStale } from '@/lib/cache';
+import type { STTransferLog } from '@/types/securetransport';
 
 export const dynamic = 'force-dynamic';
 
-const LOGS_TTL = 30_000; // 30s — logs change frequently
+const LOGS_TTL  = 5  * 60_000; // 5 min  — données complètes
+const COUNT_TTL = 10 * 60_000; // 10 min — count seul, survit à l'expiration du cache data
+// Quand cache data expire (T+5min), count encore valide → 1 appel ST au lieu de 2
 
-export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+// Stabilise le cache key : arrondi à l'heure la plus proche
+const roundToHour = (ms: number) => Math.floor(ms / 3_600_000) * 3_600_000;
 
-  const { searchParams } = new URL(req.url);
-  const limit = Math.min(Number(searchParams.get('limit') || 50), 200);
-  const offset = Math.max(Number(searchParams.get('offset') || 0), 0);
+function buildFilterKey(searchParams: URLSearchParams): string {
+  return [
+    searchParams.get('account')   ? `a:${searchParams.get('account')}`   : '',
+    searchParams.get('status')    ? `s:${searchParams.get('status')}`    : '',
+    searchParams.get('protocol')  ? `p:${searchParams.get('protocol')}`  : '',
+    searchParams.get('incoming') != null && searchParams.get('incoming') !== ''
+      ? `i:${searchParams.get('incoming')}` : '',
+    searchParams.get('startDate') ? `sd:${roundToHour(Number(searchParams.get('startDate')))}` : '',
+    searchParams.get('endDate')   ? `ed:${roundToHour(Number(searchParams.get('endDate')))}` : '',
+  ].filter(Boolean).join('|');
+}
 
-  const instances = await getSourceConfig('securetransport');
-  if (!instances.length) {
-    return NextResponse.json(
-      { error: 'No SecureTransport instances configured', source: 'securetransport' },
-      { status: 502 }
-    );
-  }
+interface LogsRaw {
+  resultSet: { returnCount: number; totalCount: number };
+  transfers: STTransferLog[];
+}
 
-  const results = await Promise.allSettled(
-    instances.map(async (instance) => {
-      const cacheKey = `dashboard:st:${instance.id}:logs:${limit}:${offset}`;
+interface LogsAggregated {
+  transfers: STTransferLog[];
+  resultSet: { returnCount: number; totalCount: number };
+}
 
-      const cached = await cacheGet<Record<string, unknown>>(cacheKey);
-      if (cached) {
-        return { ...cached, _instanceId: instance.id, _instanceName: instance.name };
-      }
+export const GET = createSummaryApiRoute<'securetransport', LogsRaw, LogsAggregated>({
+  source: 'securetransport',
+  getCacheKey: (instanceId, req) => {
+    const { searchParams } = new URL(req.url);
+    const limit  = Math.min(Number(searchParams.get('limit')  || 50), 200);
+    const offset = Math.max(Number(searchParams.get('offset') || 0), 0);
+    return `dashboard:st:${instanceId}:logs:${limit}:${offset}:${buildFilterKey(searchParams)}`;
+  },
+  ttlMs: LOGS_TTL,
+  fetcher: async (instance, req) => {
+    const { searchParams } = new URL(req.url);
+    const limit  = Math.min(Number(searchParams.get('limit')  || 50), 200);
+    const offset = Math.max(Number(searchParams.get('offset') || 0), 0);
+    const filters = {
+      account:   searchParams.get('account')  || undefined,
+      filename:  searchParams.get('filename') || undefined,
+      status:    searchParams.get('status')   || undefined,
+      protocol:  searchParams.get('protocol') || undefined,
+      incoming:  searchParams.get('incoming') != null && searchParams.get('incoming') !== ''
+        ? searchParams.get('incoming') === 'true'
+        : undefined,
+      startDate: searchParams.get('startDate') ? Number(searchParams.get('startDate')) : undefined,
+      endDate:   searchParams.get('endDate')   ? Number(searchParams.get('endDate'))   : undefined,
+    };
 
-      try {
-        const client = getSTClient(instance);
-        const logs = await client.getTransferLogs(limit, offset);
-        await cacheSet(cacheKey, logs, LOGS_TTL);
-        return { ...logs, _instanceId: instance.id, _instanceName: instance.name };
-      } catch (error) {
-        const stale = await cacheGetStale<Record<string, unknown>>(cacheKey);
-        if (stale) {
-          return { ...stale, _instanceId: instance.id, _instanceName: instance.name, _stale: true };
-        }
-        throw error;
-      }
-    })
-  );
+    // Count cache: survit à l'expiration du cache data (10 min > 5 min)
+    // Quand le cache data expire, on récupère le count ici → 1 appel ST au lieu de 2
+    const countKey = `dashboard:st:${instance.id}:logs:count:${buildFilterKey(searchParams)}`;
+    const cachedCount = await cacheGet<number>(countKey);
 
-  const fulfilled = results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<Record<string, unknown>>[];
-  const hasErrors = results.some(r => r.status === 'rejected');
-  const isStale = fulfilled.some(r => r.value._stale === true);
+    const client = getSTClient(instance);
+    const result = await client.getTransferLogs(limit, offset, filters, cachedCount ?? undefined);
 
-  // Merge all instance logs into a single list sorted by startTime desc
-  const allTransfers: Record<string, unknown>[] = [];
-  let totalCount = 0;
-
-  for (const { value } of fulfilled) {
-    const rs = value.resultSet as { returnCount: number; totalCount: number } | undefined;
-    if (rs) totalCount += rs.totalCount;
-    const transfers = value.transfers as Record<string, unknown>[] | undefined;
-    if (transfers) {
-      allTransfers.push(
-        ...transfers.map(t => ({ ...t, _instanceId: value._instanceId, _instanceName: value._instanceName }))
-      );
+    // Persist count if it wasn't already cached
+    if (cachedCount === null) {
+      await cacheSet(countKey, result.resultSet.totalCount, COUNT_TTL);
     }
-  }
 
-  // Sort by startTime descending (most recent first)
-  allTransfers.sort((a, b) => {
-    const ta = (a.id as { mTransferStartTime: number })?.mTransferStartTime ?? 0;
-    const tb = (b.id as { mTransferStartTime: number })?.mTransferStartTime ?? 0;
-    return tb - ta;
-  });
+    return result as LogsRaw;
+  },
+  aggregator: (results: InstanceResult<LogsRaw>[], req) => {
+    const { searchParams } = new URL(req.url);
+    const limit = Math.min(Number(searchParams.get('limit') || 50), 200);
 
-  return NextResponse.json({
-    data: {
+    let allTransfers: STTransferLog[] = [];
+    let totalCount = 0;
+
+    for (const r of results) {
+      if (r.resultSet) totalCount += r.resultSet.totalCount;
+      if (r.transfers) {
+        allTransfers.push(
+          ...r.transfers.map(t => ({ ...t, _instanceId: r._instanceId, _instanceName: r._instanceName }))
+        );
+      }
+    }
+
+    // Sort by timestamp desc (safety net for multi-instance merging)
+    allTransfers.sort((a, b) =>
+      ((b.id?.mTransferStartTime ?? 0) - (a.id?.mTransferStartTime ?? 0))
+    );
+
+    return {
       transfers: allTransfers.slice(0, limit),
       resultSet: { returnCount: allTransfers.length, totalCount },
-    },
-    _stale: isStale,
-    _source: 'securetransport',
-    _timestamp: Date.now(),
-    _partial: hasErrors && fulfilled.length > 0,
-  });
-}
+    };
+  },
+});

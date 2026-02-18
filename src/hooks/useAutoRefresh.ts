@@ -6,6 +6,11 @@ interface UseAutoRefreshOptions {
   url: string;
   interval: number; // ms
   enabled?: boolean;
+  /**
+   * Set to true only when the consumer displays `nextRefreshIn` (e.g. RefreshButton).
+   * When false (default), the countdown interval is skipped — eliminates ~1 re-render/5s per hook instance.
+   */
+  trackCountdown?: boolean;
 }
 
 interface UseAutoRefreshReturn<T> {
@@ -14,7 +19,7 @@ interface UseAutoRefreshReturn<T> {
   error: Error | null;
   lastUpdated: Date | null;
   refresh: () => Promise<void>;
-  nextRefreshIn: number; // seconds
+  nextRefreshIn: number; // seconds — only updates when trackCountdown: true
   isStale: boolean;
 }
 
@@ -22,7 +27,7 @@ const MAX_RETRIES = 2;
 const BACKOFF_BASE = 2000; // 2s, 4s
 
 export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefreshReturn<T> {
-  const { url, interval, enabled = true } = options;
+  const { url, interval, enabled = true, trackCountdown = false } = options;
 
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
@@ -106,9 +111,9 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
   const refresh = useCallback(async () => {
     retryCountRef.current = 0;
     consecutiveFailsRef.current = 0;
-    setNextRefreshIn(Math.floor(interval / 1000));
+    if (trackCountdown) setNextRefreshIn(Math.floor(interval / 1000));
     await fetchData(false);
-  }, [fetchData, interval]);
+  }, [fetchData, interval, trackCountdown]);
 
   // Initial fetch
   useEffect(() => {
@@ -127,11 +132,10 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
   useEffect(() => {
     if (!enabled) return;
 
-    // Reset countdown
-    setNextRefreshIn(Math.floor(interval / 1000));
+    if (trackCountdown) setNextRefreshIn(Math.floor(interval / 1000));
 
     intervalIdRef.current = setInterval(() => {
-      setNextRefreshIn(Math.floor(interval / 1000));
+      if (trackCountdown) setNextRefreshIn(Math.floor(interval / 1000));
       retryCountRef.current = 0;
       fetchData(true);
     }, interval);
@@ -141,22 +145,22 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
         clearInterval(intervalIdRef.current);
       }
     };
-  }, [interval, fetchData, enabled]);
+  }, [interval, fetchData, enabled, trackCountdown]);
 
-  // Countdown timer
+  // Countdown timer — only active when trackCountdown: true, ticks every 5s to reduce re-renders
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !trackCountdown) return;
 
     countdownIdRef.current = setInterval(() => {
-      setNextRefreshIn((prev) => Math.max(0, prev - 1));
-    }, 1000);
+      setNextRefreshIn((prev) => Math.max(0, prev - 5));
+    }, 5000);
 
     return () => {
       if (countdownIdRef.current) {
         clearInterval(countdownIdRef.current);
       }
     };
-  }, [enabled]);
+  }, [enabled, trackCountdown]);
 
   return {
     data,

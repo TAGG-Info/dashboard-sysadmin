@@ -1,92 +1,78 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { getSourceConfig } from '@/lib/config';
+import { createSummaryApiRoute } from '@/lib/api-handler';
 import { getPRTGClient } from '@/lib/prtg';
-import { cacheGet, cacheSet, cacheGetStale } from '@/lib/cache';
 import { CACHE_TTL } from '@/lib/constants';
 import type { PRTGSummary } from '@/types/prtg';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  const session = await auth();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+export const GET = createSummaryApiRoute<'prtg', PRTGSummary, PRTGSummary>({
+  source: 'prtg',
+  getCacheKey: (instanceId) => `dashboard:prtg:${instanceId}:summary`,
+  ttlMs: CACHE_TTL.PRTG,
+  fetcher: async (instance) => {
+    const client = getPRTGClient(instance);
 
-  const instances = await getSourceConfig('prtg');
-  if (!instances.length) {
-    return NextResponse.json({ error: 'No PRTG instances configured', source: 'prtg' }, { status: 502 });
-  }
+    // 2 parallel queries:
+    // - devices (for device count)
+    // - not(status = up) to get ALL non-up sensors in one call
+    // Up count = total sensors (from X-Total-Count of non-filtered query) minus non-up
+    const [devicesResult, nonUpResult] = await Promise.all([
+      client.getDevices(),
+      client.getNonUpSensors(),
+    ]);
 
-  const results = await Promise.allSettled(
-    instances.map(async (instance) => {
-      const cacheKey = `dashboard:prtg:${instance.id}:summary`;
+    // getSensors() without filter returns ALL sensors (totalCount header = total across all statuses)
+    // We only need the totalCount header, so use limit=1 for speed
+    const allResult = await client.requestWithMeta<unknown[]>('/experimental/sensors', { limit: '1' });
+    const totalSensors = allResult.totalCount || 0;
+    const nonUpCount = nonUpResult.totalCount || nonUpResult.data.length;
+    const upCount = totalSensors - nonUpCount;
 
-      const cached = await cacheGet<PRTGSummary>(cacheKey);
-      if (cached) return { ...cached, _instanceId: instance.id, _instanceName: instance.name };
+    // Count non-up sensors by normalized status
+    const statusCounts = { Down: 0, Acknowledged: 0, Warning: 0, Paused: 0, Unusual: 0 };
+    for (const s of nonUpResult.data) {
+      if (s.status in statusCounts) statusCounts[s.status as keyof typeof statusCounts]++;
+    }
 
-      try {
-        const client = getPRTGClient(instance);
-        const { data: devices } = await client.getDevices();
+    const summary: PRTGSummary = {
+      sensors: {
+        up: upCount,
+        down: statusCounts.Down,
+        acknowledged: statusCounts.Acknowledged,
+        warning: statusCounts.Warning,
+        paused: statusCounts.Paused,
+        unusual: statusCounts.Unusual,
+        total: totalSensors,
+      },
+      devices: { up: 0, down: 0, total: devicesResult.totalCount || devicesResult.data.length },
+    };
 
-        const summary: PRTGSummary = {
-          sensors: { up: 0, down: 0, warning: 0, paused: 0, unusual: 0, total: 0 },
-          devices: { up: 0, down: 0, total: devices.length },
-        };
+    for (const device of devicesResult.data) {
+      if (device.status === 'Down') summary.devices.down++;
+      else if (device.status === 'Up') summary.devices.up++;
+    }
 
-        for (const device of devices) {
-          if (device.status === 'Down') summary.devices.down++;
-          else if (device.status === 'Up') summary.devices.up++;
+    return summary;
+  },
+  aggregator: (results) => {
+    const aggregated: PRTGSummary = {
+      sensors: { up: 0, down: 0, acknowledged: 0, warning: 0, paused: 0, unusual: 0, total: 0 },
+      devices: { up: 0, down: 0, total: 0 },
+    };
 
-          if (device.metrics?.sensors) {
-            const s = device.metrics.sensors;
-            summary.sensors.up += s.up;
-            summary.sensors.down += s.down;
-            summary.sensors.warning += s.warning;
-            summary.sensors.paused += s.paused;
-            summary.sensors.unusual += s.unusual;
-            summary.sensors.total += s.total;
-          }
-        }
+    for (const r of results) {
+      aggregated.sensors.up += r.sensors.up;
+      aggregated.sensors.down += r.sensors.down;
+      aggregated.sensors.acknowledged += r.sensors.acknowledged;
+      aggregated.sensors.warning += r.sensors.warning;
+      aggregated.sensors.paused += r.sensors.paused;
+      aggregated.sensors.unusual += r.sensors.unusual;
+      aggregated.sensors.total += r.sensors.total;
+      aggregated.devices.up += r.devices.up;
+      aggregated.devices.down += r.devices.down;
+      aggregated.devices.total += r.devices.total;
+    }
 
-        await cacheSet(cacheKey, summary, CACHE_TTL.PRTG);
-        return { ...summary, _instanceId: instance.id, _instanceName: instance.name };
-      } catch (error) {
-        const stale = await cacheGetStale<PRTGSummary>(cacheKey);
-        if (stale) return { ...stale, _instanceId: instance.id, _instanceName: instance.name, _stale: true };
-        throw error;
-      }
-    })
-  );
-
-  // Aggregate summaries across all instances
-  const fulfilled = results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<PRTGSummary & { _instanceId: string; _instanceName: string; _stale?: boolean }>[];
-  const hasErrors = results.some(r => r.status === 'rejected');
-  const isStale = fulfilled.some(r => r.value._stale === true);
-
-  const aggregated: PRTGSummary = {
-    sensors: { up: 0, down: 0, warning: 0, paused: 0, unusual: 0, total: 0 },
-    devices: { up: 0, down: 0, total: 0 },
-  };
-
-  for (const { value } of fulfilled) {
-    aggregated.sensors.up += value.sensors.up;
-    aggregated.sensors.down += value.sensors.down;
-    aggregated.sensors.warning += value.sensors.warning;
-    aggregated.sensors.paused += value.sensors.paused;
-    aggregated.sensors.unusual += value.sensors.unusual;
-    aggregated.sensors.total += value.sensors.total;
-    aggregated.devices.up += value.devices.up;
-    aggregated.devices.down += value.devices.down;
-    aggregated.devices.total += value.devices.total;
-  }
-
-  return NextResponse.json({
-    data: aggregated,
-    _stale: isStale,
-    _source: 'prtg',
-    _timestamp: Date.now(),
-    _partial: hasErrors && fulfilled.length > 0,
-  });
-}
+    return aggregated;
+  },
+});

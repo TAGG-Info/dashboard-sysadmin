@@ -1,5 +1,29 @@
-import type { PRTGDevice, PRTGSensor, PRTGTimeseries } from '@/types/prtg';
+import type { PRTGDevice, PRTGSensor, PRTGStatus, PRTGTimeseries } from '@/types/prtg';
 import type { PRTGInstance } from '@/lib/config';
+
+// PRTG API v2 status enum values → dashboard normalized format
+// Ref: /api/v2/overview/#toc_29
+const STATUS_MAP: Record<string, PRTGStatus> = {
+  up: 'Up',
+  down: 'Down',
+  partialdown: 'Down',
+  acknowledged: 'Acknowledged',
+  warning: 'Warning',
+  unusual: 'Unusual',
+  pausedbyuser: 'Paused',
+  pausedbydependency: 'Paused',
+  pausedbyschedule: 'Paused',
+  pausedbylicense: 'Paused',
+  pausedbyuseruntil: 'Paused',
+  paused: 'Paused',       // fallback
+  unknown: 'Unknown',
+};
+
+function normalizeStatus(raw: string): PRTGStatus {
+  // API returns UPPER_SNAKE_CASE (e.g. PAUSED_BY_USER_UNTIL) — strip underscores + lowercase
+  const key = raw?.toLowerCase().replace(/_/g, '');
+  return STATUS_MAP[key] ?? 'Unknown';
+}
 
 export class PRTGClient {
   private baseUrl: string;
@@ -25,6 +49,8 @@ export class PRTGClient {
     data: T; totalCount: number; resultCount: number;
   }> {
     const url = new URL(`${this.baseUrl}/api/v2${path}`);
+    // PRTG API v2 pagination: use `limit` param, max 3000 (default ~100)
+    url.searchParams.set('limit', '3000');
     if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
     const res = await fetch(url.toString(), {
       headers: { 'Authorization': `Bearer ${this.apiKey}`, 'Accept': 'application/json' },
@@ -40,33 +66,51 @@ export class PRTGClient {
 
   // GET /experimental/devices
   async getDevices(): Promise<{ data: PRTGDevice[]; totalCount: number; resultCount: number }> {
-    return this.requestWithMeta<PRTGDevice[]>('/experimental/devices', { include: 'metrics' });
+    const r = await this.requestWithMeta<PRTGDevice[]>('/experimental/devices');
+    r.data = r.data.map(d => ({ ...d, status: normalizeStatus(d.status) }));
+    return r;
   }
 
   // GET /experimental/sensors
   async getSensors(params?: { deviceId?: number; filter?: string }): Promise<{ data: PRTGSensor[]; totalCount: number; resultCount: number }> {
     const qp: Record<string, string> = {};
-    if (params?.deviceId) qp.filter = `parentid = "${params.deviceId}"`;
+    if (params?.deviceId) qp.filter = `parentid = ${params.deviceId}`;
     else if (params?.filter) qp.filter = params.filter;
-    return this.requestWithMeta<PRTGSensor[]>('/experimental/sensors', qp);
+    // No default filter — PRTG API v2 returns "up" sensors by default
+    const r = await this.requestWithMeta<PRTGSensor[]>('/experimental/sensors', qp);
+    r.data = r.data.map(s => ({ ...s, status: normalizeStatus(s.status) }));
+    return r;
   }
 
-  // Sensors in alert state
+  // Sensors in alert state (down, acknowledged, partialdown, warning)
   async getAlerts(): Promise<{ data: PRTGSensor[]; totalCount: number; resultCount: number }> {
-    return this.requestWithMeta<PRTGSensor[]>('/experimental/sensors', {
-      filter: 'status = "down" or status = "warning"',
+    const r = await this.requestWithMeta<PRTGSensor[]>('/experimental/sensors', {
+      filter: 'status = down or status = acknowledged or status = warning or status = partialdown',
       sort_by: '-priority',
     });
+    r.data = r.data.map(s => ({ ...s, status: normalizeStatus(s.status) }));
+    return r;
+  }
+
+  // All non-up sensors in one call using not() filter
+  async getNonUpSensors(): Promise<{ data: PRTGSensor[]; totalCount: number; resultCount: number }> {
+    const r = await this.requestWithMeta<PRTGSensor[]>('/experimental/sensors', {
+      filter: 'not(status = up)',
+    });
+    r.data = r.data.map(s => ({ ...s, status: normalizeStatus(s.status) }));
+    return r;
   }
 
   // GET /devices/{id}
   async getDevice(id: number): Promise<PRTGDevice> {
-    return this.request<PRTGDevice>(`/devices/${id}`, { include: 'metrics,status' });
+    const d = await this.request<PRTGDevice>(`/devices/${id}`);
+    return { ...d, status: normalizeStatus(d.status) };
   }
 
   // GET /sensors/{id}
   async getSensor(id: number): Promise<PRTGSensor> {
-    return this.request<PRTGSensor>(`/sensors/${id}`);
+    const s = await this.request<PRTGSensor>(`/sensors/${id}`);
+    return { ...s, status: normalizeStatus(s.status) };
   }
 
   // GET /experimental/timeseries/{sensorId}/{type}

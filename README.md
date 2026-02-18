@@ -109,7 +109,7 @@ Voir [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) pour le guide complet (Caddy, HTTP
 Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour :
 - Structure des dossiers
 - Flux de donnees (Client -> Middleware -> API Route -> Cache -> Reponse)
-- Pattern `createApiRoute` factory
+- Patterns `createApiRoute` et `createSummaryApiRoute` factories
 - Systeme de cache Redis + fallback memoire
 - Authentification LDAP/AD et roles
 - Types TypeScript (`ApiResponse<T>`, `WithInstance<T>`)
@@ -124,4 +124,4 @@ Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour :
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Variables d'environnement, configuration sources, roles |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker Compose, Caddy, HTTPS, mise a jour, securite |
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Guide utilisateur — navigation, pages, gestion des erreurs |
-| [docs/api/README.md](docs/api/README.md) | Reference API — index des 18 endpoints |
+| [docs/api/README.md](docs/api/README.md) | Reference API — index des 19 endpoints |

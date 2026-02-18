@@ -1,0 +1,16 @@
+node_modules
+.git
+.next
+.env.local
+.env*.local
+*.log
+dist
+data
+.vscode
+.idea
+src/__tests__
+*.test.ts
+*.spec.ts
+vitest.config.*
+.DS_Store
+Thumbs.db

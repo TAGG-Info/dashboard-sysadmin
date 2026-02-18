@@ -15,6 +15,8 @@ function statusToLevel(status: string): 'healthy' | 'warning' | 'critical' | 'in
   switch (status) {
     case 'Down':
       return 'critical';
+    case 'Acknowledged':
+      return 'warning';
     case 'Warning':
     case 'Unusual':
       return 'warning';
@@ -83,7 +85,7 @@ export function AlertList() {
   const sortedAlerts = useMemo(() => {
     if (!alerts) return [];
     return [...alerts].sort((a, b) => {
-      const statusOrder: Record<string, number> = { Down: 0, Warning: 1, Unusual: 2 };
+      const statusOrder: Record<string, number> = { Down: 0, Acknowledged: 1, Warning: 2, Unusual: 3 };
       const aOrder = statusOrder[a.status] ?? 3;
       const bOrder = statusOrder[b.status] ?? 3;
       if (aOrder !== bOrder) return aOrder - bOrder;

@@ -39,42 +39,110 @@ export class SecureTransportClient {
   }
 
   async getAccounts(): Promise<STAccount[]> {
-    const result = await this.request<{ result?: STAccount[] }>(
+    const result = await this.request<{ result?: STAccount[] } | STAccount[]>(
       '/accounts?fields=name,businessUnit,type,disabled&limit=100'
     );
-    return (result as { result?: STAccount[] }).result || (result as unknown as STAccount[]);
+    return (result as { result?: STAccount[] }).result ?? (result as STAccount[]);
   }
 
   async getCertificates(): Promise<STCertificate[]> {
-    const result = await this.request<{ result?: STCertificate[] }>(
+    const result = await this.request<{ result?: STCertificate[] } | STCertificate[]>(
       '/certificates'
     );
-    return (result as { result?: STCertificate[] }).result || (result as unknown as STCertificate[]);
+    return (result as { result?: STCertificate[] }).result ?? (result as STCertificate[]);
   }
 
   async getTransferSites(): Promise<STTransferSite[]> {
     try {
-      const result = await this.request<{ result?: STTransferSite[] }>(
+      const result = await this.request<{ result?: STTransferSite[] } | STTransferSite[]>(
         '/transferSites'
       );
-      return (result as { result?: STTransferSite[] }).result || (result as unknown as STTransferSite[]);
+      return (result as { result?: STTransferSite[] }).result ?? (result as STTransferSite[]);
     } catch {
       // Fallback to /sites if transferSites not available
-      const result = await this.request<{ result?: STTransferSite[] }>(
+      const result = await this.request<{ result?: STTransferSite[] } | STTransferSite[]>(
         '/sites'
       );
-      return (result as { result?: STTransferSite[] }).result || (result as unknown as STTransferSite[]);
+      return (result as { result?: STTransferSite[] }).result ?? (result as STTransferSite[]);
     }
   }
 
-  async getTransferLogs(limit = 50, offset = 0): Promise<STTransferLogList> {
+  /** Build ST API filter params from high-level filter object */
+  private buildFilterParams(filters: {
+    account?: string;
+    status?: string;
+    protocol?: string;
+    incoming?: boolean;
+    startDate?: number;
+    endDate?: number;
+    filename?: string;
+  }): Record<string, string> {
+    const p: Record<string, string> = {};
+    // Wrap in wildcards for substring matching (ST API supports * natively).
+    // Skip if the user already included a wildcard themselves.
+    if (filters.account)  p.account  = filters.account.includes('*')  ? filters.account  : `*${filters.account}*`;
+    if (filters.filename) p.filename = filters.filename.includes('*') ? filters.filename : `*${filters.filename}*`;
+    if (filters.status)   p.status          = filters.status;
+    if (filters.protocol) p.protocol        = filters.protocol;
+    if (filters.incoming !== undefined) p.incoming = String(filters.incoming);
+    // ST API expects RFC2822: "EEE, d MMM yyyy HH:mm:ss Z"
+    if (filters.startDate) p.startTimeAfter = new Date(filters.startDate).toUTCString();
+    if (filters.endDate)   p.endTimeBefore  = new Date(filters.endDate).toUTCString();
+    return p;
+  }
+
+  /** Lightweight count-only query — cache separately in the route to avoid double calls */
+  async getTransferLogsCount(filters: Parameters<typeof this.buildFilterParams>[0] = {}): Promise<number> {
+    const p = this.buildFilterParams(filters);
+    const qs = new URLSearchParams({ limit: '1', offset: '0', ...p });
+    const res = await this.request<{ resultSet: { totalCount: number } }>(
+      `/logs/transfers?${qs.toString()}`
+    );
+    return res.resultSet.totalCount;
+  }
+
+  /**
+   * Fetch transfer logs with reverse pagination (newest first).
+   * Pass `knownTotalCount` (from a cached count) to skip the count query entirely.
+   * offset = 0 → last N records, offset = 50 → second-to-last N, etc.
+   */
+  async getTransferLogs(
+    limit = 50,
+    offset = 0,
+    filters: {
+      account?: string;
+      status?: string;
+      protocol?: string;
+      incoming?: boolean;
+      startDate?: number; // ms epoch → RFC2822 startTimeAfter
+      endDate?: number;   // ms epoch → RFC2822 endTimeBefore
+      filename?: string;  // wildcard search supported natively
+    } = {},
+    knownTotalCount?: number  // skip count query if already cached
+  ): Promise<STTransferLogList> {
+    const filterParams = this.buildFilterParams(filters);
+
+    const totalCount = knownTotalCount ?? await this.getTransferLogsCount(filters);
+
+    // Reverse pagination: ST returns oldest first, so we read from the tail
+    const actualLimit = Math.min(limit, Math.max(0, totalCount - offset));
+    if (actualLimit === 0) {
+      return { resultSet: { returnCount: 0, totalCount }, transfers: [] };
+    }
+    const stOffset = Math.max(0, totalCount - limit - offset);
+    const qs = new URLSearchParams({
+      limit: String(actualLimit),
+      offset: String(stOffset),
+      ...filterParams,
+    });
     const result = await this.request<{
       resultSet: { returnCount: number; totalCount: number };
       result: STTransferLog[];
-    }>(`/logs/transfers?limit=${limit}&offset=${offset}`);
+    }>(`/logs/transfers?${qs.toString()}`);
+
     return {
-      resultSet: result.resultSet,
-      transfers: result.result || [],
+      resultSet: { returnCount: result.resultSet.returnCount, totalCount },
+      transfers: (result.result || []).reverse(), // newest first within the page
     };
   }
 
