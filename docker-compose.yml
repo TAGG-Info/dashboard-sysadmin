@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build: .
+    container_name: sysadmin-dashboard
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - .env.local
+    # IMPORTANT: Si REDIS_PASSWORD est défini dans .env.local,
+    # REDIS_URL doit inclure le password : redis://:PASSWORD@redis:6379
+    networks:
+      - dashboard
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: dashboard-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
+    volumes:
+      - redis-data:/data
+    networks:
+      - dashboard
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: dashboard-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - dashboard
+
+volumes:
+  redis-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  dashboard:
+    driver: bridge
