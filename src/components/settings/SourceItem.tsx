@@ -60,9 +60,10 @@ export function SourceItem({
       className={cn(
         'relative rounded-lg border transition-all duration-300 overflow-hidden',
         expanded
-          ? 'border-white/[0.08] bg-white/[0.015]'
+          ? 'border-white/[0.08]'
           : 'border-white/[0.04] hover:border-white/[0.08]',
       )}
+      style={{ backgroundColor: `${color}${expanded ? '0a' : '06'}` }}
     >
       {/* Colored top line */}
       <div
@@ -135,6 +136,7 @@ export function SourceItem({
           {instances.map((instance) => {
             const iKey = `${key}-${instance.id}`;
             const isExpanded = expandedInstances[iKey] || false;
+            const singleInstance = instances.length === 1;
 
             const configFields: Record<string, string> = {};
             Object.entries(instance).forEach(([k, v]) => {
@@ -143,6 +145,30 @@ export function SourceItem({
               }
             });
 
+            // Single instance: show form directly, no sub-accordion
+            if (singleInstance) {
+              return (
+                <div
+                  key={instance.id}
+                  className="rounded-lg border border-white/[0.04] bg-white/[0.01]"
+                >
+                  <div className="px-4 py-4">
+                    <SourceConfigForm
+                      source={key}
+                      config={configFields}
+                      instanceId={instance.id}
+                      instanceName={instance.name}
+                      onSave={onSave}
+                      onDelete={() => {
+                        onToggleInstance(iKey);
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            }
+
+            // Multiple instances: keep sub-accordion
             return (
               <div
                 key={instance.id}

@@ -1,4 +1,3 @@
-import { SourceIndicator } from '@/components/ui/SourceIndicator';
 import { SourceLogo } from '@/components/ui/SourceLogo';
 
 type SourceName = 'prtg' | 'vcenter' | 'proxmox' | 'veeam' | 'glpi' | 'securetransport';
@@ -22,7 +21,6 @@ export function PageHeader({ title, subtitle, source, badge, actions }: PageHead
             <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
           )}
         </div>
-        {source && <SourceIndicator source={source} connected />}
         {badge}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}

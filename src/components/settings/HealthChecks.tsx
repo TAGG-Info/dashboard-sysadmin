@@ -21,12 +21,12 @@ interface HealthResult {
 }
 
 const sources: { key: SourceName; label: string; color: string }[] = [
-  { key: 'prtg', label: 'PRTG', color: '#2196F3' },
-  { key: 'vcenter', label: 'VMware', color: '#4CAF50' },
-  { key: 'proxmox', label: 'Proxmox', color: '#E87D0D' },
-  { key: 'veeam', label: 'Veeam', color: '#00B336' },
-  { key: 'glpi', label: 'GLPI', color: '#FEC72D' },
-  { key: 'securetransport', label: 'ST', color: '#FF6D00' },
+  { key: 'prtg', label: 'PRTG', color: '#f99e1c' },
+  { key: 'vcenter', label: 'VMware', color: '#879AC3' },
+  { key: 'proxmox', label: 'Proxmox', color: '#E57000' },
+  { key: 'veeam', label: 'Veeam', color: '#4caf50' },
+  { key: 'glpi', label: 'GLPI', color: '#00a5f3' },
+  { key: 'securetransport', label: 'ST', color: '#D9272D' },
 ];
 
 export function HealthChecks() {
@@ -158,7 +158,7 @@ export function HealthChecks() {
                   className="h-3.5 w-3.5 rounded-full mb-2 transition-all duration-500"
                   style={{
                     backgroundColor: result
-                      ? isConnected ? '#10b981' : '#ef4444'
+                      ? isConnected ? color : '#ef4444'
                       : `${color}40`,
                   }}
                 />
