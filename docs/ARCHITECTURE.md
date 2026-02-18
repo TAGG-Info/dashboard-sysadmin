@@ -43,8 +43,11 @@ dashboard-tagg/
 │   │   ├── ldap.ts                 # Client LDAP (bind, search, verify)
 │   │   ├── cache.ts                # Cache Redis + fallback Map memoire
 │   │   ├── config.ts               # Config chiffree (data/config.json)
+│   │   ├── config-types.ts         # Interfaces et types de config (extraits de config.ts)
 │   │   ├── api-handler.ts          # Factory createApiRoute
 │   │   ├── constants.ts            # TTLs, routes, couleurs
+│   │   ├── status-mappers.ts       # Fonctions statut→couleur/label (Veeam, vCenter, PRTG)
+│   │   ├── formatters.ts           # formatBytes, formatMemory, formatDateFR
 │   │   ├── prtg.ts                 # Client API PRTG v2
 │   │   ├── vcenter.ts              # Client API vCenter REST
 │   │   ├── proxmox.ts              # Client API Proxmox VE
@@ -56,6 +59,7 @@ dashboard-tagg/
 │   │   ├── useAutoRefresh.ts       # Hook generique d'auto-refresh
 │   │   ├── usePageRefresh.ts       # Hook DRY pour refresh manuel des pages
 │   │   ├── useColumnResize.ts      # Hook resize colonnes (pointer drag)
+│   │   ├── useRefreshSignal.ts     # Hook refreshSignal (partage par 6 composants)
 │   │   ├── usePRTG.ts
 │   │   ├── useInfrastructure.ts
 │   │   ├── useVeeam.ts
@@ -85,6 +89,7 @@ dashboard-tagg/
 │   │   │   ├── StatusBadge.tsx     # Badge de statut colore
 │   │   │   ├── ErrorState.tsx      # Etat d'erreur avec retry
 │   │   │   ├── RefreshButton.tsx   # Bouton refresh avec countdown
+│   │   │   ├── InstanceGroup.tsx   # groupByInstance, hasMultipleInstances, InstanceSectionHeader
 │   │   │   └── ...                 # shadcn/ui components
 │   └── middleware.ts               # Protection globale des routes (auth + RBAC)
 │
@@ -425,6 +430,65 @@ const { data } = useAutoRefresh({ url, interval }); // trackCountdown: false par
 - **Slowdown auto** : apres N echecs consecutifs, saute les ticks programmes (2x, 4x, max 8x l'intervalle) pour ne pas saturer une API en panne
 - **Stale detection** : si la reponse contient `_stale: true`, expose `isStale: true`
 - **refreshSignal** : pattern pour rafraichir un composant avec etat interne (ex: `TransferLogTable`) sans le remonter — passer un `number` incrementable qui declenche `refresh()` via `useEffect`
+
+---
+
+## Utilitaires partages
+
+### useRefreshSignal (`src/hooks/useRefreshSignal.ts`)
+
+Hook partage qui encapsule le pattern refreshSignal utilise par 6 composants (TransferLogTable, VMList, TicketList, JobList, DeviceTree, BackupCalendar). Evite la duplication du pattern `useRef` + `useEffect` dans chaque composant.
+
+```typescript
+useRefreshSignal(refreshSignal, refresh);
+// Equivalent a :
+// const refreshRef = useRef(refresh);
+// useEffect(() => { refreshRef.current = refresh; });
+// useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
+```
+
+### status-mappers (`src/lib/status-mappers.ts`)
+
+Fonctions de mapping statut→niveau consolidees depuis 4 composants (JobCard, JobList, VMList, DeviceTree) :
+
+| Fonction | Source | Retourne |
+|---|---|---|
+| `resultToStatus(result?)` | Veeam | `'healthy' \| 'warning' \| 'critical' \| 'neutral'` |
+| `resultLabel(result?)` | Veeam | Label en francais |
+| `powerStateToStatus(state)` | vCenter | `'healthy' \| 'warning' \| 'neutral'` |
+| `powerStateLabel(state)` | vCenter | Label en francais |
+| `prtgStatusToLevel(status)` | PRTG | `'healthy' \| 'warning' \| 'critical' \| 'info' \| 'neutral'` |
+
+### formatters (`src/lib/formatters.ts`)
+
+Fonctions de formatage extraites des composants :
+
+| Fonction | Description |
+|---|---|
+| `formatBytes(bytes)` | Taille en octets → `"1.2 Go"` |
+| `formatMemory(mib)` | MiB → `"8.0 Go"` |
+| `formatDateFR(dateStr)` | ISO date → `"18/02/2026 14:30:42"` (avec secondes) |
+
+### InstanceGroup (`src/components/ui/InstanceGroup.tsx`)
+
+Composants et utilitaires pour le groupement multi-instances :
+
+| Export | Role |
+|---|---|
+| `groupByInstance(items)` | Groupe un tableau par `_instanceId` → `{ instanceId, instanceName, items }[]` |
+| `hasMultipleInstances(items)` | Retourne `true` si plus d'une instance presente |
+| `InstanceSectionHeader` | Header visuel de section avec icone Building2 + nom |
+| `InstanceGroupRenderer` | Composant declaratif qui groupe et rend avec headers conditionnels |
+
+Utilise par : JobList, VMList, DeviceTree, TicketList, StatusGrid.
+
+### config-types (`src/lib/config-types.ts`)
+
+Interfaces TypeScript des configurations d'instances, extraites de `config.ts` pour separer types et logique :
+
+`BaseInstance`, `PRTGInstance`, `VCenterInstance`, `ProxmoxInstance`, `VeeamInstance`, `GLPIInstance`, `STInstance`, `SourceConfig`, `SourceInstanceMap`, `SourceKey`, `SENSITIVE_FIELDS`.
+
+Les types sont re-exportes depuis `config.ts` pour la compatibilite ascendante.
 
 ---
 
