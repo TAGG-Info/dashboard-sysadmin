@@ -16,8 +16,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           username: string; password: string;
         };
 
-        const localUser = process.env.LOCAL_ADMIN_USERNAME;
-        const localHash = process.env.LOCAL_ADMIN_PASSWORD_HASH;
+        const localUser = process.env.LOCAL_ADMIN_USERNAME?.trim();
+        const localHash = process.env.LOCAL_ADMIN_PASSWORD_HASH?.trim();
 
         if (!checkRateLimit(username)) {
           console.warn(`[auth] Rate limit dépassé pour: ${username}`);
@@ -37,15 +37,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               authSource: 'ldap',
             };
           }
-          // LDAP up but user not found → try local admin (username must match exactly)
-        } catch {
-          // LDAP down → try local admin
+          console.log('[auth] LDAP: user not found, trying local admin');
+        } catch (err) {
+          console.log('[auth] LDAP unavailable:', (err as Error).message, '→ trying local admin');
         }
 
         if (username === localUser && localHash && await bcrypt.compare(password, localHash)) {
           resetRateLimit(username);
           return { id: 'local-admin', name: username, role: 'admin', authSource: 'local' };
         }
+        console.warn(`[auth] Login failed for "${username}" — localUser="${localUser}", hashLen=${localHash?.length ?? 0}, match=${username === localUser}`);
         return null;
       },
     }),

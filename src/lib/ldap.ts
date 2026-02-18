@@ -18,10 +18,10 @@ function escapeLDAPFilter(value: string): string {
 }
 
 export async function authenticateLDAP(username: string, password: string): Promise<LDAPUser | null> {
-  const ldapUrl = process.env.LDAP_URL;
-  const baseDN = process.env.LDAP_BASE_DN;
-  const bindDN = process.env.LDAP_BIND_DN;
-  const bindPassword = process.env.LDAP_BIND_PASSWORD;
+  const ldapUrl = process.env.LDAP_URL?.trim();
+  const baseDN = process.env.LDAP_BASE_DN?.trim();
+  const bindDN = process.env.LDAP_BIND_DN?.trim();
+  const bindPassword = process.env.LDAP_BIND_PASSWORD?.trim();
   const searchFilter = (process.env.LDAP_USER_SEARCH_FILTER || '(sAMAccountName={{username}})').replace('{{username}}', escapeLDAPFilter(username));
 
   if (!ldapUrl || !baseDN || !bindDN || !bindPassword) {
