@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,6 +9,7 @@ import {
   TooltipContent,
 } from '@/components/ui/tooltip';
 import { useVeeamSessions } from '@/hooks/useVeeam';
+import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -47,9 +48,7 @@ const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 export function BackupCalendar({ refreshSignal }: { refreshSignal?: number }) {
   const { data: sessions, loading, refresh } = useVeeamSessions();
 
-  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  refreshRef.current = refresh;
-  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
+  useRefreshSignal(refreshSignal, refresh);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);

@@ -173,11 +173,11 @@ export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-fixed text-sm" style={{ width: widths.reduce((a, b) => a + b, 0) + (hasMultipleInstances ? 140 : 0) }}>
+            <table className="w-full text-sm">
               <colgroup>
-                {widths.slice(0, 2).map((w, i) => <col key={i} style={{ width: w }} />)}
-                {hasMultipleInstances && <col style={{ width: 140 }} />}
-                {widths.slice(2).map((w, i) => <col key={i + 2} style={{ width: w }} />)}
+                {widths.slice(0, 2).map((w, i) => <col key={i} style={{ minWidth: w, width: w }} />)}
+                {hasMultipleInstances && <col style={{ minWidth: 140, width: 140 }} />}
+                {widths.slice(2).map((w, i) => <col key={i + 2} style={{ minWidth: w, width: w }} />)}
               </colgroup>
               <thead>
                 <tr className="border-b border-border/50 bg-muted/20">

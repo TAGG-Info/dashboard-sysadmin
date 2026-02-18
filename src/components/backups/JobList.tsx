@@ -1,14 +1,16 @@
 'use client';
 
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ExternalLink } from '@/components/ui/ExternalLink';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { InstanceSectionHeader } from '@/components/ui/InstanceGroup';
+import { InstanceSectionHeader, groupByInstance, hasMultipleInstances } from '@/components/ui/InstanceGroup';
 import { TimeAgo } from '@/components/ui/TimeAgo';
 import { useColumnResize } from '@/hooks/useColumnResize';
+import { useRefreshSignal } from '@/hooks/useRefreshSignal';
+import { resultToStatus, resultLabel } from '@/lib/status-mappers';
 import { useVeeamJobs, type VeeamJobWithInstance } from '@/hooks/useVeeam';
 
 const COLS = [
@@ -22,45 +24,10 @@ const COLS = [
 
 const DEFAULT_WIDTHS = [220, 100, 130, 140, 100, 80];
 
-function resultToStatus(result?: string): 'healthy' | 'warning' | 'critical' | 'neutral' {
-  if (!result) return 'neutral';
-  switch (result.toLowerCase()) {
-    case 'success':
-      return 'healthy';
-    case 'warning':
-      return 'warning';
-    case 'failed':
-    case 'error':
-      return 'critical';
-    case 'none':
-      return 'neutral';
-    default:
-      return 'neutral';
-  }
-}
-
-function resultLabel(result?: string): string {
-  if (!result) return 'N/A';
-  switch (result.toLowerCase()) {
-    case 'success':
-      return 'Success';
-    case 'warning':
-      return 'Warning';
-    case 'failed':
-      return 'Failed';
-    case 'none':
-      return 'Jamais execute';
-    default:
-      return result;
-  }
-}
-
 export function JobList({ refreshSignal }: { refreshSignal?: number }) {
   const { data: jobs, loading, error, refresh } = useVeeamJobs();
 
-  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  refreshRef.current = refresh;
-  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
+  useRefreshSignal(refreshSignal, refresh);
   const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);
 
   const veeamUrl = process.env.NEXT_PUBLIC_VEEAM_URL;
@@ -68,19 +35,10 @@ export function JobList({ refreshSignal }: { refreshSignal?: number }) {
   // Group by instance
   const instanceGroups = useMemo(() => {
     if (!jobs) return [];
-    const map = new Map<string, { instanceName: string; items: VeeamJobWithInstance[] }>();
-    for (const job of jobs) {
-      const id = job._instanceId ?? 'default';
-      const name = job._instanceName ?? '';
-      if (!map.has(id)) {
-        map.set(id, { instanceName: name, items: [] });
-      }
-      map.get(id)!.items.push(job);
-    }
-    return Array.from(map.entries());
+    return groupByInstance(jobs);
   }, [jobs]);
 
-  const hasMultipleInstances = instanceGroups.length > 1;
+  const multipleInstances = jobs ? hasMultipleInstances(jobs) : false;
 
   if (error && !jobs) {
     return (
@@ -93,7 +51,6 @@ export function JobList({ refreshSignal }: { refreshSignal?: number }) {
     );
   }
 
-  const tableWidth = widths.reduce((a, b) => a + b, 0);
 
   return (
     <div className="space-y-3">
@@ -115,15 +72,15 @@ export function JobList({ refreshSignal }: { refreshSignal?: number }) {
         </button>
       </div>
 
-      {instanceGroups.map(([instanceId, { instanceName, items }]) => (
+      {instanceGroups.map(({ instanceId, instanceName, items }) => (
         <div key={instanceId}>
-          {hasMultipleInstances && (
+          {multipleInstances && (
             <InstanceSectionHeader instanceName={instanceName} className="mb-2" />
           )}
           <div className="rounded-lg border border-border/50 overflow-x-auto">
-            <table className="table-fixed text-sm" style={{ width: tableWidth }}>
+            <table className="w-full text-sm">
               <colgroup>
-                {widths.map((w, i) => <col key={i} style={{ width: w }} />)}
+                {widths.map((w, i) => <col key={i} style={{ minWidth: w, width: w }} />)}
               </colgroup>
               <thead>
                 <tr className="border-b border-border/50 bg-muted/20">
@@ -207,9 +164,9 @@ export function JobList({ refreshSignal }: { refreshSignal?: number }) {
       {/* Show loading skeletons when no data */}
       {loading && !jobs && instanceGroups.length === 0 && (
         <div className="rounded-lg border border-border/50 overflow-x-auto">
-          <table className="table-fixed text-sm" style={{ width: tableWidth }}>
+          <table className="w-full text-sm">
             <colgroup>
-              {widths.map((w, i) => <col key={i} style={{ width: w }} />)}
+              {widths.map((w, i) => <col key={i} style={{ minWidth: w, width: w }} />)}
             </colgroup>
             <thead>
               <tr className="border-b border-border/50 bg-muted/20">

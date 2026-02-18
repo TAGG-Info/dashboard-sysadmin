@@ -293,10 +293,10 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
       <CardContent className="p-0">
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="table-fixed text-sm" style={{ width: widths.reduce((a, b) => a + b, 0) }}>
+          <table className="w-full text-sm">
             <colgroup>
               {widths.map((w, i) => (
-                <col key={i} style={{ width: w }} />
+                <col key={i} style={{ minWidth: w, width: w }} />
               ))}
             </colgroup>
             <thead>

@@ -119,7 +119,6 @@ export function VMList({ refreshSignal }: { refreshSignal?: number }) {
     );
   }
 
-  const tableWidth = widths.reduce((a, b) => a + b, 0);
 
   return (
     <div className="space-y-3">
@@ -160,9 +159,9 @@ export function VMList({ refreshSignal }: { refreshSignal?: number }) {
             <InstanceSectionHeader instanceName={instanceName} className="mb-2" />
           )}
           <div className="rounded-lg border border-border/50 overflow-x-auto">
-            <table className="table-fixed text-sm" style={{ width: tableWidth }}>
+            <table className="w-full text-sm">
               <colgroup>
-                {widths.map((w, i) => <col key={i} style={{ width: w }} />)}
+                {widths.map((w, i) => <col key={i} style={{ minWidth: w, width: w }} />)}
               </colgroup>
               <thead>
                 <tr className="border-b border-border/50 bg-muted/20">
@@ -251,9 +250,9 @@ export function VMList({ refreshSignal }: { refreshSignal?: number }) {
       {/* Show loading skeletons when no data yet */}
       {loading && !vms && instanceGroups.length === 0 && (
         <div className="rounded-lg border border-border/50 overflow-x-auto">
-          <table className="table-fixed text-sm" style={{ width: tableWidth }}>
+          <table className="w-full text-sm">
             <colgroup>
-              {widths.map((w, i) => <col key={i} style={{ width: w }} />)}
+              {widths.map((w, i) => <col key={i} style={{ minWidth: w, width: w }} />)}
             </colgroup>
             <thead>
               <tr className="border-b border-border/50 bg-muted/20">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Monitor } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,10 @@ import { ExternalLink } from '@/components/ui/ExternalLink';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SensorCard } from './SensorCard';
 import { usePRTGDevices, usePRTGSensors } from '@/hooks/usePRTG';
-import { InstanceSectionHeader } from '@/components/ui/InstanceGroup';
-import type { PRTGDevice, PRTGSensor } from '@/types/prtg';
+import { InstanceSectionHeader, groupByInstance, hasMultipleInstances } from '@/components/ui/InstanceGroup';
+import { useRefreshSignal } from '@/hooks/useRefreshSignal';
+import { prtgStatusToLevel } from '@/lib/status-mappers';
+import type { PRTGDevice } from '@/types/prtg';
 import type { PRTGDeviceWithInstance } from '@/hooks/usePRTG';
 import { cn } from '@/lib/utils';
 
@@ -22,22 +24,6 @@ const statusColors: Record<string, string> = {
   Unusual: '#f59e0b',
   Unknown: '#6b7280',
 };
-
-function statusToLevel(status: string): 'healthy' | 'warning' | 'critical' | 'info' | 'neutral' {
-  switch (status) {
-    case 'Down':
-      return 'critical';
-    case 'Warning':
-    case 'Unusual':
-      return 'warning';
-    case 'Up':
-      return 'healthy';
-    case 'Paused':
-      return 'neutral';
-    default:
-      return 'info';
-  }
-}
 
 function DeviceSensors({ deviceId }: { deviceId: number }) {
   const { data: sensors, loading } = usePRTGSensors(deviceId);
@@ -143,7 +129,7 @@ function DeviceCard({ device }: { device: PRTGDevice }) {
 
           {/* Status badge */}
           <StatusBadge
-            status={statusToLevel(device.status)}
+            status={prtgStatusToLevel(device.status)}
             label={device.status}
           />
 
@@ -176,26 +162,15 @@ function DeviceCard({ device }: { device: PRTGDevice }) {
 export function DeviceTree({ refreshSignal }: { refreshSignal?: number }) {
   const { data: devices, loading, error, refresh } = usePRTGDevices();
 
-  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  refreshRef.current = refresh;
-  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
+  useRefreshSignal(refreshSignal, refresh);
 
   // Group devices by instance
   const instanceGroups = useMemo(() => {
     if (!devices) return [];
-    const map = new Map<string, { instanceName: string; items: PRTGDeviceWithInstance[] }>();
-    for (const device of devices) {
-      const id = device._instanceId ?? 'default';
-      const name = device._instanceName ?? '';
-      if (!map.has(id)) {
-        map.set(id, { instanceName: name, items: [] });
-      }
-      map.get(id)!.items.push(device);
-    }
-    return Array.from(map.entries());
+    return groupByInstance(devices);
   }, [devices]);
 
-  const hasMultipleInstances = instanceGroups.length > 1;
+  const multipleInstances = devices ? hasMultipleInstances(devices) : false;
 
   if (loading && !devices) {
     return (
@@ -242,9 +217,9 @@ export function DeviceTree({ refreshSignal }: { refreshSignal?: number }) {
           {devices.length} devices
         </span>
       </div>
-      {instanceGroups.map(([instanceId, { instanceName, items }]) => (
+      {instanceGroups.map(({ instanceId, instanceName, items }) => (
         <div key={instanceId} className="space-y-2">
-          {hasMultipleInstances && (
+          {multipleInstances && (
             <InstanceSectionHeader instanceName={instanceName} />
           )}
           {items.map((device) => (

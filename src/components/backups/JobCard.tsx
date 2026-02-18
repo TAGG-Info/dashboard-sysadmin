@@ -3,41 +3,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Progress } from '@/components/ui/progress';
+import { resultToStatus, resultLabel } from '@/lib/status-mappers';
 import type { VeeamJob } from '@/types/veeam';
 
 interface JobCardProps {
   job: VeeamJob;
   isWorking?: boolean;
   progress?: number;
-}
-
-function resultToStatus(result?: string): 'healthy' | 'warning' | 'critical' | 'neutral' {
-  if (!result) return 'neutral';
-  switch (result.toLowerCase()) {
-    case 'success':
-      return 'healthy';
-    case 'warning':
-      return 'warning';
-    case 'failed':
-    case 'error':
-      return 'critical';
-    default:
-      return 'neutral';
-  }
-}
-
-function resultLabel(result?: string): string {
-  if (!result) return 'N/A';
-  switch (result.toLowerCase()) {
-    case 'success':
-      return 'Success';
-    case 'warning':
-      return 'Warning';
-    case 'failed':
-      return 'Failed';
-    default:
-      return result;
-  }
 }
 
 export function JobCard({ job, isWorking, progress }: JobCardProps) {
