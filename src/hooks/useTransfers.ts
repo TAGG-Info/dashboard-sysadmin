@@ -2,11 +2,11 @@
 
 import { useMemo } from 'react';
 import { useAutoRefresh } from './useAutoRefresh';
+import { useRefreshIntervals } from '@/components/providers/RefreshIntervalsProvider';
 import type { STTransferSummary, STCertificateExpiring, STTransferLogList } from '@/types/securetransport';
 
 export type { STTransferSummary, STCertificateExpiring, STTransferLogList };
 
-const REFRESH = Math.max(10000, Number(process.env.NEXT_PUBLIC_REFRESH_TRANSFERS) || 120000);
 const LOGS_REFRESH = Math.max(10000, Number(process.env.NEXT_PUBLIC_REFRESH_ST_LOGS) || 30000);
 
 export interface TransferLogsParams {
@@ -22,9 +22,10 @@ export interface TransferLogsParams {
 }
 
 export function useTransferSummary() {
+  const { intervals } = useRefreshIntervals();
   return useAutoRefresh<STTransferSummary>({
     url: '/api/securetransport/transfers',
-    interval: REFRESH,
+    interval: intervals.transfers,
   });
 }
 

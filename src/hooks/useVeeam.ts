@@ -1,18 +1,19 @@
 'use client';
 import { useAutoRefresh } from './useAutoRefresh';
+import { useRefreshIntervals } from '@/components/providers/RefreshIntervalsProvider';
 import type { InstanceMetadata } from '@/types/common';
 import type { VeeamJob, VeeamSession } from '@/types/veeam';
-
-const REFRESH = Math.max(10000, Number(process.env.NEXT_PUBLIC_REFRESH_VEEAM) || 120000);
 
 /** Types with instance metadata for multi-instance support */
 export type VeeamJobWithInstance = VeeamJob & Partial<InstanceMetadata>;
 export type VeeamSessionWithInstance = VeeamSession & Partial<InstanceMetadata>;
 
 export function useVeeamJobs() {
-  return useAutoRefresh<VeeamJobWithInstance[]>({ url: '/api/veeam/jobs', interval: REFRESH });
+  const { intervals } = useRefreshIntervals();
+  return useAutoRefresh<VeeamJobWithInstance[]>({ url: '/api/veeam/jobs', interval: intervals.veeam });
 }
 
 export function useVeeamSessions() {
-  return useAutoRefresh<VeeamSessionWithInstance[]>({ url: '/api/veeam/sessions', interval: REFRESH });
+  const { intervals } = useRefreshIntervals();
+  return useAutoRefresh<VeeamSessionWithInstance[]>({ url: '/api/veeam/sessions', interval: intervals.veeam });
 }

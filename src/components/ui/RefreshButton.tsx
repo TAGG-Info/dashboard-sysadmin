@@ -23,19 +23,19 @@ export function RefreshButton({
       size="sm"
       onClick={onRefresh}
       disabled={loading}
-      className={cn('gap-2', className)}
+      className={cn('gap-2 h-8 text-xs', className)}
     >
       <RefreshCw
         className={cn(
-          'h-3.5 w-3.5',
+          'h-3 w-3',
           loading && 'animate-spin'
         )}
       />
       {nextRefreshIn !== undefined && nextRefreshIn > 0 && !loading && (
-        <span className="text-sm text-muted-foreground">{nextRefreshIn}s</span>
+        <span className="text-muted-foreground">{nextRefreshIn}s</span>
       )}
       {loading && (
-        <span className="text-sm text-muted-foreground">...</span>
+        <span className="text-muted-foreground">...</span>
       )}
     </Button>
   );

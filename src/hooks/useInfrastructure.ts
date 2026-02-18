@@ -1,10 +1,9 @@
 'use client';
 import { useAutoRefresh } from './useAutoRefresh';
+import { useRefreshIntervals } from '@/components/providers/RefreshIntervalsProvider';
 import type { InstanceMetadata } from '@/types/common';
 import type { VCenterVM, VCenterHost, VCenterDatastore } from '@/types/vcenter';
 import type { ProxmoxNode, ProxmoxVM } from '@/types/proxmox';
-
-const REFRESH = Math.max(10000, Number(process.env.NEXT_PUBLIC_REFRESH_INFRA) || 60000);
 
 /** Types with instance metadata for multi-instance support */
 export type VCenterVMWithInstance = VCenterVM & Partial<InstanceMetadata>;
@@ -14,21 +13,26 @@ export type ProxmoxNodeWithInstance = ProxmoxNode & Partial<InstanceMetadata>;
 export type ProxmoxVMWithInstance = ProxmoxVM & Partial<InstanceMetadata>;
 
 export function useVCenterVMs() {
-  return useAutoRefresh<VCenterVMWithInstance[]>({ url: '/api/vcenter/vms', interval: REFRESH });
+  const { intervals } = useRefreshIntervals();
+  return useAutoRefresh<VCenterVMWithInstance[]>({ url: '/api/vcenter/vms', interval: intervals.infra });
 }
 
 export function useVCenterHosts() {
-  return useAutoRefresh<VCenterHostWithInstance[]>({ url: '/api/vcenter/hosts', interval: REFRESH });
+  const { intervals } = useRefreshIntervals();
+  return useAutoRefresh<VCenterHostWithInstance[]>({ url: '/api/vcenter/hosts', interval: intervals.infra });
 }
 
 export function useVCenterDatastores() {
-  return useAutoRefresh<VCenterDatastoreWithInstance[]>({ url: '/api/vcenter/datastores', interval: REFRESH });
+  const { intervals } = useRefreshIntervals();
+  return useAutoRefresh<VCenterDatastoreWithInstance[]>({ url: '/api/vcenter/datastores', interval: intervals.infra });
 }
 
 export function useProxmoxNodes() {
-  return useAutoRefresh<ProxmoxNodeWithInstance[]>({ url: '/api/proxmox/nodes', interval: REFRESH });
+  const { intervals } = useRefreshIntervals();
+  return useAutoRefresh<ProxmoxNodeWithInstance[]>({ url: '/api/proxmox/nodes', interval: intervals.infra });
 }
 
 export function useProxmoxVMs() {
-  return useAutoRefresh<ProxmoxVMWithInstance[]>({ url: '/api/proxmox/vms', interval: REFRESH });
+  const { intervals } = useRefreshIntervals();
+  return useAutoRefresh<ProxmoxVMWithInstance[]>({ url: '/api/proxmox/vms', interval: intervals.infra });
 }

@@ -1,38 +1,26 @@
 'use client';
 
-import { Timer } from 'lucide-react';
+import { useState } from 'react';
+import { Timer, Pencil, Save, X, Loader2 } from 'lucide-react';
+import { useRefreshIntervals, type RefreshIntervals } from '@/components/providers/RefreshIntervalsProvider';
 
-type SourceName = 'prtg' | 'vcenter' | 'proxmox' | 'veeam' | 'glpi' | 'securetransport';
+type RefreshKey = keyof RefreshIntervals;
 
 interface RefreshConfig {
-  key: SourceName;
+  key: RefreshKey;
   label: string;
   color: string;
-  envVar: string;
-  defaultMs: number;
 }
 
 const refreshConfigs: RefreshConfig[] = [
-  { key: 'prtg', label: 'PRTG', color: '#2196F3', envVar: 'NEXT_PUBLIC_REFRESH_PRTG', defaultMs: 30000 },
-  { key: 'vcenter', label: 'VMware', color: '#4CAF50', envVar: 'NEXT_PUBLIC_REFRESH_INFRA', defaultMs: 60000 },
-  { key: 'proxmox', label: 'Proxmox', color: '#E87D0D', envVar: 'NEXT_PUBLIC_REFRESH_INFRA', defaultMs: 60000 },
-  { key: 'veeam', label: 'Veeam', color: '#00B336', envVar: 'NEXT_PUBLIC_REFRESH_VEEAM', defaultMs: 120000 },
-  { key: 'glpi', label: 'GLPI', color: '#FEC72D', envVar: 'NEXT_PUBLIC_REFRESH_TICKETS', defaultMs: 60000 },
-  { key: 'securetransport', label: 'ST', color: '#FF6D00', envVar: 'NEXT_PUBLIC_REFRESH_TRANSFERS', defaultMs: 120000 },
+  { key: 'prtg',      label: 'PRTG',            color: '#2196F3' },
+  { key: 'infra',     label: 'Infrastructure',   color: '#4CAF50' },
+  { key: 'veeam',     label: 'Veeam',            color: '#00B336' },
+  { key: 'tickets',   label: 'GLPI',             color: '#FEC72D' },
+  { key: 'transfers', label: 'SecureTransport',  color: '#FF6D00' },
 ];
 
-function getIntervalSeconds(envVar: string, defaultMs: number): number {
-  if (typeof window === 'undefined') return defaultMs / 1000;
-  const envValues: Record<string, string | undefined> = {
-    NEXT_PUBLIC_REFRESH_PRTG: process.env.NEXT_PUBLIC_REFRESH_PRTG,
-    NEXT_PUBLIC_REFRESH_INFRA: process.env.NEXT_PUBLIC_REFRESH_INFRA,
-    NEXT_PUBLIC_REFRESH_VEEAM: process.env.NEXT_PUBLIC_REFRESH_VEEAM,
-    NEXT_PUBLIC_REFRESH_TICKETS: process.env.NEXT_PUBLIC_REFRESH_TICKETS,
-    NEXT_PUBLIC_REFRESH_TRANSFERS: process.env.NEXT_PUBLIC_REFRESH_TRANSFERS,
-  };
-  const val = envValues[envVar];
-  return val ? Number(val) / 1000 : defaultMs / 1000;
-}
+const MIN_SECONDS = 10;
 
 function formatInterval(seconds: number): string {
   if (seconds >= 60) {
@@ -44,8 +32,49 @@ function formatInterval(seconds: number): string {
 }
 
 export function RefreshSettings() {
-  const intervals = refreshConfigs.map((c) => getIntervalSeconds(c.envVar, c.defaultMs));
-  const maxInterval = Math.max(...intervals);
+  const { intervals, updateIntervals } = useRefreshIntervals();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [draft, setDraft] = useState<Record<RefreshKey, number>>(() => toDraftSeconds(intervals));
+
+  function toDraftSeconds(ms: RefreshIntervals): Record<RefreshKey, number> {
+    return {
+      prtg: Math.round(ms.prtg / 1000),
+      infra: Math.round(ms.infra / 1000),
+      veeam: Math.round(ms.veeam / 1000),
+      tickets: Math.round(ms.tickets / 1000),
+      transfers: Math.round(ms.transfers / 1000),
+    };
+  }
+
+  function startEdit() {
+    setDraft(toDraftSeconds(intervals));
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setEditing(false);
+  }
+
+  async function saveEdit() {
+    setSaving(true);
+    const ms: Partial<RefreshIntervals> = {};
+    for (const { key } of refreshConfigs) {
+      ms[key] = Math.max(MIN_SECONDS, draft[key]) * 1000;
+    }
+    const ok = await updateIntervals(ms);
+    setSaving(false);
+    if (ok) setEditing(false);
+  }
+
+  function setDraftValue(key: RefreshKey, value: number) {
+    setDraft(prev => ({ ...prev, [key]: value }));
+  }
+
+  const seconds = refreshConfigs.map(c => Math.round(intervals[c.key] / 1000));
+  const maxInterval = Math.max(...seconds);
+
+  const isValid = refreshConfigs.every(({ key }) => draft[key] >= MIN_SECONDS);
 
   return (
     <div className="settings-card-glow rounded-xl bg-background border border-white/[0.06] overflow-hidden">
@@ -58,17 +87,46 @@ export function RefreshSettings() {
           <div>
             <h3 className="text-sm font-semibold text-foreground tracking-wide">Intervalles de refresh</h3>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Via <code className="text-sm font-mono text-muted-foreground/80 bg-white/5 px-1 rounded">NEXT_PUBLIC_REFRESH_*</code>
+              Frequence de mise a jour des donnees
             </p>
           </div>
         </div>
+
+        {!editing ? (
+          <button
+            onClick={startEdit}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Pencil className="h-3 w-3" />
+            Modifier
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={cancelEdit}
+              disabled={saving}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+            >
+              <X className="h-3 w-3" />
+              Annuler
+            </button>
+            <button
+              onClick={saveEdit}
+              disabled={saving || !isValid}
+              className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-40"
+            >
+              {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+              Enregistrer
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Bars */}
       <div className="px-5 py-4 space-y-3 stagger-in">
         {refreshConfigs.map((config, i) => {
-          const seconds = intervals[i];
-          const barWidth = maxInterval > 0 ? (seconds / maxInterval) * 100 : 0;
+          const sec = seconds[i];
+          const barWidth = maxInterval > 0 ? (sec / maxInterval) * 100 : 0;
 
           return (
             <div key={config.key} className="group">
@@ -80,9 +138,23 @@ export function RefreshSettings() {
                   />
                   <span className="text-sm font-medium text-foreground">{config.label}</span>
                 </div>
-                <span className="text-sm font-mono font-semibold text-muted-foreground tabular-nums">
-                  {formatInterval(seconds)}
-                </span>
+
+                {editing ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min={MIN_SECONDS}
+                      value={draft[config.key]}
+                      onChange={e => setDraftValue(config.key, parseInt(e.target.value) || MIN_SECONDS)}
+                      className="w-16 h-6 px-1.5 text-xs font-mono text-right bg-muted/20 border border-border/50 rounded focus:outline-none focus:ring-1 focus:ring-ring tabular-nums"
+                    />
+                    <span className="text-xs text-muted-foreground">s</span>
+                  </div>
+                ) : (
+                  <span className="text-sm font-mono font-semibold text-muted-foreground tabular-nums">
+                    {formatInterval(sec)}
+                  </span>
+                )}
               </div>
               <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
                 <div
