@@ -45,24 +45,43 @@ export function Sidebar() {
         collapsed ? 'w-16' : 'w-64'
       )}
     >
-      {/* Logo / Brand */}
+      {/* Logo / Brand + Collapse toggle */}
       <div className="flex h-14 items-center px-4">
-        {!collapsed && (
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Activity className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-sm font-bold text-foreground">
-              SysAdmin
-            </span>
-          </Link>
-        )}
-        {collapsed && (
-          <Link href="/" className="mx-auto">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Activity className="h-4 w-4 text-primary-foreground" />
-            </div>
-          </Link>
+        {!collapsed ? (
+          <>
+            <Link href="/" className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <Activity className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <span className="text-sm font-bold text-foreground">
+                SysAdmin
+              </span>
+            </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCollapsed(true)}
+              className="ml-auto h-8 w-8 text-muted-foreground hover:text-foreground"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-1 mx-auto">
+            <Link href="/">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <Activity className="h-4 w-4 text-primary-foreground" />
+              </div>
+            </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCollapsed(false)}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
 
@@ -111,24 +130,6 @@ export function Sidebar() {
         </nav>
       </ScrollArea>
 
-      {/* Collapse toggle button */}
-      <div className="border-t border-border/50 p-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setCollapsed(!collapsed)}
-          className={cn(
-            'h-8 w-8 text-muted-foreground hover:text-foreground',
-            !collapsed && 'ml-auto'
-          )}
-        >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
-        </Button>
-      </div>
     </div>
   );
 }

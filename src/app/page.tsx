@@ -1,11 +1,12 @@
 import { OverviewCards } from '@/components/dashboard/OverviewCards';
 import { StatusGrid } from '@/components/dashboard/StatusGrid';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+      <PageHeader title="Dashboard" />
 
       {/* Overview cards */}
       <OverviewCards />

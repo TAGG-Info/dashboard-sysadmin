@@ -1,14 +1,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ExternalLink } from '@/components/ui/ExternalLink';
@@ -17,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TimeAgo } from '@/components/ui/TimeAgo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TicketFilters, type TicketFilterValues } from './TicketFilters';
+import { useColumnResize } from '@/hooks/useColumnResize';
 import { useTickets } from '@/hooks/useTickets';
 
 const STATUS_LABELS: Record<number, string> = {
@@ -60,6 +53,19 @@ const TYPE_LABELS: Record<number, string> = {
   2: 'Demande',
 };
 
+const COLS = [
+  { label: 'ID', align: 'left' as const },
+  { label: 'Titre', align: 'left' as const },
+  { label: 'Priorite', align: 'left' as const },
+  { label: 'Statut', align: 'left' as const },
+  { label: 'Type', align: 'left' as const },
+  { label: 'Assigne', align: 'left' as const },
+  { label: 'Date', align: 'left' as const },
+  { label: 'Lien', align: 'center' as const },
+] as const;
+
+const DEFAULT_WIDTHS = [70, 280, 120, 120, 100, 140, 120, 60];
+
 export function TicketList() {
   const { data: tickets, loading, error, refresh } = useTickets();
   const [filters, setFilters] = useState<TicketFilterValues>({
@@ -67,6 +73,7 @@ export function TicketList() {
     priority: 'all',
     type: 'all',
   });
+  const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);
 
   const glpiUrl = process.env.NEXT_PUBLIC_GLPI_URL || '';
 
@@ -131,7 +138,16 @@ export function TicketList() {
               </span>
             )}
           </CardTitle>
-          <TicketFilters filters={filters} onFilterChange={setFilters} />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={resetWidths}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              title="Reinitialiser la largeur des colonnes"
+            >
+              Reset colonnes
+            </button>
+            <TicketFilters filters={filters} onFilterChange={setFilters} />
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">
@@ -153,41 +169,72 @@ export function TicketList() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/50 hover:bg-transparent">
-                  <TableHead className="w-[70px]">ID</TableHead>
-                  <TableHead>Titre</TableHead>
+            <table className="table-fixed text-sm" style={{ width: widths.reduce((a, b) => a + b, 0) + (hasMultipleInstances ? 140 : 0) }}>
+              <colgroup>
+                {widths.slice(0, 2).map((w, i) => <col key={i} style={{ width: w }} />)}
+                {hasMultipleInstances && <col style={{ width: 140 }} />}
+                {widths.slice(2).map((w, i) => <col key={i + 2} style={{ width: w }} />)}
+              </colgroup>
+              <thead>
+                <tr className="border-b border-border/50 bg-muted/20">
+                  {COLS.slice(0, 2).map((col, i) => (
+                    <th
+                      key={col.label}
+                      className={`relative px-3 py-2 text-xs font-medium text-muted-foreground select-none text-${col.align}`}
+                    >
+                      <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{col.label}</span>
+                      <div
+                        onPointerDown={(e) => startResize(e, i)}
+                        className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize group"
+                      >
+                        <div className="mx-auto h-full w-px bg-border/0 group-hover:bg-border/60 transition-colors" />
+                      </div>
+                    </th>
+                  ))}
                   {hasMultipleInstances && (
-                    <TableHead className="w-[140px]">Instance</TableHead>
+                    <th className="px-3 py-2 text-xs font-medium text-muted-foreground select-none text-left">
+                      <span className="block overflow-hidden text-ellipsis whitespace-nowrap">Instance</span>
+                    </th>
                   )}
-                  <TableHead className="w-[120px]">Priorite</TableHead>
-                  <TableHead className="w-[120px]">Statut</TableHead>
-                  <TableHead className="w-[100px]">Type</TableHead>
-                  <TableHead className="w-[140px]">Assigné</TableHead>
-                  <TableHead className="w-[120px]">Date</TableHead>
-                  <TableHead className="w-[60px]">Lien</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+                  {COLS.slice(2).map((col, i) => {
+                    const colIndex = i + 2;
+                    const isLast = colIndex === COLS.length - 1;
+                    return (
+                      <th
+                        key={col.label}
+                        className={`relative px-3 py-2 text-xs font-medium text-muted-foreground select-none text-${col.align}`}
+                      >
+                        <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{col.label}</span>
+                        {!isLast && (
+                          <div
+                            onPointerDown={(e) => startResize(e, colIndex)}
+                            className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize group"
+                          >
+                            <div className="mx-auto h-full w-px bg-border/0 group-hover:bg-border/60 transition-colors" />
+                          </div>
+                        )}
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
                 {filteredTickets.map((ticket) => (
-                  <TableRow key={`${ticket._instanceId ?? 'default'}-${ticket.id}`} className="border-border/50">
-                    <TableCell className="font-mono text-sm text-muted-foreground">
-                      #{ticket.id}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-foreground line-clamp-1">
-                        {ticket.name}
-                      </span>
-                    </TableCell>
+                  <tr key={`${ticket._instanceId ?? 'default'}-${ticket.id}`} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
+                    <td className="px-3 py-1.5 overflow-hidden font-mono text-xs text-muted-foreground">
+                      <span className="block truncate">#{ticket.id}</span>
+                    </td>
+                    <td className="px-3 py-1.5 overflow-hidden">
+                      <span className="block truncate text-xs text-foreground">{ticket.name}</span>
+                    </td>
                     {hasMultipleInstances && (
-                      <TableCell>
-                        <Badge variant="outline" className="text-sm text-muted-foreground border-border/50">
+                      <td className="px-3 py-1.5 overflow-hidden">
+                        <Badge variant="outline" className="text-xs text-muted-foreground border-border/50">
                           {ticket._instanceName || 'Default'}
                         </Badge>
-                      </TableCell>
+                      </td>
                     )}
-                    <TableCell>
+                    <td className="px-3 py-1.5 overflow-hidden">
                       <Badge
                         className={
                           PRIORITY_COLORS[ticket.priority] || PRIORITY_COLORS[3]
@@ -196,8 +243,8 @@ export function TicketList() {
                         {PRIORITY_LABELS[ticket.priority] ||
                           `P${ticket.priority}`}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="px-3 py-1.5 overflow-hidden">
                       <StatusBadge
                         status={STATUS_MAP[ticket.status] || 'neutral'}
                         label={
@@ -205,29 +252,29 @@ export function TicketList() {
                           `Statut ${ticket.status}`
                         }
                       />
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-sm">
+                    </td>
+                    <td className="px-3 py-1.5 overflow-hidden">
+                      <Badge variant="outline" className="text-xs">
                         {TYPE_LABELS[ticket.type] || `Type ${ticket.type}`}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {ticket._users_id_assign || '—'}
-                    </TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="px-3 py-1.5 overflow-hidden text-xs text-muted-foreground">
+                      <span className="block truncate">{ticket._users_id_assign || '\u2014'}</span>
+                    </td>
+                    <td className="px-3 py-1.5 overflow-hidden">
                       <TimeAgo date={ticket.date} />
-                    </TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="px-3 py-1.5 overflow-hidden text-center">
                       {glpiUrl && <ExternalLink
                         href={`${glpiUrl}/front/ticket.form.php?id=${ticket.id}`}
                         label=""
                         source="glpi"
                       />}
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
         )}
       </CardContent>

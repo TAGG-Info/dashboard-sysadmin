@@ -19,14 +19,14 @@ Le SysAdmin Dashboard est une application Next.js 16 (App Router) qui agrege en 
 dashboard-tagg/
 ├── src/
 │   ├── app/                        # App Router Next.js
-│   │   ├── api/                    # 18 routes API (server-side uniquement)
+│   │   ├── api/                    # 19 routes API (server-side uniquement)
 │   │   │   ├── auth/[...nextauth]/ # Handlers NextAuth
 │   │   │   ├── prtg/               # devices, sensors, alerts, summary
 │   │   │   ├── vcenter/            # vms, hosts, datastores
 │   │   │   ├── proxmox/            # nodes, vms
 │   │   │   ├── veeam/              # jobs, sessions
 │   │   │   ├── glpi/               # tickets, summary
-│   │   │   ├── securetransport/    # transfers
+│   │   │   ├── securetransport/    # transfers, logs
 │   │   │   ├── settings/sources/   # CRUD config instances (admin)
 │   │   │   └── health/             # health check
 │   │   ├── login/                  # Page de connexion
@@ -54,6 +54,8 @@ dashboard-tagg/
 │   │
 │   ├── hooks/                      # Hooks React avec auto-refresh
 │   │   ├── useAutoRefresh.ts       # Hook generique d'auto-refresh
+│   │   ├── usePageRefresh.ts       # Hook DRY pour refresh manuel des pages
+│   │   ├── useColumnResize.ts      # Hook resize colonnes (pointer drag)
 │   │   ├── usePRTG.ts
 │   │   ├── useInfrastructure.ts
 │   │   ├── useVeeam.ts
@@ -71,6 +73,19 @@ dashboard-tagg/
 │   │   └── securetransport.ts
 │   │
 │   ├── components/                 # Composants React par domaine
+│   │   ├── layout/
+│   │   │   ├── DashboardShell.tsx  # Shell principal (sidebar + topbar + main)
+│   │   │   ├── Sidebar.tsx         # Sidebar collapsible (fleche en haut)
+│   │   │   ├── Topbar.tsx          # Barre superieure (dots + user menu)
+│   │   │   ├── PageHeader.tsx      # Header standardise des pages
+│   │   │   ├── MobileNav.tsx       # Navigation mobile (drawer)
+│   │   │   └── SourceStatusDots.tsx # Indicateurs 6 sources
+│   │   ├── ui/
+│   │   │   ├── StatCard.tsx        # Carte statistique standardisee
+│   │   │   ├── StatusBadge.tsx     # Badge de statut colore
+│   │   │   ├── ErrorState.tsx      # Etat d'erreur avec retry
+│   │   │   ├── RefreshButton.tsx   # Bouton refresh avec countdown
+│   │   │   └── ...                 # shadcn/ui components
 │   └── middleware.ts               # Protection globale des routes (auth + RBAC)
 │
 ├── data/
@@ -128,11 +143,13 @@ Navigateur
 
 ---
 
-## Pattern `createApiRoute`
+## Factories de routes API
 
-Toutes les routes API de donnees utilisent la factory `createApiRoute` (definie dans `src/lib/api-handler.ts`). Elle centralise la gestion de : l'authentification, le multi-instances, le cache, le stale fallback et les metadonnees de reponse.
+Toutes les routes API de donnees utilisent deux factories (definies dans `src/lib/api-handler.ts`). Elles centralisent la gestion de : l'authentification, le multi-instances, le cache, le stale fallback et les metadonnees de reponse.
 
-### Interface
+### `createApiRoute` — routes qui retournent un tableau
+
+Pour les endpoints qui retournent une **liste d'items** (VMs, hosts, tickets, sensors, etc.). Chaque item est enrichi avec `_instanceId` et `_instanceName`.
 
 ```typescript
 interface ApiRouteOptions<K extends SourceKey> {
@@ -141,13 +158,9 @@ interface ApiRouteOptions<K extends SourceKey> {
   ttlMs: number;
   fetcher: (instance: SourceInstanceMap[K], req: NextRequest) => Promise<unknown[]>;
 }
-
-export function createApiRoute<K extends SourceKey>(
-  options: ApiRouteOptions<K>
-): (req: NextRequest) => Promise<NextResponse>
 ```
 
-### Exemple d'utilisation
+Exemple :
 
 ```typescript
 // src/app/api/prtg/devices/route.ts
@@ -162,15 +175,48 @@ export const GET = createApiRoute({
 });
 ```
 
-### Comportement interne
+**Routes utilisant `createApiRoute`** : `prtg/devices`, `prtg/sensors`, `prtg/alerts`, `vcenter/vms`, `vcenter/hosts`, `vcenter/datastores`, `proxmox/nodes`, `proxmox/vms`, `veeam/jobs`, `veeam/sessions`, `glpi/tickets`.
+
+### `createSummaryApiRoute` — routes qui retournent un objet agrege
+
+Pour les endpoints qui **agrègent** les resultats de plusieurs instances en un seul objet (summaries, stats, logs fusionnes, etc.). Le `fetcher` retourne les donnees brutes par instance, et l'`aggregator` les combine.
+
+```typescript
+interface SummaryApiRouteOptions<K extends SourceKey, TRaw, TAggregated> {
+  source: K;
+  getCacheKey: (instanceId: string, req: NextRequest) => string;
+  ttlMs: number;
+  fetcher: (instance: SourceInstanceMap[K], req: NextRequest) => Promise<TRaw>;
+  aggregator: (results: InstanceResult<TRaw>[], req: NextRequest) => TAggregated;
+}
+```
+
+Exemple :
+
+```typescript
+// src/app/api/prtg/summary/route.ts
+export const GET = createSummaryApiRoute<'prtg', PRTGSummary, PRTGSummary>({
+  source: 'prtg',
+  getCacheKey: (instanceId) => `dashboard:prtg:${instanceId}:summary`,
+  ttlMs: CACHE_TTL.PRTG,
+  fetcher: async (instance) => { /* ... retourne PRTGSummary par instance */ },
+  aggregator: (results) => { /* ... combine les PRTGSummary en un seul */ },
+});
+```
+
+**Routes utilisant `createSummaryApiRoute`** : `prtg/summary`, `glpi/summary`, `securetransport/transfers`, `securetransport/logs`.
+
+### Comportement interne (commun aux deux factories)
 
 1. Verifier la session JWT (`auth()`) — retourne 401 si absent
 2. Recuperer toutes les instances configurees pour la source
 3. Pour chaque instance en parallele (`Promise.allSettled`) :
    - Tenter `cacheFetch(key, ttl, fetcher)`
    - Si le fetcher echoue : tenter `cacheGetStale(key)` (donnees perimees)
-   - Enrichir chaque item avec `_instanceId` et `_instanceName`
-4. Agregation : fusionner les resultats de toutes les instances
+   - Enrichir chaque resultat avec `_instanceId` et `_instanceName`
+4. Agregation :
+   - `createApiRoute` : fusionne les tableaux de toutes les instances
+   - `createSummaryApiRoute` : appelle `aggregator(results, req)` pour combiner les resultats
 5. Retourner `{ data, _source, _timestamp, _stale, _partial }`
 
 `_partial: true` est retourne si certaines instances ont echoue mais d'autres ont fourni des donnees.
@@ -206,16 +252,20 @@ Chaque entree de cache stocke `{ data, timestamp, ttl }`. Le TTL total en Redis 
 
 ### TTLs par source
 
-| Source | TTL frais | TTL stale max | Refresh UI |
-|---|---|---|---|
-| PRTG | 30 s | 150 s | 30 000 ms |
-| vCenter | 60 s | 300 s | 60 000 ms |
-| Proxmox | 60 s | 300 s | 60 000 ms |
-| Veeam | 120 s | 600 s | 120 000 ms |
-| GLPI | 60 s | 300 s | 60 000 ms |
-| SecureTransport | 120 s | 600 s | 120 000 ms |
+| Source | Endpoint | TTL frais | TTL stale max | Refresh UI |
+|---|---|---|---|---|
+| PRTG | tous | 30 s | 150 s | 30 000 ms |
+| vCenter | tous | 60 s | 300 s | 60 000 ms |
+| Proxmox | tous | 60 s | 300 s | 60 000 ms |
+| Veeam | tous | 120 s | 600 s | 120 000 ms |
+| GLPI | tous | 60 s | 300 s | 60 000 ms |
+| SecureTransport | `/transfers` (resume) | 120 s | 600 s | 120 000 ms |
+| SecureTransport | `/logs` (data) | 300 s | 1 500 s | — |
+| SecureTransport | `/logs` (count seul) | 600 s | — | — |
 
 TTLs configurables via `CACHE_TTL_*` (en secondes).
+
+> Le cache `/logs` utilise **deux niveaux** : le cache data (TTL 5 min) et un cache count separe (TTL 10 min). Quand le cache data expire, le count est encore valide, ce qui reduit les appels ST de 2 a 1. Voir [docs/api/securetransport.md](api/securetransport.md#double-cache-pour-le-count).
 
 ---
 
@@ -294,6 +344,87 @@ Chaque source accepte un tableau d'instances dans la configuration. Exemple pour
 **Cle de cache** : une cle par instance (`dashboard:prtg:{instanceId}:devices`), les instances sont independantes en cache.
 
 **Priorite config** : `data/config.json` > variables d'environnement. Si le fichier config contient des instances pour une source, les variables d'environnement sont ignorees pour cette source.
+
+---
+
+## Layout standardise
+
+Toutes les pages suivent un layout uniforme base sur des composants partages.
+
+### Structure d'une page
+
+```
+DashboardShell
+  ├── Sidebar (collapsible, fleche en haut a droite)
+  ├── Topbar (source dots + user menu, PAS de titre)
+  └── Main content
+        ├── PageHeader (titre + source indicator + badge + actions)
+        ├── Stats (grille de StatCard)
+        └── Contenu (tables, grilles, sidebar, etc.)
+```
+
+### PageHeader (`src/components/layout/PageHeader.tsx`)
+
+Header unique utilise par les 7 pages. Props : `title`, `source?` (affiche SourceIndicator), `badge?`, `actions?` (RefreshButton).
+
+### StatCard (`src/components/ui/StatCard.tsx`)
+
+Carte statistique standardisee, deux variantes :
+- **Simple** : label + valeur + badge optionnel (Tickets, Backups)
+- **Avec icone** : icone dans cercle colore + valeur + label (Monitoring SensorGrid)
+
+### usePageRefresh (`src/hooks/usePageRefresh.ts`)
+
+Hook factorise pour le pattern refresh manuel. Retourne `{ refreshKey, loading, handleRefresh }`. Utilise par les 6 pages client (toutes sauf Dashboard).
+
+### useColumnResize (`src/hooks/useColumnResize.ts`)
+
+Hook de resize de colonnes par pointer drag. Retourne `{ widths, startResize, resetWidths }`. Utilise par les 5 tableaux : TransferLogTable, TicketList, JobList, VMList, ProxmoxVMTable.
+
+### Conventions
+
+- Espacement vertical : `space-y-6` entre sections
+- Grilles stats : `gap-4` (tickets/backups) ou `gap-3` (monitoring)
+- Borders : `border-border/50`
+- Tables denses : `text-xs`/`text-sm`, `px-3 py-1.5`
+
+---
+
+## Hook useAutoRefresh
+
+Le hook generique `src/hooks/useAutoRefresh.ts` est utilise par tous les hooks de donnees (`usePRTG`, `useInfrastructure`, `useTransfers`, etc.).
+
+### Options
+
+```typescript
+interface UseAutoRefreshOptions {
+  url: string;
+  interval: number;        // ms
+  enabled?: boolean;       // defaut: true
+  trackCountdown?: boolean; // defaut: false
+}
+```
+
+### trackCountdown
+
+**Par defaut `false`** — le countdown timer (setInterval 5s) est inactif.
+
+Mettre `trackCountdown: true` uniquement dans le composant/hook qui passe `nextRefreshIn` a un `RefreshButton`. Sans ca, chaque instance du hook provoque ~1 re-render/5s inutile.
+
+```typescript
+// OK — la page affiche un RefreshButton avec countdown
+const { data } = useAutoRefresh({ url, interval, trackCountdown: true });
+
+// OK — composant interne qui n'a pas de RefreshButton
+const { data } = useAutoRefresh({ url, interval }); // trackCountdown: false par defaut
+```
+
+### Comportements
+
+- **Retry backoff** : en cas d'echec initial, retente 2 fois (2s, 4s) avant d'abandonner
+- **Slowdown auto** : apres N echecs consecutifs, saute les ticks programmes (2x, 4x, max 8x l'intervalle) pour ne pas saturer une API en panne
+- **Stale detection** : si la reponse contient `_stale: true`, expose `isStale: true`
+- **refreshSignal** : pattern pour rafraichir un composant avec etat interne (ex: `TransferLogTable`) sans le remonter — passer un `number` incrementable qui declenche `refresh()` via `useEffect`
 
 ---
 

@@ -46,7 +46,7 @@ Cliquez sur votre nom d'utilisateur en haut à droite de l'interface, puis séle
 
 ### Menu latéral (Sidebar)
 
-Le menu latéral gauche donne accès à toutes les sections du dashboard. Il peut être réduit ou agrandi à l'aide du bouton fléché situé en bas du menu.
+Le menu latéral gauche donne accès à toutes les sections du dashboard. Il peut être réduit ou agrandi à l'aide du bouton fléché situé en haut à droite du menu (à côté du logo).
 
 | Icône | Section | Description |
 |-------|---------|-------------|
@@ -64,9 +64,14 @@ En mode réduit, les libellés sont masqués mais des infobulles apparaissent au
 
 La barre du haut affiche :
 
-- **Le titre de la page courante** (à gauche)
 - **Les indicateurs de statut des sources** : petits points colorés représentant l'état de connexion à chacune des 6 sources de données (PRTG, VMware, Proxmox, Veeam, GLPI, SecureTransport)
 - **Le menu utilisateur** (à droite) : affiche votre nom et permet la déconnexion
+
+Le titre de la page est affiché directement dans le contenu de chaque page (PageHeader), accompagné d'un indicateur de source et du bouton d'actualisation quand applicable.
+
+### Colonnes redimensionnables
+
+Tous les tableaux du dashboard (tickets, jobs, VMs, transferts) ont des colonnes redimensionnables. Faites glisser le bord droit d'un en-tête de colonne pour ajuster sa largeur. Un bouton "Reset colonnes" permet de revenir aux largeurs par défaut.
 
 ### Rôles et droits d'accès
 
@@ -128,12 +133,14 @@ La page Monitoring affiche les données de supervision issues de PRTG.
 
 ### Compteurs de capteurs (SensorGrid)
 
-Quatre compteurs en haut de page indiquent le nombre total de capteurs par état :
+Six compteurs en haut de page indiquent le nombre total de capteurs par état :
 
 - **Up** (vert) : capteurs fonctionnels
 - **Down** (rouge) : capteurs en erreur
-- **Warning** (orange) : capteurs en avertissement ou comportement inhabituel (Unusual)
-- **Paused** (gris) : capteurs mis en pause manuellement
+- **Acknowledged** (rouge sombre) : capteurs en erreur acquittee
+- **Warning** (orange) : capteurs en avertissement
+- **Unusual** (orange fonce) : capteurs au comportement inhabituel
+- **Paused** (bleu) : capteurs mis en pause manuellement
 
 ### Liste des alertes (AlertList)
 
@@ -330,7 +337,7 @@ Un bouton **Actualiser** est disponible en haut à droite de la page.
 
 ## Transferts (SecureTransport)
 
-La page Transferts affiche les informations issues de IBM Sterling Secure Transport (ST).
+La page Transferts affiche les informations issues d'Axway SecureTransport (ST).
 
 ### Indicateur de connexion
 
@@ -356,13 +363,30 @@ Liste des **certificats arrivant à expiration** (dans les 30 prochains jours). 
 
 Si aucun certificat n'expire prochainement, une bannière verte "Aucun certificat n'expire prochainement" est affichée à la place.
 
-### Transferts récents
+### Journal des transferts (TransferLogTable)
 
-Un encadré d'information indique que le log de transfert complet n'est pas toujours disponible via l'API REST. Un lien direct vers l'interface web SecureTransport est proposé si une URL externe est configurée.
+Tableau paginé affichant les logs de transfert récents, triés du plus récent au plus ancien.
+
+**Colonnes** : Date/heure, Compte, Fichier, Taille, Protocole (badge), Direction (entrant/sortant avec icône), Statut (badge coloré), Durée.
+
+**Filtres disponibles** (combinables) :
+
+| Filtre | Description |
+|--------|-------------|
+| Compte | Filtrer par nom de compte SecureTransport |
+| Fichier | Recherche par nom de fichier |
+| Protocole | Dropdown : Tous, SFTP, HTTP, FTP, AS2, etc. |
+| Direction | Dropdown : Tous, Entrants, Sortants |
+| Statut | Dropdown : Tous, Completed, Failed, etc. |
+| Période | Sélecteur de plage de dates |
+
+**Pagination** : navigation par pages avec sélecteur du nombre de lignes par page (25, 50, 100, 200). Le compteur total de transferts correspondant aux filtres est affiché.
+
+Les données du journal sont actualisées automatiquement toutes les 30 secondes (configurable via `NEXT_PUBLIC_REFRESH_ST_LOGS`).
 
 ### Actualisation manuelle
 
-Un bouton **Actualiser** est disponible en haut à droite de la page.
+Un bouton **Actualiser** est disponible en haut à droite de la page. Il recharge les compteurs, les certificats et le journal des transferts simultanément.
 
 ---
 

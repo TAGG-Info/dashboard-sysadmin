@@ -1,25 +1,19 @@
 'use client';
 
-import { useState, useCallback } from 'react';
 import { RefreshButton } from '@/components/ui/RefreshButton';
 import { HypervisorTabs } from '@/components/infrastructure/HypervisorTabs';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 export default function InfrastructurePage() {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [loading, setLoading] = useState(false);
-
-  const handleRefresh = useCallback(async () => {
-    setLoading(true);
-    setRefreshKey((prev) => prev + 1);
-    setTimeout(() => setLoading(false), 1000);
-  }, []);
+  const { refreshKey, loading, handleRefresh } = usePageRefresh();
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Infrastructure</h1>
-        <RefreshButton onRefresh={handleRefresh} loading={loading} />
-      </div>
+      <PageHeader
+        title="Infrastructure"
+        actions={<RefreshButton onRefresh={handleRefresh} loading={loading} />}
+      />
 
       <HypervisorTabs key={`infra-${refreshKey}`} />
     </div>

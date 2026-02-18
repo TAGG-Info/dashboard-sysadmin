@@ -1,6 +1,5 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,21 +15,9 @@ import {
 import { SourceStatusDots } from '@/components/layout/SourceStatusDots';
 import { Separator } from '@/components/ui/separator';
 
-const pageTitles: Record<string, string> = {
-  '/': 'Dashboard',
-  '/monitoring': 'Monitoring',
-  '/infrastructure': 'Infrastructure',
-  '/backups': 'Backups',
-  '/tickets': 'Tickets',
-  '/transfers': 'Transferts',
-  '/settings': 'Parametres',
-};
-
 export function Topbar() {
-  const pathname = usePathname();
   const { data: session } = useSession();
 
-  const pageTitle = pageTitles[pathname] || 'Dashboard';
   const userName = session?.user?.name || 'Admin';
   const userInitials = userName
     .split(' ')
@@ -41,10 +28,8 @@ export function Topbar() {
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
-      {/* Left: page title */}
-      <div className="flex items-center gap-2">
-        <h1 className="text-lg font-semibold text-foreground">{pageTitle}</h1>
-      </div>
+      {/* Left: spacer */}
+      <div />
 
       {/* Right: source indicators + user */}
       <div className="flex items-center gap-3">

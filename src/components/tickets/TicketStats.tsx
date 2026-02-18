@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/StatCard';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -78,24 +79,19 @@ export function TicketStats() {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
       {stats.map((stat) => (
-        <Card key={stat.label} className="bg-card border-border/50">
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">{stat.label}</p>
-            <p
-              className="text-xl font-bold"
-              style={{ color: stat.color }}
-            >
-              {stat.value}
-            </p>
-            {stat.badge && (
-              <StatusBadge
-                status={stat.badge}
-                label={`${stat.value} ${stat.label.toLowerCase()}`}
-                className="mt-1"
-              />
-            )}
-          </CardContent>
-        </Card>
+        <StatCard
+          key={stat.label}
+          label={stat.label}
+          value={stat.value}
+          color={stat.color}
+          badge={stat.badge ? (
+            <StatusBadge
+              status={stat.badge}
+              label={`${stat.value} ${stat.label.toLowerCase()}`}
+              className="mt-1"
+            />
+          ) : undefined}
+        />
       ))}
     </div>
   );

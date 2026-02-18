@@ -1,43 +1,18 @@
 'use client';
 
-import { CheckCircle, XCircle, AlertTriangle, PauseCircle } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, AlertTriangle, Activity, PauseCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { usePRTGSensors } from '@/hooks/usePRTG';
-
-interface CounterCardProps {
-  label: string;
-  count: number;
-  icon: React.ReactNode;
-  color: string;
-}
-
-function CounterCard({ label, count, icon, color }: CounterCardProps) {
-  return (
-    <Card className="border-none">
-      <CardContent className="flex items-center gap-3 p-4">
-        <div
-          className="flex h-10 w-10 items-center justify-center rounded-lg"
-          style={{ backgroundColor: `${color}15` }}
-        >
-          <div style={{ color }}>{icon}</div>
-        </div>
-        <div>
-          <p className="text-2xl font-bold text-foreground">{count}</p>
-          <p className="text-sm text-muted-foreground">{label}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+import { StatCard } from '@/components/ui/StatCard';
+import { usePRTGSummary } from '@/hooks/usePRTG';
 
 export function SensorGrid() {
-  const { data: sensors, loading } = usePRTGSensors();
+  const { data: summary, loading } = usePRTGSummary();
 
-  if (loading && !sensors) {
+  if (loading && !summary) {
     return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, i) => (
           <Card key={i} className="border-none">
             <CardContent className="flex items-center gap-3 p-4">
               <Skeleton className="h-10 w-10 rounded-lg" />
@@ -52,38 +27,43 @@ export function SensorGrid() {
     );
   }
 
-  const counts = {
-    up: sensors?.filter((s) => s.status === 'Up').length ?? 0,
-    down: sensors?.filter((s) => s.status === 'Down').length ?? 0,
-    warning: sensors?.filter((s) => s.status === 'Warning' || s.status === 'Unusual').length ?? 0,
-    paused: sensors?.filter((s) => s.status === 'Paused').length ?? 0,
-  };
-
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <CounterCard
+    <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
+      <StatCard
         label="Up"
-        count={counts.up}
+        value={summary?.sensors.up ?? 0}
         icon={<CheckCircle className="h-5 w-5" />}
-        color="#10b981"
+        color="#4cb842"
       />
-      <CounterCard
+      <StatCard
         label="Down"
-        count={counts.down}
+        value={summary?.sensors.down ?? 0}
         icon={<XCircle className="h-5 w-5" />}
-        color="#ef4444"
+        color="#d71920"
       />
-      <CounterCard
+      <StatCard
+        label="Acknowledged"
+        value={summary?.sensors.acknowledged ?? 0}
+        icon={<ShieldCheck className="h-5 w-5" />}
+        color="#832026"
+      />
+      <StatCard
         label="Warning"
-        count={counts.warning}
+        value={summary?.sensors.warning ?? 0}
         icon={<AlertTriangle className="h-5 w-5" />}
-        color="#f59e0b"
+        color="#ffc000"
       />
-      <CounterCard
+      <StatCard
+        label="Unusual"
+        value={summary?.sensors.unusual ?? 0}
+        icon={<Activity className="h-5 w-5" />}
+        color="#ee7f00"
+      />
+      <StatCard
         label="Paused"
-        count={counts.paused}
+        value={summary?.sensors.paused ?? 0}
         icon={<PauseCircle className="h-5 w-5" />}
-        color="#6b7280"
+        color="#0073bf"
       />
     </div>
   );

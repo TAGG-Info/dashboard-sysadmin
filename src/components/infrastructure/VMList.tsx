@@ -2,14 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -21,7 +13,19 @@ import { ExternalLink } from '@/components/ui/ExternalLink';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { InstanceSectionHeader } from '@/components/ui/InstanceGroup';
+import { useColumnResize } from '@/hooks/useColumnResize';
 import { useVCenterVMs, useVCenterHosts } from '@/hooks/useInfrastructure';
+
+const COLS = [
+  { label: 'Nom', align: 'left' as const },
+  { label: 'Etat', align: 'left' as const },
+  { label: 'Host', align: 'left' as const },
+  { label: 'CPU', align: 'right' as const },
+  { label: 'RAM', align: 'right' as const },
+  { label: 'Lien', align: 'right' as const },
+] as const;
+
+const DEFAULT_WIDTHS = [200, 100, 160, 80, 100, 80];
 
 function powerStateToStatus(state: string): 'healthy' | 'warning' | 'neutral' {
   switch (state.toUpperCase()) {
@@ -60,10 +64,11 @@ export function VMList() {
   const { data: vms, loading, error, refresh } = useVCenterVMs();
   const { data: hosts } = useVCenterHosts();
   const [filterPower, setFilterPower] = useState<string>('all');
+  const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);
 
   const vcenterUrl = process.env.NEXT_PUBLIC_VCENTER_URL;
 
-  // Map "instanceId:hostId" → hostName for display
+  // Map "instanceId:hostId" -> hostName for display
   const hostNameMap = useMemo(() => {
     const map = new Map<string, string>();
     if (!hosts) return map;
@@ -110,6 +115,8 @@ export function VMList() {
     );
   }
 
+  const tableWidth = widths.reduce((a, b) => a + b, 0);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -122,6 +129,13 @@ export function VMList() {
           )}
         </h3>
         <div className="flex items-center gap-2">
+          <button
+            onClick={resetWidths}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            title="Reinitialiser la largeur des colonnes"
+          >
+            Reset colonnes
+          </button>
           <Select value={filterPower} onValueChange={setFilterPower}>
             <SelectTrigger className="w-[140px] h-8 text-sm">
               <SelectValue placeholder="Etat" />
@@ -142,57 +156,77 @@ export function VMList() {
             <InstanceSectionHeader instanceName={instanceName} className="mb-2" />
           )}
           <div className="rounded-lg border border-border/50 overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-sm">Nom</TableHead>
-                  <TableHead className="text-sm">Etat</TableHead>
-                  <TableHead className="text-sm">Host</TableHead>
-                  <TableHead className="text-sm text-right">CPU</TableHead>
-                  <TableHead className="text-sm text-right">RAM</TableHead>
-                  <TableHead className="text-sm text-right w-[80px]">Lien</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <table className="table-fixed text-sm" style={{ width: tableWidth }}>
+              <colgroup>
+                {widths.map((w, i) => <col key={i} style={{ width: w }} />)}
+              </colgroup>
+              <thead>
+                <tr className="border-b border-border/50 bg-muted/20">
+                  {COLS.map((col, i) => {
+                    const isLast = i === COLS.length - 1;
+                    return (
+                      <th
+                        key={col.label}
+                        className={`relative px-3 py-2 text-xs font-medium text-muted-foreground select-none text-${col.align}`}
+                      >
+                        <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{col.label}</span>
+                        {!isLast && (
+                          <div
+                            onPointerDown={(e) => startResize(e, i)}
+                            className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize group"
+                          >
+                            <div className="mx-auto h-full w-px bg-border/0 group-hover:bg-border/60 transition-colors" />
+                          </div>
+                        )}
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
                 {loading && !vms ? (
                   Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                    </TableRow>
+                    <tr key={i} className="border-b border-border/30">
+                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-32" /></td>
+                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-16" /></td>
+                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-24" /></td>
+                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-8" /></td>
+                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-16" /></td>
+                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-12" /></td>
+                    </tr>
                   ))
                 ) : groupVMs.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
+                  <tr>
+                    <td colSpan={6} className="text-center text-sm text-muted-foreground py-8">
                       Aucune VM trouvee
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ) : (
                   groupVMs.map((vm) => (
-                    <TableRow key={`${instanceId}-${vm.vm}`}>
-                      <TableCell className="text-sm font-medium">{vm.name}</TableCell>
-                      <TableCell>
+                    <tr key={`${instanceId}-${vm.vm}`} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
+                      <td className="px-3 py-1.5 overflow-hidden text-xs font-medium text-foreground">
+                        <span className="block truncate">{vm.name}</span>
+                      </td>
+                      <td className="px-3 py-1.5 overflow-hidden">
                         <StatusBadge
                           status={powerStateToStatus(vm.power_state)}
                           label={powerStateLabel(vm.power_state)}
                         />
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {vm.host
-                          ? (hostNameMap.get(`${vm._instanceId ?? 'default'}:${vm.host}`) ?? vm.host)
-                          : '—'}
-                      </TableCell>
-                      <TableCell className="text-sm text-right text-muted-foreground">
-                        {vm.cpu_count} vCPU
-                      </TableCell>
-                      <TableCell className="text-sm text-right text-muted-foreground">
-                        {formatMemory(vm.memory_size_MiB)}
-                      </TableCell>
-                      <TableCell className="text-right">
+                      </td>
+                      <td className="px-3 py-1.5 overflow-hidden text-xs text-muted-foreground">
+                        <span className="block truncate">
+                          {vm.host
+                            ? (hostNameMap.get(`${vm._instanceId ?? 'default'}:${vm.host}`) ?? vm.host)
+                            : '\u2014'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-1.5 overflow-hidden text-right text-xs text-muted-foreground">
+                        <span className="block truncate">{vm.cpu_count} vCPU</span>
+                      </td>
+                      <td className="px-3 py-1.5 overflow-hidden text-right text-xs text-muted-foreground">
+                        <span className="block truncate">{formatMemory(vm.memory_size_MiB)}</span>
+                      </td>
+                      <td className="px-3 py-1.5 overflow-hidden text-right">
                         {vcenterUrl && (
                           <ExternalLink
                             href={`${vcenterUrl}/ui/app/vm;nav=v/urn:vmomi:VirtualMachine:${vm.vm}`}
@@ -200,12 +234,12 @@ export function VMList() {
                             source="vcenter"
                           />
                         )}
-                      </TableCell>
-                    </TableRow>
+                      </td>
+                    </tr>
                   ))
                 )}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
         </div>
       ))}
@@ -213,30 +247,35 @@ export function VMList() {
       {/* Show loading skeletons when no data yet */}
       {loading && !vms && instanceGroups.length === 0 && (
         <div className="rounded-lg border border-border/50 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="text-sm">Nom</TableHead>
-                <TableHead className="text-sm">Etat</TableHead>
-                <TableHead className="text-sm">Host</TableHead>
-                <TableHead className="text-sm text-right">CPU</TableHead>
-                <TableHead className="text-sm text-right">RAM</TableHead>
-                <TableHead className="text-sm text-right w-[80px]">Lien</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <table className="table-fixed text-sm" style={{ width: tableWidth }}>
+            <colgroup>
+              {widths.map((w, i) => <col key={i} style={{ width: w }} />)}
+            </colgroup>
+            <thead>
+              <tr className="border-b border-border/50 bg-muted/20">
+                {COLS.map((col) => (
+                  <th
+                    key={col.label}
+                    className={`px-3 py-2 text-xs font-medium text-muted-foreground select-none text-${col.align}`}
+                  >
+                    {col.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
               {Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                </TableRow>
+                <tr key={i} className="border-b border-border/30">
+                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-32" /></td>
+                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-16" /></td>
+                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-24" /></td>
+                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-8" /></td>
+                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-16" /></td>
+                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-12" /></td>
+                </tr>
               ))}
-            </TableBody>
-          </Table>
+            </tbody>
+          </table>
         </div>
       )}
     </div>
