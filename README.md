@@ -47,8 +47,8 @@ git clone https://github.com/votre-org/dashboard-tagg.git
 cd dashboard-tagg
 
 # Copier et editer les variables d'environnement
-cp .env.example .env.local
-# Editer .env.local : NEXTAUTH_SECRET, LOCAL_ADMIN_*, LDAP_*, sources...
+cp .env.example .env
+# Editer .env : NEXTAUTH_SECRET, LOCAL_ADMIN_*, LDAP_*, sources...
 
 npm install
 npm run dev
@@ -92,15 +92,14 @@ Voir [docs/CONFIGURATION.md](docs/CONFIGURATION.md) pour le detail complet des v
 ## Deploiement Docker
 
 ```bash
-cp .env.example .env.local
-# Editer .env.local avec les valeurs de production
+cp .env.example .env
+# Editer .env avec les valeurs de production (voir docs/CONFIGURATION.md)
+# IMPORTANT : encoder le hash admin en base64 (voir docs/DEPLOYMENT.md)
 
-docker compose up -d
+docker compose up -d --build
 ```
 
-Caddy gere automatiquement le TLS. Modifier `Caddyfile` pour adapter le nom de domaine.
-
-Voir [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) pour le guide complet (Caddy, HTTPS, mise a jour, logs, securite).
+Adapter le domaine dans `Caddyfile`. Voir [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) pour le guide complet (TLS, hash bcrypt, mise a jour, securite).
 
 ---
 

@@ -10,8 +10,23 @@ Ces variables sont indispensables au demarrage de l'application.
 | `NEXTAUTH_URL` | URL canonique de l'application (ex: `https://dashboard.internal.example.com`). Requis en production. |
 | `LOCAL_ADMIN_USERNAME` | Nom d'utilisateur du compte administrateur local (fallback si LDAP indisponible). |
 | `LOCAL_ADMIN_PASSWORD_HASH` | Hash bcrypt du mot de passe de l'admin local. Voir la section "Generer un hash bcrypt" ci-dessous. |
+| `AUTH_TRUST_HOST` | Mettre a `true` derriere un reverse proxy (Caddy, nginx). Permet a NextAuth de faire confiance au header Host forwarde. |
 
 ### Generer un hash bcrypt
+
+#### Avec Docker (recommande)
+
+Docker Compose interprete les `$` dans les fichiers `.env`, ce qui casse les hash bcrypt (`$2b$10$...`). **Stocker le hash encode en base64** :
+
+```bash
+node -e "const b=require('bcryptjs'); console.log(Buffer.from(b.hashSync('votre-mot-de-passe',10)).toString('base64'))"
+```
+
+La sortie est une chaine alphanumerique sans `$` (ex: `JDJiJDEwJC4uLg==`). Le code la decode automatiquement au demarrage.
+
+#### Sans Docker (dev local)
+
+Le hash brut fonctionne directement :
 
 ```bash
 # Avec Node.js
@@ -142,23 +157,15 @@ Les deux tokens sont requis. L'App Token identifie l'application cliente, le Use
 | Variable | Description | Defaut |
 |---|---|---|
 | `NEXT_PUBLIC_APP_NAME` | Nom affiche dans l'interface | `SysAdmin Dashboard` |
-| `NEXT_PUBLIC_APP_URL` | URL publique de l'application | — |
-| `NODE_TLS_REJECT_UNAUTHORIZED` | Desactiver la validation TLS globale (mettre a `0`) | non defini (validation active) |
-| `ALLOW_SELF_SIGNED_CERTS` | Alternative : wrapper qui positionne `NODE_TLS_REJECT_UNAUTHORIZED=0` | `false` |
-| `CRYPTO_SALT` | Sel pour la derivation de cle AES | `dashboard-tagg-config-salt` |
+| `ALLOW_SELF_SIGNED_CERTS` | Accepter les certificats auto-signes pour les APIs internes (positionne `NODE_TLS_REJECT_UNAUTHORIZED=0`) | `false` |
+| `CRYPTO_SALT` | Sel pour la derivation de cle AES-256-GCM. **Obligatoire en production** (le serveur refuse de demarrer sans). Generer avec `openssl rand -base64 16`. | erreur si absent |
 | `DATA_DIR` | Repertoire de stockage de `config.json` | `./data` |
 
-Pour autoriser les certificats auto-signes ou une CA interne, deux approches equivalentes sont possibles :
-
 ```env
-# Approche 1 — variable directe (recommandee, utilisee dans .env.example)
-NODE_TLS_REJECT_UNAUTHORIZED=0
-
-# Approche 2 — wrapper (active NODE_TLS_REJECT_UNAUTHORIZED=0 via next.config.ts)
 ALLOW_SELF_SIGNED_CERTS=true
 ```
 
-A utiliser uniquement en reseau interne de confiance. Ces parametres s'appliquent a toutes les requetes HTTPS sortantes du serveur (vCenter, Proxmox, Veeam, GLPI, SecureTransport, PRTG).
+A utiliser uniquement en reseau interne de confiance. S'applique a toutes les requetes HTTPS sortantes du serveur (vCenter, Proxmox, Veeam, GLPI, SecureTransport, PRTG).
 
 ### Sources via variables d'environnement (fallback)
 

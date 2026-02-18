@@ -17,7 +17,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         };
 
         const localUser = process.env.LOCAL_ADMIN_USERNAME?.trim();
-        const localHash = process.env.LOCAL_ADMIN_PASSWORD_HASH?.trim();
+        // Docker Compose expands $ in env values, breaking bcrypt hashes.
+        // Accept base64-encoded hashes: if the value doesn't start with $2, decode from base64.
+        let localHash = process.env.LOCAL_ADMIN_PASSWORD_HASH?.trim();
+        if (localHash && !localHash.startsWith('$2')) {
+          try { localHash = Buffer.from(localHash, 'base64').toString('utf-8'); } catch { /* use as-is */ }
+        }
 
         if (!checkRateLimit(username)) {
           console.warn(`[auth] Rate limit dépassé pour: ${username}`);

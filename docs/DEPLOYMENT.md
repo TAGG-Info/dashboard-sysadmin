@@ -30,8 +30,8 @@ git clone https://github.com/votre-org/dashboard-tagg.git
 cd dashboard-tagg
 
 # Preparer la configuration
-cp .env.example .env.local
-# Editer .env.local avec les valeurs de production (voir docs/CONFIGURATION.md)
+cp .env.example .env
+# Editer .env avec les valeurs de production (voir docs/CONFIGURATION.md)
 
 # Lancer tous les services
 docker compose up -d --build
@@ -51,17 +51,18 @@ docker compose logs -f caddy
 
 ## Variables d'environnement pour Docker
 
-Le fichier `docker-compose.yml` charge automatiquement `.env.local` via `env_file`. Les variables suivantes sont requises en production :
+Le fichier `docker-compose.yml` charge automatiquement `.env` via `env_file`. Les variables suivantes sont requises en production :
 
 ```env
 # Requis
 NEXTAUTH_SECRET=<openssl rand -base64 32>
 NEXTAUTH_URL=https://dashboard.internal.example.com
+AUTH_TRUST_HOST=true
 LOCAL_ADMIN_USERNAME=admin
-LOCAL_ADMIN_PASSWORD_HASH=<bcrypt-hash>
+LOCAL_ADMIN_PASSWORD_HASH=<hash-bcrypt-en-base64>
 
 # Redis (inclus dans docker-compose)
-REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+REDIS_URL=redis://:votre-password@redis:6379
 REDIS_PASSWORD=<mot-de-passe-fort>
 
 # LDAP (si applicable)
@@ -69,10 +70,6 @@ LDAP_URL=ldaps://dc.internal.example.com:636
 LDAP_BASE_DN=DC=internal,DC=example,DC=com
 LDAP_BIND_DN=CN=svc-dashboard,OU=ServiceAccounts,DC=internal,DC=example,DC=com
 LDAP_BIND_PASSWORD=<mot-de-passe-service>
-
-# Sources d'infrastructure (ou configurer via l'interface Settings)
-# PRTG_BASE_URL=https://prtg.internal.example.com:1616
-# ...
 ```
 
 Si `REDIS_PASSWORD` est defini, l'URL Redis doit inclure le mot de passe :
@@ -80,6 +77,23 @@ Si `REDIS_PASSWORD` est defini, l'URL Redis doit inclure le mot de passe :
 ```env
 REDIS_URL=redis://:votre-password@redis:6379
 ```
+
+> **Note :** ne pas utiliser `${REDIS_PASSWORD}` dans la valeur de `REDIS_URL` — Docker Compose interprete les `$` dans le `.env`. Copier le mot de passe en clair dans les deux variables.
+
+### Hash bcrypt et Docker Compose
+
+Docker Compose interprete les `$` dans les fichiers `.env` comme des references de variables. Les hash bcrypt (`$2b$10$...`) contiennent des `$` qui sont supprimes silencieusement, rendant le hash invalide.
+
+**Solution :** stocker le hash encode en **base64**. Le code le decode automatiquement au demarrage.
+
+```bash
+# Generer le hash base64 en une commande
+node -e "const b=require('bcryptjs'); console.log(Buffer.from(b.hashSync('VOTRE_MOT_DE_PASSE',10)).toString('base64'))"
+```
+
+Copier la sortie (chaine alphanumerique sans `$`) dans `LOCAL_ADMIN_PASSWORD_HASH`.
+
+En developpement local (sans Docker), le hash bcrypt brut `$2b$10$...` fonctionne aussi directement.
 
 ### Volume de donnees
 
@@ -119,11 +133,30 @@ dashboard.internal.example.com {
 
 **Adapter le nom de domaine** en remplacant `dashboard.internal.example.com` par votre FQDN.
 
-### TLS automatique
+### TLS avec certificat personnalise
 
-Caddy obtient et renouvelle automatiquement un certificat TLS via ACME (Let's Encrypt ou ZeroSSL). Pour un reseau interne sans acces Internet :
-- Utiliser un certificat interne : voir [Caddy — manual TLS](https://caddyserver.com/docs/caddyfile/directives/tls)
-- Ou desactiver TLS et gerer le certificat en amont (load balancer)
+Pour un reseau interne avec un certificat wildcard ou une CA interne, monter les fichiers dans le conteneur Caddy et configurer le `Caddyfile` :
+
+```caddy
+dashboard.internal.example.com {
+    tls /etc/caddy/certs/wildcard.crt /etc/caddy/certs/wildcard.key
+    reverse_proxy dashboard:3000
+    # ... headers
+}
+```
+
+Ajouter le volume dans `docker-compose.yml` :
+```yaml
+caddy:
+  volumes:
+    - ./certs:/etc/caddy/certs:ro
+```
+
+Placer les fichiers `.crt` et `.key` dans le dossier `certs/` a la racine du projet (ce dossier est ignore par `.gitignore`).
+
+### TLS automatique (Let's Encrypt)
+
+Si le serveur a un acces Internet et un DNS public, Caddy obtient et renouvelle automatiquement un certificat via ACME (Let's Encrypt). Aucune configuration TLS supplementaire n'est necessaire dans le `Caddyfile`.
 
 ### Ports Caddy
 
