@@ -73,7 +73,8 @@ export class GLPIClient {
     }
 
     if (!res.ok) {
-      loggers.glpi.error({ status: res.status, path }, 'GLPI API error');
+      const body = await res.text().catch(() => '');
+      loggers.glpi.error({ status: res.status, path, body: body.slice(0, 500) }, 'GLPI API error');
       throw new Error(`GLPI error: ${res.status}`);
     }
     return res.json();
@@ -81,7 +82,7 @@ export class GLPIClient {
 
   // Tickets ouverts (statuts 1=Nouveau, 2=En cours (attribue), 3=En cours (planifie), 4=En attente)
   async getTickets(): Promise<GLPITicket[]> {
-    const all = await this.request<GLPITicket[]>(`/Ticket?range=0-200&order=DESC&sort=15`);
+    const all = await this.request<GLPITicket[]>(`/Ticket?range=0-50&order=DESC&sort=15`);
     if (!Array.isArray(all)) {
       loggers.glpi.warn(
         { responseType: typeof all, response: JSON.stringify(all).slice(0, 500) },
