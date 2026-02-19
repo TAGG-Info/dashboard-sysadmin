@@ -4,7 +4,7 @@ import { readRefreshIntervals, writeRefreshIntervals, MIN_INTERVAL, type Refresh
 
 export const dynamic = 'force-dynamic';
 
-const VALID_KEYS: RefreshKey[] = ['prtg', 'infra', 'veeam', 'tickets', 'transfers'];
+const VALID_KEYS: RefreshKey[] = ['prtg', 'infra', 'veeam', 'tickets', 'transfers', 'transferLogs'];
 
 /**
  * GET /api/settings/refresh
