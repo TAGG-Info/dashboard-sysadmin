@@ -118,6 +118,7 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
             <CardTitle className="text-foreground flex items-center gap-2 text-base font-semibold">
               <SourceLogo source="securetransport" size={18} />
               Logs de transfert
+              {loading && !data && <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />}
               {totalCount > 0 && (
                 <Badge variant="outline" className="text-muted-foreground text-xs">
                   {totalCount.toLocaleString('fr-FR')} total
