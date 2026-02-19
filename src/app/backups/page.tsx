@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/StatCard';
-import { RefreshButton } from '@/components/ui/RefreshButton';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { JobList } from '@/components/backups/JobList';
@@ -11,7 +10,6 @@ import { SessionTimeline } from '@/components/backups/SessionTimeline';
 import { BackupCalendar } from '@/components/backups/BackupCalendar';
 import { useVeeamJobs, useVeeamSessions } from '@/hooks/useVeeam';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 function BackupStats() {
   const { data: jobs, loading: jobsLoading } = useVeeamJobs();
@@ -79,32 +77,26 @@ function BackupStats() {
 }
 
 export default function BackupsPage() {
-  const { refreshKey, loading, handleRefresh } = usePageRefresh();
-
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Backups Veeam"
-        source="veeam"
-        actions={<RefreshButton onRefresh={handleRefresh} loading={loading} />}
-      />
+      <PageHeader title="Backups Veeam" source="veeam" />
 
-      {/* Stats cards (stateless → key remount) */}
-      <BackupStats key={`stats-${refreshKey}`} />
+      {/* Stats cards */}
+      <BackupStats />
 
-      {/* Job list (has column resize state → refreshSignal) */}
-      <JobList refreshSignal={refreshKey} />
+      {/* Job list */}
+      <JobList />
 
       {/* Session timeline + Calendar */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-[5fr_3fr]">
-        <Card key={`timeline-${refreshKey}`} className="bg-card border-border/50">
+        <Card className="bg-card border-border/50">
           <CardContent className="p-4">
             <SessionTimeline />
           </CardContent>
         </Card>
         <Card className="bg-card border-border/50">
           <CardContent className="p-4">
-            <BackupCalendar refreshSignal={refreshKey} />
+            <BackupCalendar />
           </CardContent>
         </Card>
       </div>

@@ -2,26 +2,18 @@
 
 import { TicketStats } from '@/components/tickets/TicketStats';
 import { TicketList } from '@/components/tickets/TicketList';
-import { RefreshButton } from '@/components/ui/RefreshButton';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 export default function TicketsPage() {
-  const { refreshKey, loading, handleRefresh } = usePageRefresh();
-
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Tickets GLPI"
-        source="glpi"
-        actions={<RefreshButton onRefresh={handleRefresh} loading={loading} />}
-      />
+      <PageHeader title="Tickets GLPI" source="glpi" />
 
       {/* Stats cards */}
-      <TicketStats key={`stats-${refreshKey}`} />
+      <TicketStats />
 
       {/* Ticket list with filters */}
-      <TicketList refreshSignal={refreshKey} />
+      <TicketList />
     </div>
   );
 }

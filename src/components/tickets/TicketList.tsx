@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { hasMultipleInstances as checkMultipleInstances } from '@/components/ui/InstanceGroup';
 import { TicketFilters, type TicketFilterValues } from './TicketFilters';
 import { useColumnResize } from '@/hooks/useColumnResize';
-import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { useTickets } from '@/hooks/useTickets';
 import { SourceLogo } from '@/components/ui/SourceLogo';
 
@@ -69,10 +68,8 @@ const COLS = [
 
 const DEFAULT_WIDTHS = [70, 280, 120, 120, 100, 140, 120, 60];
 
-export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
+export function TicketList() {
   const { data: tickets, loading, error, refresh } = useTickets();
-
-  useRefreshSignal(refreshSignal, refresh);
   const [filters, setFilters] = useState<TicketFilterValues>({
     status: 'all',
     priority: 'all',
@@ -114,36 +111,27 @@ export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
   const multipleInstances = tickets ? checkMultipleInstances(tickets) : false;
 
   if (error && !tickets) {
-    return (
-      <ErrorState
-        title="Erreur GLPI"
-        message={error.message}
-        source="GLPI"
-        onRetry={refresh}
-      />
-    );
+    return <ErrorState title="Erreur GLPI" message={error.message} source="GLPI" onRetry={refresh} />;
   }
 
   return (
     <Card className="bg-card border-border/50">
       <CardHeader className="pb-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+          <CardTitle className="text-foreground flex items-center gap-2 text-base font-semibold">
             <SourceLogo source="glpi" size={18} />
             Liste des tickets
             {tickets && (
-              <span className="ml-2 text-sm font-normal text-muted-foreground">
+              <span className="text-muted-foreground ml-2 text-sm font-normal">
                 ({filteredTickets.length}
-                {filteredTickets.length !== tickets.length
-                  ? ` / ${tickets.length}`
-                  : ''})
+                {filteredTickets.length !== tickets.length ? ` / ${tickets.length}` : ''})
               </span>
             )}
           </CardTitle>
           <div className="flex items-center gap-3">
             <button
               onClick={resetWidths}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground text-xs transition-colors"
               title="Reinitialiser la largeur des colonnes"
             >
               Reset colonnes
@@ -154,7 +142,7 @@ export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
       </CardHeader>
       <CardContent className="p-0">
         {loading && !tickets ? (
-          <div className="p-4 space-y-3">
+          <div className="space-y-3 p-4">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4">
                 <Skeleton className="h-4 w-12" />
@@ -166,35 +154,42 @@ export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
             ))}
           </div>
         ) : filteredTickets.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
+          <div className="text-muted-foreground p-8 text-center text-sm">
             Aucun ticket ne correspond aux filtres selectionnes.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-fixed text-sm" style={{ width: widths.reduce((a, b) => a + b, 0) + (multipleInstances ? 140 : 0) }}>
+            <table
+              className="table-fixed text-sm"
+              style={{ width: widths.reduce((a, b) => a + b, 0) + (multipleInstances ? 140 : 0) }}
+            >
               <colgroup>
-                {widths.slice(0, 2).map((w, i) => <col key={i} style={{ width: w }} />)}
+                {widths.slice(0, 2).map((w, i) => (
+                  <col key={i} style={{ width: w }} />
+                ))}
                 {multipleInstances && <col style={{ width: 140 }} />}
-                {widths.slice(2).map((w, i) => <col key={i + 2} style={{ width: w }} />)}
+                {widths.slice(2).map((w, i) => (
+                  <col key={i + 2} style={{ width: w }} />
+                ))}
               </colgroup>
               <thead>
-                <tr className="border-b border-border/50 bg-muted/20">
+                <tr className="border-border/50 bg-muted/20 border-b">
                   {COLS.slice(0, 2).map((col, i) => (
                     <th
                       key={col.label}
-                      className={`relative px-3 py-2 text-xs font-medium text-muted-foreground select-none text-${col.align}`}
+                      className={`text-muted-foreground relative px-3 py-2 text-xs font-medium select-none text-${col.align}`}
                     >
                       <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{col.label}</span>
                       <div
                         onPointerDown={(e) => startResize(e, i)}
-                        className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize group"
+                        className="group absolute top-0 right-0 h-full w-1.5 cursor-col-resize"
                       >
-                        <div className="mx-auto h-full w-px bg-border/0 group-hover:bg-border/60 transition-colors" />
+                        <div className="bg-border/0 group-hover:bg-border/60 mx-auto h-full w-px transition-colors" />
                       </div>
                     </th>
                   ))}
                   {multipleInstances && (
-                    <th className="px-3 py-2 text-xs font-medium text-muted-foreground select-none text-left">
+                    <th className="text-muted-foreground px-3 py-2 text-left text-xs font-medium select-none">
                       <span className="block overflow-hidden text-ellipsis whitespace-nowrap">Instance</span>
                     </th>
                   )}
@@ -204,15 +199,15 @@ export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
                     return (
                       <th
                         key={col.label}
-                        className={`relative px-3 py-2 text-xs font-medium text-muted-foreground select-none text-${col.align}`}
+                        className={`text-muted-foreground relative px-3 py-2 text-xs font-medium select-none text-${col.align}`}
                       >
                         <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{col.label}</span>
                         {!isLast && (
                           <div
                             onPointerDown={(e) => startResize(e, colIndex)}
-                            className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize group"
+                            className="group absolute top-0 right-0 h-full w-1.5 cursor-col-resize"
                           >
-                            <div className="mx-auto h-full w-px bg-border/0 group-hover:bg-border/60 transition-colors" />
+                            <div className="bg-border/0 group-hover:bg-border/60 mx-auto h-full w-px transition-colors" />
                           </div>
                         )}
                       </th>
@@ -222,56 +217,53 @@ export function TicketList({ refreshSignal }: { refreshSignal?: number }) {
               </thead>
               <tbody>
                 {filteredTickets.map((ticket) => (
-                  <tr key={`${ticket._instanceId ?? 'default'}-${ticket.id}`} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
-                    <td className="px-3 py-1.5 overflow-hidden font-mono text-xs text-muted-foreground">
+                  <tr
+                    key={`${ticket._instanceId ?? 'default'}-${ticket.id}`}
+                    className="border-border/30 hover:bg-muted/10 border-b transition-colors"
+                  >
+                    <td className="text-muted-foreground overflow-hidden px-3 py-1.5 font-mono text-xs">
                       <span className="block truncate">#{ticket.id}</span>
                     </td>
-                    <td className="px-3 py-1.5 overflow-hidden">
-                      <span className="block truncate text-xs text-foreground">{ticket.name}</span>
+                    <td className="overflow-hidden px-3 py-1.5">
+                      <span className="text-foreground block truncate text-xs">{ticket.name}</span>
                     </td>
                     {multipleInstances && (
-                      <td className="px-3 py-1.5 overflow-hidden">
-                        <Badge variant="outline" className="text-xs text-muted-foreground border-border/50">
+                      <td className="overflow-hidden px-3 py-1.5">
+                        <Badge variant="outline" className="text-muted-foreground border-border/50 text-xs">
                           {ticket._instanceName || 'Default'}
                         </Badge>
                       </td>
                     )}
-                    <td className="px-3 py-1.5 overflow-hidden">
-                      <Badge
-                        className={
-                          PRIORITY_COLORS[ticket.priority] || PRIORITY_COLORS[3]
-                        }
-                      >
-                        {PRIORITY_LABELS[ticket.priority] ||
-                          `P${ticket.priority}`}
+                    <td className="overflow-hidden px-3 py-1.5">
+                      <Badge className={PRIORITY_COLORS[ticket.priority] || PRIORITY_COLORS[3]}>
+                        {PRIORITY_LABELS[ticket.priority] || `P${ticket.priority}`}
                       </Badge>
                     </td>
-                    <td className="px-3 py-1.5 overflow-hidden">
+                    <td className="overflow-hidden px-3 py-1.5">
                       <StatusBadge
                         status={STATUS_MAP[ticket.status] || 'neutral'}
-                        label={
-                          STATUS_LABELS[ticket.status] ||
-                          `Statut ${ticket.status}`
-                        }
+                        label={STATUS_LABELS[ticket.status] || `Statut ${ticket.status}`}
                       />
                     </td>
-                    <td className="px-3 py-1.5 overflow-hidden">
+                    <td className="overflow-hidden px-3 py-1.5">
                       <Badge variant="outline" className="text-xs">
                         {TYPE_LABELS[ticket.type] || `Type ${ticket.type}`}
                       </Badge>
                     </td>
-                    <td className="px-3 py-1.5 overflow-hidden text-xs text-muted-foreground">
+                    <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-xs">
                       <span className="block truncate">{ticket._users_id_assign || '\u2014'}</span>
                     </td>
-                    <td className="px-3 py-1.5 overflow-hidden">
+                    <td className="overflow-hidden px-3 py-1.5">
                       <TimeAgo date={ticket.date} />
                     </td>
-                    <td className="px-3 py-1.5 overflow-hidden text-center">
-                      {glpiUrl && <ExternalLink
-                        href={`${glpiUrl}/front/ticket.form.php?id=${ticket.id}`}
-                        label=""
-                        source="glpi"
-                      />}
+                    <td className="overflow-hidden px-3 py-1.5 text-center">
+                      {glpiUrl && (
+                        <ExternalLink
+                          href={`${glpiUrl}/front/ticket.form.php?id=${ticket.id}`}
+                          label=""
+                          source="glpi"
+                        />
+                      )}
                     </td>
                   </tr>
                 ))}

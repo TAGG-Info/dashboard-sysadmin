@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SourceIndicator } from '@/components/ui/SourceIndicator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -32,22 +32,9 @@ function groupByInstanceId<T extends { _instanceId?: string; _instanceName?: str
   }));
 }
 
-export function HypervisorTabs({ refreshSignal }: { refreshSignal?: number }) {
+export function HypervisorTabs() {
   const { data: hosts, loading: hostsLoading, error: hostsError, refresh: refreshHosts } = useVCenterHosts();
   const { data: nodes, loading: nodesLoading, error: nodesError, refresh: refreshNodes } = useProxmoxNodes();
-
-  const refreshHostsRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  const refreshNodesRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  // eslint-disable-next-line react-hooks/refs
-  refreshHostsRef.current = refreshHosts;
-  // eslint-disable-next-line react-hooks/refs
-  refreshNodesRef.current = refreshNodes;
-  useEffect(() => {
-    if (refreshSignal) {
-      refreshHostsRef.current?.();
-      refreshNodesRef.current?.();
-    }
-  }, [refreshSignal]);
 
   const hostGroups = useMemo(() => {
     if (!hosts) return [];
@@ -120,8 +107,8 @@ export function HypervisorTabs({ refreshSignal }: { refreshSignal?: number }) {
 
         {/* VM List + Datastores side by side */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-[3fr_2fr]">
-          <VMList refreshSignal={refreshSignal} />
-          <DatastoreList key={refreshSignal} />
+          <VMList />
+          <DatastoreList />
         </div>
       </TabsContent>
 
@@ -170,7 +157,7 @@ export function HypervisorTabs({ refreshSignal }: { refreshSignal?: number }) {
         </div>
 
         {/* Proxmox VM Table */}
-        <ProxmoxVMTable refreshSignal={refreshSignal} />
+        <ProxmoxVMTable />
       </TabsContent>
     </Tabs>
   );

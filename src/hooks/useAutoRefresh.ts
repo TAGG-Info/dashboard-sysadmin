@@ -7,7 +7,7 @@ interface UseAutoRefreshOptions {
   interval: number; // ms
   enabled?: boolean;
   /**
-   * Set to true only when the consumer displays `nextRefreshIn` (e.g. RefreshButton).
+   * Set to true only when the consumer displays `nextRefreshIn`.
    * When false (default), the countdown interval is skipped — eliminates ~1 re-render/5s per hook instance.
    */
   trackCountdown?: boolean;

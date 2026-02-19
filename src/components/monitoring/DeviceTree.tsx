@@ -9,7 +9,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SensorCard } from './SensorCard';
 import { usePRTGDevices, usePRTGSensors } from '@/hooks/usePRTG';
 import { InstanceSectionHeader, groupByInstance, hasMultipleInstances } from '@/components/ui/InstanceGroup';
-import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { prtgStatusToLevel } from '@/lib/status-mappers';
 import type { PRTGDevice } from '@/types/prtg';
 import { cn } from '@/lib/utils';
@@ -138,10 +137,8 @@ function DeviceCard({ device }: { device: PRTGDevice }) {
   );
 }
 
-export function DeviceTree({ refreshSignal }: { refreshSignal?: number }) {
-  const { data: devices, loading, error, refresh } = usePRTGDevices();
-
-  useRefreshSignal(refreshSignal, refresh);
+export function DeviceTree() {
+  const { data: devices, loading, error } = usePRTGDevices();
 
   // Group devices by instance
   const instanceGroups = useMemo(() => {

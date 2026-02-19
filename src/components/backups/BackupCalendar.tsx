@@ -3,13 +3,8 @@
 import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useVeeamSessions } from '@/hooks/useVeeam';
-import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -45,10 +40,8 @@ function getDayLabel(status: DayStatus): string {
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
-export function BackupCalendar({ refreshSignal }: { refreshSignal?: number }) {
-  const { data: sessions, loading, refresh } = useVeeamSessions();
-
-  useRefreshSignal(refreshSignal, refresh);
+export function BackupCalendar() {
+  const { data: sessions, loading } = useVeeamSessions();
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -70,7 +63,7 @@ export function BackupCalendar({ refreshSignal }: { refreshSignal?: number }) {
         map[key] = 'failed';
       } else if (result === 'warning' && currentStatus !== 'failed') {
         map[key] = 'warning';
-      } else if ((result === 'success') && currentStatus === 'none') {
+      } else if (result === 'success' && currentStatus === 'none') {
         map[key] = 'success';
       } else if (currentStatus === 'none') {
         // Other results, keep as none unless already set
@@ -146,14 +139,12 @@ export function BackupCalendar({ refreshSignal }: { refreshSignal?: number }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">Calendrier des backups</h3>
+        <h3 className="text-foreground text-sm font-semibold">Calendrier des backups</h3>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goToPreviousMonth}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm font-medium text-foreground min-w-[120px] text-center capitalize">
-            {monthLabel}
-          </span>
+          <span className="text-foreground min-w-[120px] text-center text-sm font-medium capitalize">{monthLabel}</span>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goToNextMonth}>
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -173,9 +164,9 @@ export function BackupCalendar({ refreshSignal }: { refreshSignal?: number }) {
       ) : (
         <div>
           {/* Weekday headers */}
-          <div className="grid grid-cols-7 gap-1 mb-1">
+          <div className="mb-1 grid grid-cols-7 gap-1">
             {WEEKDAYS.map((day) => (
-              <div key={day} className="text-sm text-muted-foreground text-center">
+              <div key={day} className="text-muted-foreground text-center text-sm">
                 {day}
               </div>
             ))}
@@ -199,15 +190,14 @@ export function BackupCalendar({ refreshSignal }: { refreshSignal?: number }) {
                   <TooltipTrigger asChild>
                     <div
                       className={cn(
-                        'aspect-square rounded-sm transition-colors cursor-default flex items-center justify-center text-[9px]',
-                        !inMonth && 'opacity-20'
+                        'flex aspect-square cursor-default items-center justify-center rounded-sm text-[9px] transition-colors',
+                        !inMonth && 'opacity-20',
                       )}
                       style={{ backgroundColor: color }}
                     >
-                      <span className={cn(
-                        'font-medium',
-                        status === 'none' ? 'text-muted-foreground/50' : 'text-white/90'
-                      )}>
+                      <span
+                        className={cn('font-medium', status === 'none' ? 'text-muted-foreground/50' : 'text-white/90')}
+                      >
                         {dayNum}
                       </span>
                     </div>
@@ -222,16 +212,11 @@ export function BackupCalendar({ refreshSignal }: { refreshSignal?: number }) {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-4 mt-3">
+          <div className="mt-3 flex items-center gap-4">
             {(['success', 'warning', 'failed', 'none'] as DayStatus[]).map((status) => (
               <div key={status} className="flex items-center gap-1.5">
-                <div
-                  className="h-2.5 w-2.5 rounded-sm"
-                  style={{ backgroundColor: getDayColor(status) }}
-                />
-                <span className="text-sm text-muted-foreground">
-                  {getDayLabel(status)}
-                </span>
+                <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: getDayColor(status) }} />
+                <span className="text-muted-foreground text-sm">{getDayLabel(status)}</span>
               </div>
             ))}
           </div>

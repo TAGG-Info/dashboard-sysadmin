@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ExternalLink } from '@/components/ui/ExternalLink';
@@ -57,15 +57,8 @@ function formatBytes(bytes: number): string {
   return `${mb.toFixed(0)} Mo`;
 }
 
-export function ProxmoxVMTable({ refreshSignal }: { refreshSignal?: number }) {
+export function ProxmoxVMTable() {
   const { data: vms, loading, error, refresh } = useProxmoxVMs();
-
-  const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  // eslint-disable-next-line react-hooks/refs
-  refreshRef.current = refresh;
-  useEffect(() => {
-    if (refreshSignal) refreshRef.current?.();
-  }, [refreshSignal]);
   const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);
 
   const proxmoxUrl = process.env.NEXT_PUBLIC_PROXMOX_URL;

@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useColumnResize } from '@/hooks/useColumnResize';
-import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { useTransferLogs } from '@/hooks/useTransfers';
 import { formatBytes, formatDateTimeFR } from '@/lib/formatters';
 import { TransferFilters, type TransferFilterValues } from './TransferFilters';
@@ -24,7 +23,7 @@ const COLS = [
   { label: 'Login', align: 'left' },
   { label: 'Fichier', align: 'left' },
   { label: 'Taille', align: 'right' },
-  { label: 'Proto', align: 'left' },
+  { label: 'Protocole', align: 'left' },
   { label: 'Sens', align: 'center' },
   { label: 'TLS', align: 'center' },
   { label: 'Statut', align: 'left' },
@@ -68,7 +67,7 @@ function ProtocolBadge({ protocol }: { protocol: string }) {
   );
 }
 
-export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) {
+export function TransferLogTable() {
   const [filters, setFilters] = useState<TransferFilterValues>({});
   const [page, setPage] = useState(0);
 
@@ -88,8 +87,6 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
     limit: PAGE_SIZE,
     offset: page * PAGE_SIZE,
   });
-
-  useRefreshSignal(refreshSignal, refresh);
 
   const transfers = data?.transfers ?? [];
   const totalCount = data?.resultSet?.totalCount ?? 0;
