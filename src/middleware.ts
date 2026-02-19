@@ -1,5 +1,9 @@
-import { auth } from '@/lib/auth';
+import NextAuth from 'next-auth';
+import { authConfig } from '@/lib/auth.config';
 import { NextResponse } from 'next/server';
+
+// Lightweight auth for middleware (Edge Runtime) — JWT verification only, no Node.js deps.
+const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -23,10 +27,7 @@ export default auth((req) => {
   // Si de nouvelles routes mutantes (/api/actions, etc.) sont ajoutées, étendre ce check.
   // Note: si origin est absent (clients non-navigateur), la requête passe — acceptable
   // car toutes les routes sont aussi protégées par JWT session cookie (SameSite).
-  if (
-    pathname.startsWith('/api/settings') &&
-    ['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)
-  ) {
+  if (pathname.startsWith('/api/settings') && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
     const origin = req.headers.get('origin');
     const host = req.headers.get('host');
     if (origin) {
@@ -48,6 +49,31 @@ export default auth((req) => {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       return NextResponse.redirect(new URL('/', req.url));
+    }
+  }
+
+  // Page-level authorization based on allowedPages from role
+  if (isAuth && !pathname.startsWith('/api/')) {
+    const role = req.auth?.user?.role;
+    const allowedPages = req.auth?.user?.allowedPages;
+
+    // Admin bypasses page checks
+    if (role !== 'admin' && allowedPages) {
+      // Check dashboard pages (exact match for /, startsWith for others)
+      const isProtectedPage =
+        pathname === '/' ||
+        ['/monitoring', '/infrastructure', '/backups', '/transfers', '/tickets'].some((p) => pathname.startsWith(p));
+
+      if (isProtectedPage) {
+        const pageMatch =
+          pathname === '/' ? allowedPages.includes('/') : allowedPages.some((p) => pathname.startsWith(p));
+
+        if (!pageMatch) {
+          // Redirect to the first allowed page, or / as ultimate fallback
+          const firstAllowed = allowedPages.find((p) => p !== '/settings') || '/';
+          return NextResponse.redirect(new URL(firstAllowed, req.url));
+        }
+      }
     }
   }
 

@@ -4,6 +4,7 @@ import { SourceConfigs } from '@/components/settings/SourceConfigs';
 import { HealthChecks } from '@/components/settings/HealthChecks';
 import { RefreshSettings } from '@/components/settings/RefreshSettings';
 import { ExternalLinks } from '@/components/settings/ExternalLinks';
+import { RoleManager } from '@/components/settings/RoleManager';
 import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function SettingsPage() {
@@ -12,7 +13,7 @@ export default function SettingsPage() {
       <PageHeader
         title="Parametres"
         badge={
-          <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 gap-1.5 text-sm h-6 px-2.5 font-semibold">
+          <Badge className="h-6 gap-1.5 border-amber-500/20 bg-amber-500/10 px-2.5 text-sm font-semibold text-amber-400">
             <Shield className="h-3 w-3" />
             Admin
           </Badge>
@@ -20,9 +21,12 @@ export default function SettingsPage() {
       />
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Source Configuration */}
-        <SourceConfigs />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Left: Source Configuration + Roles */}
+        <div className="space-y-6">
+          <SourceConfigs />
+          <RoleManager />
+        </div>
 
         {/* Right: Health, Refresh, Links (sticky) */}
         <div className="space-y-5 lg:sticky lg:top-4 lg:self-start">

@@ -22,7 +22,10 @@ export async function authenticateLDAP(username: string, password: string): Prom
   const baseDN = process.env.LDAP_BASE_DN?.trim();
   const bindDN = process.env.LDAP_BIND_DN?.trim();
   const bindPassword = process.env.LDAP_BIND_PASSWORD?.trim();
-  const searchFilter = (process.env.LDAP_USER_SEARCH_FILTER || '(sAMAccountName={{username}})').replace('{{username}}', escapeLDAPFilter(username));
+  const searchFilter = (process.env.LDAP_USER_SEARCH_FILTER || '(sAMAccountName={{username}})').replace(
+    '{{username}}',
+    escapeLDAPFilter(username),
+  );
 
   if (!ldapUrl || !baseDN || !bindDN || !bindPassword) {
     throw new Error('LDAP configuration incomplete');
@@ -45,7 +48,11 @@ export async function authenticateLDAP(username: string, password: string): Prom
 
     // 1. Bind with the service account
     client.bind(bindDN, bindPassword, (err) => {
-      if (err) { client.unbind(); reject(err); return; }
+      if (err) {
+        client.unbind();
+        reject(err);
+        return;
+      }
 
       // 2. Search for the user
       const searchOptions: ldap.SearchOptions = {
@@ -55,21 +62,38 @@ export async function authenticateLDAP(username: string, password: string): Prom
       };
 
       client.search(baseDN, searchOptions, (err, res) => {
-        if (err) { client.unbind(); reject(err); return; }
+        if (err) {
+          client.unbind();
+          reject(err);
+          return;
+        }
 
         let userEntry: ldap.SearchEntry | null = null;
 
-        res.on('searchEntry', (entry: ldap.SearchEntry) => { userEntry = entry; });
-        res.on('error', (err: Error) => { client.unbind(); reject(err); });
+        res.on('searchEntry', (entry: ldap.SearchEntry) => {
+          userEntry = entry;
+        });
+        res.on('error', (err: Error) => {
+          client.unbind();
+          reject(err);
+        });
         res.on('end', () => {
-          if (!userEntry) { client.unbind(); resolve(null); return; }
+          if (!userEntry) {
+            client.unbind();
+            resolve(null);
+            return;
+          }
 
           // ldapjs v3: SearchEntry has `dn` (string) inherited from LDAPMessage
           const userDN = userEntry.dn;
 
           // 3. Bind with user credentials to verify the password
           client.bind(userDN, password, (err) => {
-            if (err) { client.unbind(); resolve(null); return; }
+            if (err) {
+              client.unbind();
+              resolve(null);
+              return;
+            }
 
             // ldapjs v3: SearchEntry.attributes is Attribute[]
             // Each Attribute has `.type` (string) and `.values` (string | string[])
@@ -101,9 +125,4 @@ export async function authenticateLDAP(username: string, password: string): Prom
       });
     });
   });
-}
-
-export function isAdmin(groups: string[]): boolean {
-  const adminGroup = process.env.LDAP_ADMIN_GROUP || 'Dashboard-Admins';
-  return groups.some(g => g.toLowerCase().includes(adminGroup.toLowerCase()));
 }

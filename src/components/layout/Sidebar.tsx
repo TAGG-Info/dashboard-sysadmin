@@ -1,22 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import {
-  Home,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  Zap,
-} from 'lucide-react';
+import { Home, Settings, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SourceLogo } from '@/components/ui/SourceLogo';
 import type { SourceName } from '@/types/common';
@@ -51,10 +42,23 @@ const settingsItem: NavItem = { href: '/settings', label: 'Settings', icon: Sett
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
 
-  const isItemActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname.startsWith(href);
+  const isAdmin = session?.user?.role === 'admin';
+  const allowedPages = session?.user?.allowedPages;
+
+  const filteredSections = useMemo(() => {
+    if (isAdmin || !allowedPages) return navSections;
+    return navSections.map((section) => ({
+      ...section,
+      items: section.items.filter((item) => allowedPages.includes(item.href)),
+    }));
+  }, [isAdmin, allowedPages]);
+
+  const showSettings = isAdmin || !allowedPages;
+
+  const isItemActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
   const renderNavLink = (item: NavItem) => {
     const active = isItemActive(item.href);
@@ -66,8 +70,8 @@ export function Sidebar() {
         className={cn(
           'group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
           active
-            ? 'bg-white/[0.07] text-foreground border-l-2 border-primary -ml-[2px] pl-[14px]'
-            : 'text-muted-foreground hover:bg-white/[0.04] hover:text-foreground'
+            ? 'text-foreground border-primary -ml-[2px] border-l-2 bg-white/[0.07] pl-[14px]'
+            : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.04]',
         )}
       >
         {item.source ? (
@@ -96,8 +100,8 @@ export function Sidebar() {
   return (
     <div
       className={cn(
-        'relative flex h-screen flex-col border-r border-border/50 bg-sidebar transition-all duration-300',
-        collapsed ? 'w-16' : 'w-56'
+        'border-border/50 bg-sidebar relative flex h-screen flex-col border-r transition-all duration-300',
+        collapsed ? 'w-16' : 'w-56',
       )}
     >
       {/* Logo / Brand */}
@@ -105,34 +109,32 @@ export function Sidebar() {
         {!collapsed ? (
           <>
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
-                <Zap className="h-4 w-4 text-primary" />
+              <div className="bg-primary/15 flex h-8 w-8 items-center justify-center rounded-lg">
+                <Zap className="text-primary h-4 w-4" />
               </div>
-              <span className="text-sm font-bold tracking-tight text-foreground">
-                SysAdmin
-              </span>
+              <span className="text-foreground text-sm font-bold tracking-tight">SysAdmin</span>
             </Link>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setCollapsed(true)}
-              className="ml-auto h-7 w-7 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground ml-auto h-7 w-7"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
           </>
         ) : (
-          <div className="flex flex-col items-center gap-1 mx-auto">
+          <div className="mx-auto flex flex-col items-center gap-1">
             <Link href="/">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
-                <Zap className="h-4 w-4 text-primary" />
+              <div className="bg-primary/15 flex h-8 w-8 items-center justify-center rounded-lg">
+                <Zap className="text-primary h-4 w-4" />
               </div>
             </Link>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setCollapsed(false)}
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground h-7 w-7"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -143,25 +145,21 @@ export function Sidebar() {
       {/* Navigation sections */}
       <ScrollArea className="flex-1 py-2">
         <nav className="flex flex-col gap-4 px-3">
-          {navSections.map((section) => (
+          {filteredSections.map((section) => (
             <div key={section.label}>
               {!collapsed && (
-                <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                <p className="text-muted-foreground/60 mb-2 px-3 text-[11px] font-semibold tracking-wider uppercase">
                   {section.label}
                 </p>
               )}
-              <div className="flex flex-col gap-0.5">
-                {section.items.map(renderNavLink)}
-              </div>
+              <div className="flex flex-col gap-0.5">{section.items.map(renderNavLink)}</div>
             </div>
           ))}
         </nav>
       </ScrollArea>
 
-      {/* Settings at bottom */}
-      <div className="border-t border-border/30 px-3 py-3">
-        {renderNavLink(settingsItem)}
-      </div>
+      {/* Settings at bottom — admin only */}
+      {showSettings && <div className="border-border/30 border-t px-3 py-3">{renderNavLink(settingsItem)}</div>}
     </div>
   );
 }

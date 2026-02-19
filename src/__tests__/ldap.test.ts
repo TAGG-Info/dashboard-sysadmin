@@ -1,8 +1,19 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { isAdmin } from '@/lib/ldap';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { resolveRole } from '@/lib/roles';
 
-describe('isAdmin', () => {
+// Mock fs to avoid actual file I/O
+vi.mock('fs/promises', () => ({
+  readFile: vi.fn().mockRejectedValue(new Error('File not found')),
+  writeFile: vi.fn().mockResolvedValue(undefined),
+  mkdir: vi.fn().mockResolvedValue(undefined),
+}));
+
+describe('resolveRole', () => {
   const original = process.env.LDAP_ADMIN_GROUP;
+
+  beforeEach(() => {
+    process.env.LDAP_ADMIN_GROUP = 'Dashboard-Admins';
+  });
 
   afterEach(() => {
     if (original !== undefined) {
@@ -12,42 +23,51 @@ describe('isAdmin', () => {
     }
   });
 
-  it('retourne true si le groupe correspond (exact)', () => {
-    process.env.LDAP_ADMIN_GROUP = 'Dashboard-Admins';
-    expect(isAdmin(['CN=Dashboard-Admins,DC=corp,DC=com'])).toBe(true);
+  it('retourne admin si le groupe correspond (exact)', async () => {
+    const role = await resolveRole(['CN=Dashboard-Admins,DC=corp,DC=com']);
+    expect(role.id).toBe('admin');
   });
 
-  it('retourne true avec comparaison insensible à la casse', () => {
-    process.env.LDAP_ADMIN_GROUP = 'Dashboard-Admins';
-    expect(isAdmin(['CN=dashboard-admins,DC=corp,DC=com'])).toBe(true);
+  it('retourne admin avec comparaison insensible à la casse', async () => {
+    const role = await resolveRole(['CN=dashboard-admins,DC=corp,DC=com']);
+    expect(role.id).toBe('admin');
   });
 
-  it('retourne false si aucun groupe ne correspond', () => {
-    process.env.LDAP_ADMIN_GROUP = 'Dashboard-Admins';
-    expect(isAdmin(['CN=Viewers,DC=corp,DC=com'])).toBe(false);
+  it('retourne viewer si aucun groupe ne correspond', async () => {
+    const role = await resolveRole(['CN=Viewers,DC=corp,DC=com']);
+    expect(role.id).toBe('viewer');
   });
 
-  it('retourne false pour un tableau vide', () => {
-    process.env.LDAP_ADMIN_GROUP = 'Dashboard-Admins';
-    expect(isAdmin([])).toBe(false);
+  it('retourne viewer pour un tableau vide', async () => {
+    const role = await resolveRole([]);
+    expect(role.id).toBe('viewer');
   });
 
-  it('utilise "Dashboard-Admins" par défaut si LDAP_ADMIN_GROUP est absent', () => {
-    delete process.env.LDAP_ADMIN_GROUP;
-    expect(isAdmin(['CN=Dashboard-Admins,DC=corp,DC=com'])).toBe(true);
-  });
-
-  it('retourne false si LDAP_ADMIN_GROUP absent et groupes ne correspondent pas', () => {
-    delete process.env.LDAP_ADMIN_GROUP;
-    expect(isAdmin(['CN=OtherGroup,DC=corp,DC=com'])).toBe(false);
-  });
-
-  it('retourne true si plusieurs groupes dont un correspond', () => {
-    process.env.LDAP_ADMIN_GROUP = 'Dashboard-Admins';
-    expect(isAdmin([
+  it('retourne admin si plusieurs groupes dont un correspond', async () => {
+    const role = await resolveRole([
       'CN=Viewers,DC=corp,DC=com',
       'CN=Dashboard-Admins,DC=corp,DC=com',
       'CN=OtherGroup,DC=corp,DC=com',
-    ])).toBe(true);
+    ]);
+    expect(role.id).toBe('admin');
+  });
+
+  it('retourne viewer par défaut si LDAP_ADMIN_GROUP est absent et groupes ne correspondent pas', async () => {
+    delete process.env.LDAP_ADMIN_GROUP;
+    const role = await resolveRole(['CN=OtherGroup,DC=corp,DC=com']);
+    expect(role.id).toBe('viewer');
+  });
+
+  it('le rôle viewer a toutes les pages dashboard mais pas /settings', async () => {
+    const role = await resolveRole([]);
+    expect(role.pages).toContain('/');
+    expect(role.pages).toContain('/monitoring');
+    expect(role.pages).not.toContain('/settings');
+  });
+
+  it('le rôle admin a toutes les pages y compris /settings', async () => {
+    const role = await resolveRole(['CN=Dashboard-Admins,DC=corp,DC=com']);
+    expect(role.pages).toContain('/settings');
+    expect(role.pages).toContain('/');
   });
 });
