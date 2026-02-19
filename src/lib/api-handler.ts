@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getSourceConfig, type SourceKey, type SourceInstanceMap } from '@/lib/config';
-import { cacheFetch, cacheGetStale } from '@/lib/cache';
+import { cacheFetch, cacheGetStale, cacheSet } from '@/lib/cache';
 
 type EnrichedItem = Record<string, unknown>;
 
@@ -42,17 +42,21 @@ export function createApiRoute<K extends SourceKey>(options: ApiRouteOptions<K>)
       );
     }
 
+    const noCache = req.headers.get('x-no-cache') === '1';
+
     const results = await Promise.allSettled(
       instances.map(async (instance) => {
         const cacheKey = options.getCacheKey(instance.id, req);
 
         try {
-          const data = await cacheFetch<unknown[]>(
-            cacheKey,
-            options.ttlMs,
-            () => options.fetcher(instance, req),
-          );
-          return data.map(item => ({
+          let data: unknown[];
+          if (noCache) {
+            data = await options.fetcher(instance, req);
+            void cacheSet(cacheKey, data, options.ttlMs);
+          } else {
+            data = await cacheFetch<unknown[]>(cacheKey, options.ttlMs, () => options.fetcher(instance, req));
+          }
+          return data.map((item) => ({
             ...(item as EnrichedItem),
             _instanceId: instance.id,
             _instanceName: instance.name,
@@ -60,7 +64,7 @@ export function createApiRoute<K extends SourceKey>(options: ApiRouteOptions<K>)
         } catch (error) {
           const stale = await cacheGetStale<unknown[]>(cacheKey);
           if (stale) {
-            return stale.map(item => ({
+            return stale.map((item) => ({
               ...(item as EnrichedItem),
               _instanceId: instance.id,
               _instanceName: instance.name,
@@ -72,13 +76,13 @@ export function createApiRoute<K extends SourceKey>(options: ApiRouteOptions<K>)
       }),
     );
 
-    const fulfilled = results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<EnrichedItem[]>[];
-    const data = fulfilled.flatMap(r => r.value);
-    const hasErrors = results.some(r => r.status === 'rejected');
+    const fulfilled = results.filter((r) => r.status === 'fulfilled') as PromiseFulfilledResult<EnrichedItem[]>[];
+    const data = fulfilled.flatMap((r) => r.value);
+    const hasErrors = results.some((r) => r.status === 'rejected');
 
     return NextResponse.json({
       data,
-      _stale: data.some(d => d._stale === true),
+      _stale: data.some((d) => d._stale === true),
       _source: options.source,
       _timestamp: Date.now(),
       _partial: hasErrors && data.length > 0,
@@ -108,16 +112,20 @@ export function createSummaryApiRoute<K extends SourceKey, TRaw, TAggregated>(
       );
     }
 
+    const noCache = req.headers.get('x-no-cache') === '1';
+
     const results = await Promise.allSettled(
       instances.map(async (instance) => {
         const cacheKey = options.getCacheKey(instance.id, req);
 
         try {
-          const data = await cacheFetch<TRaw>(
-            cacheKey,
-            options.ttlMs,
-            () => options.fetcher(instance, req),
-          );
+          let data: TRaw;
+          if (noCache) {
+            data = await options.fetcher(instance, req);
+            void cacheSet(cacheKey, data, options.ttlMs);
+          } else {
+            data = await cacheFetch<TRaw>(cacheKey, options.ttlMs, () => options.fetcher(instance, req));
+          }
           return {
             ...data,
             _instanceId: instance.id,
@@ -138,10 +146,11 @@ export function createSummaryApiRoute<K extends SourceKey, TRaw, TAggregated>(
       }),
     );
 
-    const fulfilled = (results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<InstanceResult<TRaw>>[])
-      .map(r => r.value);
-    const hasErrors = results.some(r => r.status === 'rejected');
-    const isStale = fulfilled.some(r => r._stale === true);
+    const fulfilled = (
+      results.filter((r) => r.status === 'fulfilled') as PromiseFulfilledResult<InstanceResult<TRaw>>[]
+    ).map((r) => r.value);
+    const hasErrors = results.some((r) => r.status === 'rejected');
+    const isStale = fulfilled.some((r) => r._stale === true);
 
     const aggregated = options.aggregator(fulfilled, req);
 

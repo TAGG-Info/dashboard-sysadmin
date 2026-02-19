@@ -11,14 +11,17 @@ const roundToHour = (ms: number) => Math.floor(ms / 3_600_000) * 3_600_000;
 
 function buildFilterKey(searchParams: URLSearchParams): string {
   return [
-    searchParams.get('account')   ? `a:${searchParams.get('account')}`   : '',
-    searchParams.get('status')    ? `s:${searchParams.get('status')}`    : '',
-    searchParams.get('protocol')  ? `p:${searchParams.get('protocol')}`  : '',
+    searchParams.get('account') ? `a:${searchParams.get('account')}` : '',
+    searchParams.get('status') ? `s:${searchParams.get('status')}` : '',
+    searchParams.get('protocol') ? `p:${searchParams.get('protocol')}` : '',
     searchParams.get('incoming') != null && searchParams.get('incoming') !== ''
-      ? `i:${searchParams.get('incoming')}` : '',
+      ? `i:${searchParams.get('incoming')}`
+      : '',
     searchParams.get('startDate') ? `sd:${roundToHour(Number(searchParams.get('startDate')))}` : '',
-    searchParams.get('endDate')   ? `ed:${roundToHour(Number(searchParams.get('endDate')))}` : '',
-  ].filter(Boolean).join('|');
+    searchParams.get('endDate') ? `ed:${roundToHour(Number(searchParams.get('endDate')))}` : '',
+  ]
+    .filter(Boolean)
+    .join('|');
 }
 
 interface LogsRaw {
@@ -35,32 +38,33 @@ export const GET = createSummaryApiRoute<'securetransport', LogsRaw, LogsAggrega
   source: 'securetransport',
   getCacheKey: (instanceId, req) => {
     const { searchParams } = new URL(req.url);
-    const limit  = Math.min(Number(searchParams.get('limit')  || 50), 200);
+    const limit = Math.min(Number(searchParams.get('limit') || 50), 200);
     const offset = Math.max(Number(searchParams.get('offset') || 0), 0);
     return `dashboard:st:${instanceId}:logs:${limit}:${offset}:${buildFilterKey(searchParams)}`;
   },
   ttlMs: CACHE_TTL.ST_LOGS,
   fetcher: async (instance, req) => {
     const { searchParams } = new URL(req.url);
-    const limit  = Math.min(Number(searchParams.get('limit')  || 50), 200);
+    const limit = Math.min(Number(searchParams.get('limit') || 50), 200);
     const offset = Math.max(Number(searchParams.get('offset') || 0), 0);
     const filters = {
-      account:   searchParams.get('account')  || undefined,
-      filename:  searchParams.get('filename') || undefined,
-      status:    searchParams.get('status')   || undefined,
-      protocol:  searchParams.get('protocol') || undefined,
-      incoming:  searchParams.get('incoming') != null && searchParams.get('incoming') !== ''
-        ? searchParams.get('incoming') === 'true'
-        : undefined,
+      account: searchParams.get('account') || undefined,
+      filename: searchParams.get('filename') || undefined,
+      status: searchParams.get('status') || undefined,
+      protocol: searchParams.get('protocol') || undefined,
+      incoming:
+        searchParams.get('incoming') != null && searchParams.get('incoming') !== ''
+          ? searchParams.get('incoming') === 'true'
+          : undefined,
       startDate: searchParams.get('startDate') ? Number(searchParams.get('startDate')) : undefined,
-      endDate:   searchParams.get('endDate')   ? Number(searchParams.get('endDate'))   : undefined,
+      endDate: searchParams.get('endDate') ? Number(searchParams.get('endDate')) : undefined,
     };
 
-    // Toujours faire le count frais pour la page 1 (offset=0) — sinon la reverse
-    // pagination rate les transferts récents quand le count caché est périmé.
-    // Pour les pages suivantes, le count caché est OK (navigation dans l'historique).
+    // Count frais obligatoire pour page 1 (offset=0) et refresh manuel (X-No-Cache)
+    // → la reverse pagination a besoin du count exact pour montrer les derniers transferts.
+    const noCache = req.headers.get('x-no-cache') === '1';
     const countKey = `dashboard:st:${instance.id}:logs:count:${buildFilterKey(searchParams)}`;
-    const cachedCount = offset === 0 ? null : await cacheGet<number>(countKey);
+    const cachedCount = offset === 0 || noCache ? null : await cacheGet<number>(countKey);
 
     const client = getSTClient(instance);
     const result = await client.getTransferLogs(limit, offset, filters, cachedCount ?? undefined);
@@ -74,22 +78,20 @@ export const GET = createSummaryApiRoute<'securetransport', LogsRaw, LogsAggrega
     const { searchParams } = new URL(req.url);
     const limit = Math.min(Number(searchParams.get('limit') || 50), 200);
 
-    let allTransfers: STTransferLog[] = [];
+    const allTransfers: STTransferLog[] = [];
     let totalCount = 0;
 
     for (const r of results) {
       if (r.resultSet) totalCount += r.resultSet.totalCount;
       if (r.transfers) {
         allTransfers.push(
-          ...r.transfers.map(t => ({ ...t, _instanceId: r._instanceId, _instanceName: r._instanceName }))
+          ...r.transfers.map((t) => ({ ...t, _instanceId: r._instanceId, _instanceName: r._instanceName })),
         );
       }
     }
 
     // Sort by timestamp desc (safety net for multi-instance merging)
-    allTransfers.sort((a, b) =>
-      ((b.id?.mTransferStartTime ?? 0) - (a.id?.mTransferStartTime ?? 0))
-    );
+    allTransfers.sort((a, b) => (b.id?.mTransferStartTime ?? 0) - (a.id?.mTransferStartTime ?? 0));
 
     return {
       transfers: allTransfers.slice(0, limit),

@@ -43,10 +43,16 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
   const countdownIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
   const fetchingRef = useRef(false);
+  const lastManualRefreshRef = useRef(0);
 
   const fetchData = useCallback(
-    async (isScheduled = false) => {
+    async (isScheduled = false, bypassCache = false) => {
       if (fetchingRef.current) return;
+
+      // Skip scheduled fetch if a manual refresh happened recently
+      if (isScheduled && Date.now() - lastManualRefreshRef.current < interval * 0.5) {
+        return;
+      }
 
       // After repeated failures, slow down: skip scheduled fetches
       // and only retry at longer intervals (2x, 4x, max 8x the normal interval)
@@ -62,7 +68,10 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
       setLoading(true);
 
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          cache: 'no-store',
+          ...(bypassCache && { headers: { 'X-No-Cache': '1' } }),
+        });
         if (!response.ok) {
           throw new Error('Service injoignable');
         }
@@ -108,14 +117,15 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
         }
       }
     },
-    [url],
+    [url, interval],
   );
 
   const refresh = useCallback(async () => {
     retryCountRef.current = 0;
     consecutiveFailsRef.current = 0;
+    lastManualRefreshRef.current = Date.now();
     if (trackCountdown) setNextRefreshIn(Math.floor(interval / 1000));
-    await fetchData(false);
+    await fetchData(false, true);
   }, [fetchData, interval, trackCountdown]);
 
   // Initial fetch
