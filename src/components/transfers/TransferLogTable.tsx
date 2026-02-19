@@ -34,7 +34,7 @@ const ALL_COLS = [
 // Full widths: Date, Compte, Login, Fichier, Taille, Proto, Sens, TLS, Statut, Duree
 const ALL_WIDTHS = [155, 130, 100, 240, 70, 75, 50, 50, 110, 70];
 // Split widths (no Sens column): Date, Compte, Login, Fichier, Taille, Proto, TLS, Statut, Duree
-const SPLIT_WIDTHS = [130, 110, 90, 180, 60, 65, 45, 100, 60];
+const SPLIT_WIDTHS = [120, 90, 75, 160, 55, 60, 35, 115, 55];
 
 function StatusCell({ status }: { status: string }) {
   const cls =
@@ -165,7 +165,7 @@ export function TransferLogTable({ direction }: TransferLogTableProps) {
         <CardContent className="p-0">
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full table-fixed text-sm">
               <colgroup>
                 {widths.map((w, i) => (
                   <col key={i} style={{ width: w }} />
