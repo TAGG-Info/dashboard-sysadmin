@@ -229,7 +229,7 @@ export function RoleManager() {
                     size="icon"
                     className="text-muted-foreground hover:text-foreground h-7 w-7"
                     onClick={() => openEditDialog(role)}
-                    disabled={role.isSystem && role.id === 'admin'}
+                    disabled={false}
                     title="Modifier"
                   >
                     <Pencil className="h-3.5 w-3.5" />
