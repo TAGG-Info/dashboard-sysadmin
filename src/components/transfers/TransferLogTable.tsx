@@ -267,7 +267,11 @@ export function TransferLogTable({ direction }: TransferLogTableProps) {
                         <StatusCell status={t.status} />
                       </td>
                       <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-right text-xs">
-                        <span className="block truncate">{t.duration}</span>
+                        <span className="block truncate">
+                          {t.status === 'In Progress' || t.status === 'Waiting' || t.status === 'Paused'
+                            ? '—'
+                            : t.duration}
+                        </span>
                       </td>
                     </tr>
                   ))
