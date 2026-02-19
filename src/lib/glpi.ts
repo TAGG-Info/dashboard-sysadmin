@@ -79,12 +79,11 @@ export class GLPIClient {
     return res.json();
   }
 
-  // Tickets ouverts (statuts 1-4), tries par date_mod DESC
-  async getTickets(status?: string): Promise<GLPITicket[]> {
-    const statusFilter = status || '1,2,3,4';
-    return this.request<GLPITicket[]>(
-      `/Ticket?range=0-50&order=DESC&sort=15&expand_dropdowns=true&searchText[status]=${statusFilter}`,
-    );
+  // Tickets ouverts (statuts 1=Nouveau, 2=En cours (attribue), 3=En cours (planifie), 4=En attente)
+  async getTickets(): Promise<GLPITicket[]> {
+    const all = await this.request<GLPITicket[]>(`/Ticket?range=0-200&order=DESC&sort=15`);
+    // Filter open tickets in code — status: 1=Nouveau, 2=Assigne, 3=Planifie, 4=En attente
+    return Array.isArray(all) ? all.filter((t) => t.status <= 4) : [];
   }
 
   async getTicket(id: number): Promise<GLPITicket> {
@@ -93,7 +92,7 @@ export class GLPIClient {
 
   // Calcule le summary a partir des tickets
   async getTicketSummary(): Promise<GLPITicketSummary> {
-    const tickets = await this.getTickets('1,2,3,4');
+    const tickets = await this.getTickets();
     const byStatus: Record<number, number> = {};
     const byPriority: Record<number, number> = {};
     let solvedCount = 0;
