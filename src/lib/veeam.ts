@@ -147,13 +147,18 @@ export class VeeamClient {
   }
 }
 
-// Factory that caches clients by instanceId
-const clientCache = new Map<string, VeeamClient>();
+// Factory that caches clients by instanceId + config fingerprint
+const clientCache = new Map<string, { client: VeeamClient; fingerprint: string }>();
+
+function configFingerprint(instance: VeeamInstance): string {
+  return `${instance.baseUrl}|${instance.username}|${instance.psBaseUrl || ''}`;
+}
 
 export function getVeeamClient(instance: VeeamInstance): VeeamClient {
+  const fp = configFingerprint(instance);
   const cached = clientCache.get(instance.id);
-  if (cached) return cached;
+  if (cached && cached.fingerprint === fp) return cached.client;
   const client = new VeeamClient(instance);
-  clientCache.set(instance.id, client);
+  clientCache.set(instance.id, { client, fingerprint: fp });
   return client;
 }

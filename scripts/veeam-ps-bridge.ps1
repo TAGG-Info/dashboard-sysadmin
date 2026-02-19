@@ -59,8 +59,9 @@ function Refresh-Cache {
     try {
         Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Refreshing VBR data cache..."
 
-        # Get jobs
-        $jobs = Get-VBRJob | ForEach-Object {
+        # Get standard VM jobs (exclude agent jobs to avoid deprecation warning)
+        $jobs = @()
+        $jobs += Get-VBRJob -WarningAction SilentlyContinue | Where-Object { $_.JobType -ne 'EpAgentBackup' } | ForEach-Object {
             $lastSession = $_.FindLastSession()
             @{
                 id         = $_.Id.ToString()
@@ -71,6 +72,23 @@ function Refresh-Cache {
                 lastRun    = if ($lastSession) { $lastSession.CreationTime.ToUniversalTime().ToString("o") } else { $null }
                 lastResult = if ($lastSession) { $lastSession.Result.ToString() } else { "None" }
             }
+        }
+        # Get agent/computer backup jobs (Veeam 12+ recommended cmdlet)
+        try {
+            $jobs += Get-VBRComputerBackupJob | ForEach-Object {
+                $lastSession = $_.FindLastSession()
+                @{
+                    id         = $_.Id.ToString()
+                    name       = $_.Name
+                    type       = $_.JobType.ToString()
+                    isDisabled = (-not $_.IsScheduleEnabled)
+                    schedule   = @{ isEnabled = $_.IsScheduleEnabled }
+                    lastRun    = if ($lastSession) { $lastSession.CreationTime.ToUniversalTime().ToString("o") } else { $null }
+                    lastResult = if ($lastSession) { $lastSession.Result.ToString() } else { "None" }
+                }
+            }
+        } catch {
+            Write-Warning "Get-VBRComputerBackupJob failed: $_"
         }
         $script:jobsCache = ($jobs | ConvertTo-Json -Depth 5 -Compress)
         if (-not $jobs) { $script:jobsCache = "[]" }
