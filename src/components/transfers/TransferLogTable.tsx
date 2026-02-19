@@ -51,7 +51,7 @@ function StatusCell({ status }: { status: string }) {
 }
 
 const PROTOCOL_COLORS: Record<string, string> = {
-  SSH: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  SSH: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
   PESIT: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
   FTP: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
   HTTPS: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
