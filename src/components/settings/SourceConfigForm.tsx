@@ -1,19 +1,11 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import {
-  Eye,
-  EyeOff,
-  CheckCircle,
-  XCircle,
-  Loader2,
-  Save,
-  Plug,
-  Trash2,
-} from 'lucide-react';
+import { Eye, EyeOff, Loader2, Save, Plug, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 type SourceName = 'prtg' | 'vcenter' | 'proxmox' | 'veeam' | 'glpi' | 'securetransport';
 
@@ -58,7 +50,7 @@ const sourceFields: Record<SourceName, FieldDef[]> = {
   ],
   vcenter: [
     { key: 'baseUrl', label: 'URL de base', placeholder: 'https://vcenter.example.com' },
-    { key: 'username', label: 'Nom d\'utilisateur' },
+    { key: 'username', label: "Nom d'utilisateur" },
     { key: 'password', label: 'Mot de passe', secret: true },
     { key: 'externalUrl', label: 'URL externe', placeholder: 'https://vcenter.example.com/ui' },
   ],
@@ -70,7 +62,7 @@ const sourceFields: Record<SourceName, FieldDef[]> = {
   ],
   veeam: [
     { key: 'baseUrl', label: 'URL de base', placeholder: 'https://veeam.example.com:9419' },
-    { key: 'username', label: 'Nom d\'utilisateur' },
+    { key: 'username', label: "Nom d'utilisateur" },
     { key: 'password', label: 'Mot de passe', secret: true },
     { key: 'externalUrl', label: 'URL externe', placeholder: 'https://veeam.example.com' },
   ],
@@ -82,18 +74,12 @@ const sourceFields: Record<SourceName, FieldDef[]> = {
   ],
   securetransport: [
     { key: 'baseUrl', label: 'URL de base', placeholder: 'https://st.example.com' },
-    { key: 'username', label: 'Nom d\'utilisateur' },
+    { key: 'username', label: "Nom d'utilisateur" },
     { key: 'password', label: 'Mot de passe', secret: true },
     { key: 'apiVersion', label: 'Version API', defaultValue: 'v2.0' },
     { key: 'externalUrl', label: 'URL externe', placeholder: 'https://st.example.com' },
   ],
 };
-
-interface TestResult {
-  success: boolean;
-  latency?: number;
-  error?: string;
-}
 
 export function SourceConfigForm({
   source,
@@ -128,8 +114,6 @@ export function SourceConfigForm({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [testResult, setTestResult] = useState<TestResult | null>(null);
-  const [saveResult, setSaveResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const isLoading = testing || saving || deleting;
 
@@ -139,9 +123,6 @@ export function SourceConfigForm({
 
   const handleFieldChange = useCallback((key: string, value: string) => {
     setFormValues((prev) => ({ ...prev, [key]: value }));
-    // Clear results when user modifies form
-    setTestResult(null);
-    setSaveResult(null);
   }, []);
 
   // Build the config payload, sending **** for unchanged secret fields
@@ -170,7 +151,6 @@ export function SourceConfigForm({
 
   const handleTest = useCallback(async () => {
     setTesting(true);
-    setTestResult(null);
     try {
       const res = await fetch('/api/settings/sources/test', {
         method: 'POST',
@@ -179,15 +159,12 @@ export function SourceConfigForm({
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setTestResult({ success: true, latency: data.latency });
+        toast.success(`Connecte${data.latency !== undefined ? ` (${data.latency} ms)` : ''}`);
       } else {
-        setTestResult({ success: false, error: data.error || `HTTP ${res.status}` });
+        toast.error(data.error || `Erreur HTTP ${res.status}`);
       }
     } catch (err) {
-      setTestResult({
-        success: false,
-        error: err instanceof Error ? err.message : 'Erreur de connexion',
-      });
+      toast.error(err instanceof Error ? err.message : 'Erreur de connexion');
     } finally {
       setTesting(false);
     }
@@ -195,18 +172,16 @@ export function SourceConfigForm({
 
   const handleSave = useCallback(async () => {
     if (!instanceName.trim()) {
-      setSaveResult({ success: false, message: 'Le nom de l\'instance est requis' });
+      toast.error("Le nom de l'instance est requis");
       return;
     }
 
     setSaving(true);
-    setSaveResult(null);
     try {
       const body: Record<string, unknown> = {
         source,
         config: buildPayload(),
       };
-      // Include instanceId for existing instances
       if (instanceId) {
         body.instanceId = instanceId;
       }
@@ -218,20 +193,14 @@ export function SourceConfigForm({
       });
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
-        setSaveResult({ success: true, message: 'Configuration sauvegardee' });
+        toast.success('Configuration sauvegardee');
         onSave(data.instanceId);
       } else {
         const data = await res.json().catch(() => ({}));
-        setSaveResult({
-          success: false,
-          message: data.error || `Erreur HTTP ${res.status}`,
-        });
+        toast.error(data.error || `Erreur HTTP ${res.status}`);
       }
     } catch (err) {
-      setSaveResult({
-        success: false,
-        message: err instanceof Error ? err.message : 'Erreur de connexion',
-      });
+      toast.error(err instanceof Error ? err.message : 'Erreur de connexion');
     } finally {
       setSaving(false);
     }
@@ -251,20 +220,15 @@ export function SourceConfigForm({
         body: JSON.stringify({ source, instanceId }),
       });
       if (res.ok) {
+        toast.success('Instance supprimee');
         onDelete?.();
         onSave();
       } else {
         const data = await res.json().catch(() => ({}));
-        setSaveResult({
-          success: false,
-          message: data.error || `Erreur HTTP ${res.status}`,
-        });
+        toast.error(data.error || `Erreur HTTP ${res.status}`);
       }
     } catch (err) {
-      setSaveResult({
-        success: false,
-        message: err instanceof Error ? err.message : 'Erreur de connexion',
-      });
+      toast.error(err instanceof Error ? err.message : 'Erreur de connexion');
     } finally {
       setDeleting(false);
       setConfirmDelete(false);
@@ -275,21 +239,14 @@ export function SourceConfigForm({
     <div className="space-y-4">
       {/* Instance name field */}
       <div className="space-y-2">
-        <Label
-          htmlFor={`${source}-${instanceId || 'new'}-name`}
-          className="text-sm text-muted-foreground"
-        >
+        <Label htmlFor={`${source}-${instanceId || 'new'}-name`} className="text-muted-foreground text-sm">
           Nom de l&apos;instance <span className="text-[#ef4444]">*</span>
         </Label>
         <Input
           id={`${source}-${instanceId || 'new'}-name`}
           type="text"
           value={instanceName}
-          onChange={(e) => {
-            setInstanceName(e.target.value);
-            setTestResult(null);
-            setSaveResult(null);
-          }}
+          onChange={(e) => setInstanceName(e.target.value)}
           placeholder={`Ex: ${sourceLabels[source]} Production`}
           className="bg-background border-border/50"
           disabled={isLoading}
@@ -307,7 +264,7 @@ export function SourceConfigForm({
             <div key={field.key} className="space-y-2">
               <Label
                 htmlFor={`${source}-${instanceId || 'new'}-${field.key}`}
-                className="text-sm text-muted-foreground"
+                className="text-muted-foreground text-sm"
               >
                 {field.label}
               </Label>
@@ -325,14 +282,10 @@ export function SourceConfigForm({
                   <button
                     type="button"
                     onClick={() => toggleSecret(field.key)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 transition-colors"
                     tabIndex={-1}
                   >
-                    {isVisible ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 )}
               </div>
@@ -342,33 +295,14 @@ export function SourceConfigForm({
       </div>
 
       {/* Actions and results */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleTest}
-          disabled={isLoading}
-          className="gap-2"
-        >
-          {testing ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Plug className="h-3.5 w-3.5" />
-          )}
+      <div className="flex flex-col items-start gap-3 pt-2 sm:flex-row sm:items-center">
+        <Button variant="outline" size="sm" onClick={handleTest} disabled={isLoading} className="gap-2">
+          {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plug className="h-3.5 w-3.5" />}
           Tester la connexion
         </Button>
 
-        <Button
-          size="sm"
-          onClick={handleSave}
-          disabled={isLoading}
-          className="gap-2"
-        >
-          {saving ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Save className="h-3.5 w-3.5" />
-          )}
+        <Button size="sm" onClick={handleSave} disabled={isLoading} className="gap-2">
+          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
           Sauvegarder
         </Button>
 
@@ -379,61 +313,15 @@ export function SourceConfigForm({
             size="sm"
             onClick={handleDelete}
             disabled={isLoading}
-            className={`gap-2 ml-auto ${
+            className={`ml-auto gap-2 ${
               confirmDelete
                 ? 'border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444]/10'
-                : 'text-[#ef4444] hover:text-[#ef4444] hover:bg-[#ef4444]/10'
+                : 'text-[#ef4444] hover:bg-[#ef4444]/10 hover:text-[#ef4444]'
             }`}
           >
-            {deleting ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Trash2 className="h-3.5 w-3.5" />
-            )}
+            {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
             {confirmDelete ? 'Confirmer la suppression' : 'Supprimer'}
           </Button>
-        )}
-
-        {/* Test result */}
-        {testResult && (
-          <div className="flex items-center gap-2 ml-auto">
-            {testResult.success ? (
-              <>
-                <CheckCircle className="h-4 w-4 text-[#10b981]" />
-                <span className="text-sm text-[#10b981] font-medium">
-                  Connecte{testResult.latency !== undefined ? ` (${testResult.latency} ms)` : ''}
-                </span>
-              </>
-            ) : (
-              <>
-                <XCircle className="h-4 w-4 text-[#ef4444]" />
-                <span className="text-sm text-[#ef4444] font-medium max-w-[300px] truncate">
-                  {testResult.error || 'Erreur'}
-                </span>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Save result */}
-        {saveResult && !testResult && (
-          <div className="flex items-center gap-2 ml-auto">
-            {saveResult.success ? (
-              <>
-                <CheckCircle className="h-4 w-4 text-[#10b981]" />
-                <span className="text-sm text-[#10b981] font-medium">
-                  {saveResult.message}
-                </span>
-              </>
-            ) : (
-              <>
-                <XCircle className="h-4 w-4 text-[#ef4444]" />
-                <span className="text-sm text-[#ef4444] font-medium max-w-[300px] truncate">
-                  {saveResult.message}
-                </span>
-              </>
-            )}
-          </div>
         )}
       </div>
     </div>

@@ -3,17 +3,16 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
@@ -24,34 +23,32 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError('Identifiants invalides. Veuillez reessayer.');
+        toast.error('Identifiants invalides. Veuillez reessayer.');
       } else {
         router.push('/');
         router.refresh();
       }
     } catch {
-      setError('Une erreur est survenue. Veuillez reessayer.');
+      toast.error('Une erreur est survenue. Veuillez reessayer.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="bg-background flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="bg-card border border-border/50 rounded-2xl shadow-lg backdrop-blur-sm p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-foreground mb-2">
+        <div className="bg-card border-border/50 rounded-2xl border p-8 shadow-lg backdrop-blur-sm">
+          <div className="mb-8 text-center">
+            <h1 className="text-foreground mb-2 text-2xl font-bold">
               {process.env.NEXT_PUBLIC_APP_NAME || 'SysAdmin Dashboard'}
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Connectez-vous pour acceder au tableau de bord
-            </p>
+            <p className="text-muted-foreground text-sm">Connectez-vous pour acceder au tableau de bord</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-muted-foreground mb-1.5">
+              <label htmlFor="username" className="text-muted-foreground mb-1.5 block text-sm font-medium">
                 Nom d&apos;utilisateur
               </label>
               <input
@@ -60,14 +57,14 @@ export default function LoginPage() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                className="bg-background border-border text-foreground placeholder-muted-foreground/50 focus:ring-primary w-full rounded-lg border px-4 py-2.5 transition-all focus:border-transparent focus:ring-2 focus:outline-none"
                 placeholder="prenom.nom"
                 autoComplete="username"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-muted-foreground mb-1.5">
+              <label htmlFor="password" className="text-muted-foreground mb-1.5 block text-sm font-medium">
                 Mot de passe
               </label>
               <input
@@ -76,22 +73,16 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                className="bg-background border-border text-foreground placeholder-muted-foreground/50 focus:ring-primary w-full rounded-lg border px-4 py-2.5 transition-all focus:border-transparent focus:ring-2 focus:outline-none"
                 placeholder="Mot de passe"
                 autoComplete="current-password"
               />
             </div>
 
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 text-sm text-red-400">
-                {error}
-              </div>
-            )}
-
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+              className="bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-primary-foreground focus:ring-primary focus:ring-offset-background w-full rounded-lg px-4 py-2.5 font-medium transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed"
             >
               {loading ? 'Connexion en cours...' : 'Se connecter'}
             </button>

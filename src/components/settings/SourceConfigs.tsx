@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Database } from 'lucide-react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { SourceItem } from '@/components/settings/SourceItem';
 import type { SourceDef, InstanceConfig } from '@/components/settings/SourceItem';
@@ -43,7 +44,7 @@ export function SourceConfigs() {
         setConfigs(data.config || data);
       }
     } catch (err) {
-      console.error('[SourceConfigs] Failed to load config:', err);
+      toast.error('Erreur de chargement de la configuration');
     } finally {
       setLoading(false);
     }
@@ -79,36 +80,31 @@ export function SourceConfigs() {
   }, 0);
 
   return (
-    <div className="settings-card-glow rounded-xl bg-background border border-white/[0.06] overflow-hidden">
+    <div className="settings-card-glow bg-background overflow-hidden rounded-xl border border-white/[0.06]">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
+      <div className="flex items-center justify-between border-b border-white/[0.04] px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20">
-            <Database className="h-4 w-4 text-primary" />
+          <div className="bg-primary/10 border-primary/20 flex h-8 w-8 items-center justify-center rounded-lg border">
+            <Database className="text-primary h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground tracking-wide">Sources de donnees</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Connexions vers vos outils d&apos;infrastructure
-            </p>
+            <h3 className="text-foreground text-sm font-semibold tracking-wide">Sources de donnees</h3>
+            <p className="text-muted-foreground mt-0.5 text-sm">Connexions vers vos outils d&apos;infrastructure</p>
           </div>
         </div>
         {!loading && totalInstances > 0 && (
-          <Badge className="bg-primary/10 text-primary border-primary/20 text-sm h-6 px-2.5 font-semibold">
+          <Badge className="bg-primary/10 text-primary border-primary/20 h-6 px-2.5 text-sm font-semibold">
             {totalInstances} instance{totalInstances > 1 ? 's' : ''}
           </Badge>
         )}
       </div>
 
       {/* Source List */}
-      <div className="p-3 space-y-2 stagger-in">
+      <div className="stagger-in space-y-2 p-3">
         {loading ? (
           <>
             {sources.map(({ key }) => (
-              <div
-                key={key}
-                className="h-14 rounded-lg bg-white/[0.02] animate-pulse border border-white/[0.03]"
-              />
+              <div key={key} className="h-14 animate-pulse rounded-lg border border-white/[0.03] bg-white/[0.02]" />
             ))}
           </>
         ) : (

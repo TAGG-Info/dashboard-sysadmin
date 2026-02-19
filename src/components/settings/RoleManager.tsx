@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ShieldCheck, Plus, Pencil, Trash2, X, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,8 +45,11 @@ export function RoleManager() {
   const [form, setForm] = useState<RoleFormState>(emptyForm);
   const [adGroupInput, setAdGroupInput] = useState('');
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (error) toast.error(error);
+  }, [error]);
 
   const isEditing = editingRole !== null;
 
@@ -53,7 +57,6 @@ export function RoleManager() {
     setEditingRole(null);
     setForm(emptyForm);
     setAdGroupInput('');
-    setFormError(null);
     setDialogOpen(true);
   };
 
@@ -66,7 +69,6 @@ export function RoleManager() {
       pages: [...role.pages],
     });
     setAdGroupInput('');
-    setFormError(null);
     setDialogOpen(true);
   };
 
@@ -101,52 +103,42 @@ export function RoleManager() {
   };
 
   const handleSave = async () => {
-    setFormError(null);
-
     if (!form.name.trim()) {
-      setFormError('Le nom est requis');
+      toast.error('Le nom est requis');
       return;
     }
     if (!form.id || form.id.length < 2) {
-      setFormError("L'identifiant doit contenir au moins 2 caracteres");
+      toast.error("L'identifiant doit contenir au moins 2 caracteres");
       return;
     }
     if (form.pages.length === 0) {
-      setFormError('Selectionnez au moins une page');
+      toast.error('Selectionnez au moins une page');
       return;
     }
 
     setSaving(true);
-    let errMsg: string | null;
-
-    if (isEditing) {
-      errMsg = await updateRole({
-        id: form.id,
-        name: form.name,
-        adGroups: form.adGroups,
-        pages: form.pages,
-      });
-    } else {
-      errMsg = await createRole({
-        id: form.id,
-        name: form.name,
-        adGroups: form.adGroups,
-        pages: form.pages,
-      });
-    }
+    const errMsg = isEditing
+      ? await updateRole({ id: form.id, name: form.name, adGroups: form.adGroups, pages: form.pages })
+      : await createRole({ id: form.id, name: form.name, adGroups: form.adGroups, pages: form.pages });
 
     setSaving(false);
     if (errMsg) {
-      setFormError(errMsg);
+      toast.error(errMsg);
     } else {
+      toast.success(isEditing ? 'Role modifie' : 'Role cree');
       setDialogOpen(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     setSaving(true);
-    await deleteRole(id);
+    const errMsg = await deleteRole(id);
     setSaving(false);
+    if (errMsg) {
+      toast.error(errMsg);
+    } else {
+      toast.success('Role supprime');
+    }
     setConfirmDelete(null);
   };
 
@@ -190,13 +182,6 @@ export function RoleManager() {
           </Button>
         </div>
       </div>
-
-      {/* Error banner */}
-      {error && (
-        <div className="bg-destructive/10 border-destructive/20 text-destructive mx-3 mt-3 rounded-lg border px-3 py-2 text-sm">
-          {error}
-        </div>
-      )}
 
       {/* Role List */}
       <div className="space-y-2 p-3">
@@ -382,9 +367,6 @@ export function RoleManager() {
                 ))}
               </div>
             </div>
-
-            {/* Form error */}
-            {formError && <p className="text-destructive text-sm">{formError}</p>}
           </div>
 
           <DialogFooter>

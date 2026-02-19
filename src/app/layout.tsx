@@ -40,7 +40,7 @@ export default function RootLayout({
             </RefreshIntervalsProvider>
           </ThemeProvider>
         </SessionProvider>
-        <Toaster richColors position="bottom-right" theme="dark" />
+        <Toaster richColors position="top-right" theme="dark" />
       </body>
     </html>
   );
