@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function TicketsPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ zoom: 1.15 }}>
       <PageHeader title="Tickets GLPI" source="glpi" />
 
       {/* Stats cards */}

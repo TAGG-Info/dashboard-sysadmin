@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Mockup v6</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0b1120;
+    --bg-raised: #111827;
+    --bg-card: rgba(17,24,39,0.7);
+    --bg-card-solid: #111827;
+    --border: rgba(148,163,184,0.08);
+    --border-accent: rgba(45,212,191,0.2);
+    --text: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-muted: #64748b;
+    --accent: #2dd4bf;
+    --accent-glow: rgba(45,212,191,0.15);
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --orange: #fb923c;
+    --teal: #2dd4bf;
+    /* Brand colors (from SourceLogo.tsx) */
+    --prtg: #f99e1c;
+    --vmware: #879AC3;
+    --proxmox: #E57000;
+    --veeam: #4caf50;
+    --glpi: #00a5f3;
+    --st: #D9272D;
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 0 0 1px rgba(148,163,184,0.06);
+    --shadow-elevated: 0 4px 16px rgba(0,0,0,0.4), 0 0 0 1px rgba(148,163,184,0.06);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0; margin: 0;
+    zoom: 1.35;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== SHELL ===== */
+  .layout-shell { display: flex; min-height: 100vh; }
+
+  .sidebar-mock {
+    width: 220px;
+    background: var(--bg-raised);
+    border-right: 1px solid var(--border);
+    padding: 20px 14px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-mock .logo {
+    font-size: 15px; font-weight: 800; letter-spacing: -0.3px;
+    background: linear-gradient(135deg, var(--accent), #60a5fa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 28px; padding: 4px 12px;
+  }
+  .sidebar-mock .nav-item {
+    padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    color: var(--text-muted); margin-bottom: 2px; transition: all 0.15s;
+    cursor: pointer; display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-mock .nav-item svg { flex-shrink: 0; opacity: 0.65; transition: opacity 0.15s; }
+  .sidebar-mock .nav-item:hover svg { opacity: 0.85; }
+  .sidebar-mock .nav-item.active svg { opacity: 1; }
+  .sidebar-mock .nav-item:hover { color: var(--text-secondary); background: rgba(255,255,255,0.03); }
+  .sidebar-mock .nav-item.active {
+    background: var(--accent-glow);
+    color: var(--accent); font-weight: 600;
+    box-shadow: inset 0 0 0 1px rgba(45,212,191,0.12);
+  }
+
+  .main-area {
+    flex: 1; padding: 16px 28px; min-width: 0;
+    background: radial-gradient(ellipse at 20% 0%, rgba(45,212,191,0.03) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(96,165,250,0.02) 0%, transparent 50%);
+  }
+
+  /* ===== TOPBAR ===== */
+  .topbar-mock {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-dots { display: flex; gap: 6px; align-items: center; }
+  .topbar-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); box-shadow: 0 0 6px rgba(52,211,153,0.4);
+  }
+  .topbar-dot.warn { background: var(--yellow); box-shadow: 0 0 6px rgba(251,191,36,0.4); }
+  .topbar-dot.err { background: var(--red); box-shadow: 0 0 6px rgba(248,113,113,0.4); }
+  .topbar-user {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 500; color: var(--text-secondary);
+  }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 10px;
+    background: linear-gradient(135deg, rgba(45,212,191,0.2), rgba(96,165,250,0.2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: var(--accent); font-weight: 700;
+    border: 1px solid rgba(45,212,191,0.15);
+  }
+
+  /* ===== PAGE HEADER ===== */
+  .page-header {
+    margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;
+  }
+  .page-header h1 {
+    font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--text) 60%, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .page-header .subtitle {
+    font-size: 13px; color: var(--text-muted); font-weight: 400; margin-top: 2px;
+  }
+  .refresh-btn {
+    padding: 7px 16px; border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-raised); color: var(--text-secondary);
+    font-size: 12px; font-weight: 500; font-family: inherit;
+    cursor: pointer; transition: all 0.15s;
+    box-shadow: var(--shadow-card);
+  }
+  .refresh-btn:hover { border-color: var(--border-accent); color: var(--accent); }
+
+  /* ===== CARD BASE ===== */
+  .card {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .card:hover { box-shadow: var(--shadow-elevated); border-color: rgba(148,163,184,0.12); }
+
+  /* ===== ROW 1: STAT CARDS ===== */
+  .cards-grid-5 {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 14px; margin-bottom: 18px;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px 10px;
+    position: relative; overflow: hidden;
+    box-shadow: var(--shadow-card);
+    transition: all 0.2s;
+  }
+  .stat-card:hover {
+    box-shadow: var(--shadow-elevated);
+    border-color: rgba(148,163,184,0.12);
+    transform: translateY(-1px);
+  }
+  .stat-card .accent-bar {
+    position: absolute; top: 0; left: 0; bottom: 0; width: 3px; border-radius: 12px 0 0 12px;
+  }
+  .stat-card .card-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+  }
+  .stat-card .card-title {
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.6px;
+  }
+  .stat-card .card-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+  }
+  .stat-card .big-number {
+    font-size: 28px; font-weight: 800; letter-spacing: -1px; line-height: 1;
+  }
+  .stat-card .sub-line {
+    font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 400;
+  }
+  .stat-card .sub-line .down { color: var(--red); font-weight: 600; }
+  .stat-card .sub-line .warn { color: var(--yellow); font-weight: 600; }
+  .stat-card .sub-line .ok { color: var(--green); font-weight: 600; }
+  .sparkline { margin-top: 10px; height: 28px; opacity: 0.8; }
+  .sparkline svg { width: 100%; height: 100%; }
+
+  /* ===== ROW 2: INFRA = 3 PANELS ===== */
+  .infra-row {
+    display: grid; grid-template-columns: auto 1fr 1fr;
+    gap: 14px; margin-bottom: 18px;
+  }
+  .infra-panel {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .section-label {
+    font-size: 10px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+  }
+  .gauges-row { display: flex; gap: 14px; align-items: center; }
+
+  /* Host rows */
+  .host-row {
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .host-row:last-child { border-bottom: none; }
+  .host-name {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
+  }
+  .host-model {
+    font-size: 10px; color: var(--text-muted); margin-bottom: 3px;
+    font-weight: 400; letter-spacing: 0.2px;
+  }
+  .host-detail { font-size: 11px; color: var(--text-secondary); font-weight: 400; }
+
+  /* Hypervisor tabs */
+  .hyper-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+  .hyper-tab {
+    padding: 5px 14px; border-radius: 8px;
+    font-size: 11px; font-weight: 600; font-family: inherit;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .hyper-tab:hover { color: var(--text-secondary); background: rgba(255,255,255,0.03); }
+  .hyper-tab.active-vcenter {
+    background: rgba(135,154,195,0.15); color: #879AC3;
+    border-color: rgba(135,154,195,0.3);
+    box-shadow: 0 0 12px rgba(135,154,195,0.1);
+  }
+  .hyper-tab.active-proxmox {
+    background: rgba(229,112,0,0.15); color: #E57000;
+    border-color: rgba(229,112,0,0.3);
+    box-shadow: 0 0 12px rgba(229,112,0,0.1);
+  }
+  .hyper-content { display: none; }
+  .hyper-content.active { display: block; }
+
+  /* Mini gauges */
+  .mini-gauges { display: flex; gap: 10px; margin-top: 4px; }
+  .mini-gauge { display: flex; align-items: center; gap: 4px; font-size: 10px; }
+  .mini-gauge .mg-label { color: var(--text-muted); font-weight: 600; min-width: 24px; }
+  .mini-gauge .mg-bar {
+    width: 48px; height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px; overflow: hidden;
+  }
+  .mini-gauge .mg-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+  .mini-gauge .mg-val { color: var(--text-secondary); font-weight: 700; min-width: 28px; }
+
+  /* ===== ROW 3: CALENDAR + TICKETS ===== */
+  .row-3 {
+    display: grid; grid-template-columns: auto 1fr;
+    gap: 14px; margin-bottom: 18px;
+  }
+  .panel {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: var(--shadow-card);
+  }
+  .panel-title {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .panel-title .icon {
+    width: 22px; height: 22px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+
+  /* Calendar */
+  .calendar-wrapper { max-width: 280px; }
+  .calendar-mini {
+    display: grid; grid-template-columns: repeat(7, 36px);
+    grid-auto-rows: 28px; gap: 3px;
+  }
+  .calendar-mini .day-header {
+    font-size: 10px; color: var(--text-muted); font-weight: 600;
+    text-align: center; display: flex; align-items: center; justify-content: center;
+  }
+  .calendar-mini .day {
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 500; color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .calendar-mini .day.success { background: rgba(52,211,153,0.15); color: var(--green); }
+  .calendar-mini .day.fail { background: rgba(248,113,113,0.2); color: var(--red); box-shadow: inset 0 0 0 1px rgba(248,113,113,0.2); }
+  .calendar-mini .day.mixed { background: rgba(251,191,36,0.15); color: var(--yellow); }
+  .calendar-mini .day.empty { background: transparent; }
+  .calendar-mini .day.future { background: rgba(255,255,255,0.02); }
+  .cal-legend { margin-top: 12px; display: flex; gap: 14px; font-size: 11px; color: var(--text-muted); font-weight: 500; }
+  .cal-legend .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; vertical-align: middle; }
+
+  /* Ticket bars */
+  .h-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .h-bar .label { font-size: 12px; color: var(--text-muted); font-weight: 500; width: 74px; text-align: right; flex-shrink: 0; }
+  .h-bar .bar-bg { flex: 1; height: 22px; background: rgba(255,255,255,0.04); border-radius: 6px; overflow: hidden; }
+  .h-bar .bar-fill {
+    height: 100%; border-radius: 6px;
+    display: flex; align-items: center; padding-left: 10px;
+    font-size: 11px; color: white; font-weight: 700;
+    transition: width 0.4s ease;
+  }
+  .ticket-footer {
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 24px; font-size: 12px; color: var(--text-muted); font-weight: 400;
+  }
+
+  /* ===== ROW 4: JOBS ===== */
+  .row-4 { display: grid; grid-template-columns: 1fr; gap: 14px; }
+
+  .job-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .job-item:last-child { border-bottom: none; }
+  .job-name { font-size: 12px; color: var(--text); font-weight: 500; }
+  .job-type { font-size: 10px; color: var(--text-muted); font-weight: 400; margin-top: 1px; }
+  .job-meta { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .job-time { font-size: 10px; color: var(--text-muted); font-weight: 400; }
+
+  /* ===== TIMELINE ===== */
+  .timeline-item {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .timeline-item:last-child { border-bottom: none; }
+  .timeline-dot {
+    width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+  }
+  .timeline-content .title { font-size: 12px; color: var(--text); font-weight: 500; }
+  .timeline-content .meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-weight: 400; }
+
+  /* ===== BADGES ===== */
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px; border-radius: 6px;
+    font-size: 10px; font-weight: 600; margin-left: 6px;
+    letter-spacing: 0.2px;
+  }
+  .badge.success { background: rgba(52,211,153,0.12); color: var(--green); }
+  .badge.warning { background: rgba(251,191,36,0.12); color: var(--yellow); }
+  .badge.error { background: rgba(248,113,113,0.15); color: var(--red); }
+  .badge.info { background: rgba(96,165,250,0.12); color: var(--blue); }
+
+  /* ===== HYPER SUMMARY ===== */
+  .hyper-summary {
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--text-muted); font-weight: 400;
+  }
+  .hyper-summary strong { color: var(--text); font-weight: 700; }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="layout-shell">
+  <div class="sidebar-mock">
+    <div class="logo">TAGG Dashboard</div>
+    <div class="nav-item active">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 166.446 130.297" xmlns="http://www.w3.org/2000/svg"><path d="M106.062 69.168a83.2 83.2 0 0 0-56.58 22.273l14.058 15.972q-.68.449-1.345.914A58.04 58.04 0 0 1 95.47 97.841c18.162.001 34.756 8.441 45.516 22.037 8.307-9.191 16.743-18.52 23.854-26.386a83.2 83.2 0 0 0-58.777-24.324" fill="#f99e1c" transform="translate(-22.812 -69.168)"/><path d="m51.266 122.989 75.49 45.426-11.581 10.248z" fill="#00397e" transform="translate(-22.812 -69.168)"/><path d="m41.29 184.952-35.564.02c-2.142 12.892-8.613 24.66-18.29 33.441a58.04 58.04 0 0 1-23.945 13.03l6.203 31.806a83.13 83.13 0 0 0 44.338-20.686 83.2 83.2 0 0 0 27.262-57.61z" fill="#ee0f6a" transform="rotate(-47.853 -89.352 -8.877)"/><path d="M49.493 91.451c-16.976 15.728-26.66 37.78-26.681 60.922.004 16.815 5.165 33.233 14.686 47.092l12.026-8.161c-7.83-10.147-12.138-22.6-12.147-35.417a58.05 58.05 0 0 1 26.173-48.465z" fill="#b4cc38" transform="translate(-22.812 -69.168)"/></svg>
+      Monitoring
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#879AC3" fill-rule="evenodd" d="M5.574 0c-.959 0-1.728.754-1.728 1.68v5.744H1.728C.77 7.424 0 8.18 0 9.104v12.438c0 .926.77 1.68 1.728 1.68H14.58c.96 0 1.753-.754 1.753-1.68v-2.045h5.939c.958 0 1.728-.757 1.728-1.68V5.38c0-.924-.77-1.655-1.728-1.655h-2.118V1.68c0-.926-.771-1.68-1.728-1.68zm0 .95h12.852c.42 0 .755.323.755.73v2.044H9.42c-.957 0-1.753.731-1.753 1.655v2.045H4.82V1.68c0-.407.332-.73.755-.73m3.846 3.7h9.76v9.443a.76.76 0 0 1-.754.755h-2.093V9.103c0-.923-.794-1.68-1.753-1.68h-5.94V5.38c0-.406.36-.73.779-.73m10.734 0h2.118c.42 0 .754.323.754.73v12.437c0 .406-.334.73-.754.73h-5.94v-2.75h2.094c.957 0 1.728-.778 1.728-1.704zM1.728 8.372h2.118v5.72c0 .926.769 1.704 1.728 1.704h2.093v2.02c0 .923.796 1.68 1.753 1.68h5.939v2.045c0 .406-.356.73-.779.73H1.728a.735.735 0 0 1-.754-.73V9.103c0-.405.329-.73.754-.73m3.091 0h2.848v6.475H5.574a.757.757 0 0 1-.755-.755zm3.822 0h5.94c.422 0 .778.325.778.73v5.745H8.641zm0 7.424h6.718v2.75h-5.94c-.419 0-.778-.324-.778-.73z"/></svg>
+      Infrastructure
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#4caf50" d="M6 6v24.75S6.093 42 17.25 42H42v-8H19s-8-.125-8-8V6z"/><path fill="#90a4ae" d="M15 6h6l7.5 18L36 6h6L32 30h-7z"/></svg>
+      Sauvegardes
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="-10 145 190 230" xmlns="http://www.w3.org/2000/svg"><path fill="#00a5f3" opacity="0.6" d="M128.5 308.4c-7.9-.6-15.7-2.3-23.1-4.9 19.7-11.1 33.1-27.1 38.2-49.3 1.4-6-2.7-9.1-7.8-11-10.2-3.8-21-4.2-31.8-4.6-5.4 0-10.8-.2-16.2-.8 16.4-7.2 33.7-12.3 51.4-15.1 9.1-1.8 18.6-1.8 27.7 0 12.6 3 19 12.8 16.1 25.4-4.5 19.5-19.1 31.5-33 43.9-6.6 6.1-14.3 11-21.5 16.4m-33.4 18.2-17.8-3.8c-.5 4.7-4.9 5.5-7.9 7.2-14.8 8.3-54.7 27.4-55.7 30.6 3 0 59.6-21.8 81.4-34"/><path fill="#00a5f3" d="M104.1 176.7c19.2-7 39.1-8.9 59.3-8.8 4.9 0 9.3.8 9.6-6.4.3-6.6-2-9.3-8.8-9.7-19.5-1.1-39.1-.1-58.4 2.9-26.7 4-52.6 10.6-74.9 26.9C-2.5 206-10 252.8 14.2 286.4c5.3 7.4 12 13.7 19.6 18.7 13.3 8.5 28 14.5 43.4 17.7l17.8 3.8c22.3 2.1 44.6 3.9 67.1 1.9 7.4-.7 7.4-4.4 7.4-9.7.2-5.9-1.8-8.4-8.1-8.2-11.1.6-22.2-.1-33-2.2-7.9-.6-15.7-2.3-23.1-4.9-33.6-11.2-49.5-31.3-49.7-62.6-.1-30.9 16.3-52.4 48.5-64.2"/></svg>
+      Tickets
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 6 64 44" xmlns="http://www.w3.org/2000/svg"><path fill="#D9272D" d="M64.01,27.362V18.562L50.71,12.062v13.3l-50.7,-24.2v8.8l58,27.6v-13z"/><path fill="#D9272D" d="M13,33.7v8.8l9.4,4.4l-15.1,15.9h9.9l17.7,-18.7z"/><path fill="#D9272D" d="M58,42.1l-51,-24.5v8.8l40.6,19.5z"/></svg>
+      Transferts
+    </div>
+    <div style="margin-top:auto">
+      <div class="nav-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.18V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0-.42-2.59H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 2.59-.42V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1.08 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0 .42 2.59H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1.08z"/></svg>
+        Parametres
+      </div>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <!-- Topbar -->
+    <div class="topbar-mock">
+      <div class="topbar-dots">
+        <div class="topbar-dot"></div><div class="topbar-dot"></div><div class="topbar-dot"></div>
+        <div class="topbar-dot"></div><div class="topbar-dot warn"></div><div class="topbar-dot"></div>
+      </div>
+      <div class="topbar-user">admin <div class="avatar">A</div></div>
+    </div>
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1>Dashboard</h1>
+        <div class="subtitle">Vue d'ensemble de l'infrastructure</div>
+      </div>
+      <div class="refresh-btn">&#8635; Rafraichir &middot; 28s</div>
+    </div>
+
+    <!-- ROW 1: 5 StatCards -->
+    <div class="cards-grid-5">
+      <div class="stat-card">
+        <div class="accent-bar" style="background:linear-gradient(180deg,var(--prtg),rgba(249,158,28,0.3))"></div>
+        <div class="card-header">
+          <span class="card-title">Monitoring</span>
+          <div class="card-icon" style="background:rgba(249,158,28,0.12);padding:4px">
+            <svg width="18" height="18" viewBox="0 0 166.446 130.297" xmlns="http://www.w3.org/2000/svg"><path d="M106.062 69.168a83.2 83.2 0 0 0-56.58 22.273l14.058 15.972q-.68.449-1.345.914A58.04 58.04 0 0 1 95.47 97.841c18.162.001 34.756 8.441 45.516 22.037 8.307-9.191 16.743-18.52 23.854-26.386a83.2 83.2 0 0 0-58.777-24.324" fill="#f99e1c" transform="translate(-22.812 -69.168)"/><path d="m51.266 122.989 75.49 45.426-11.581 10.248z" fill="#00397e" transform="translate(-22.812 -69.168)"/><path d="m41.29 184.952-35.564.02c-2.142 12.892-8.613 24.66-18.29 33.441a58.04 58.04 0 0 1-23.945 13.03l6.203 31.806a83.13 83.13 0 0 0 44.338-20.686 83.2 83.2 0 0 0 27.262-57.61z" fill="#ee0f6a" transform="rotate(-47.853 -89.352 -8.877)"/><path d="M49.493 91.451c-16.976 15.728-26.66 37.78-26.681 60.922.004 16.815 5.165 33.233 14.686 47.092l12.026-8.161c-7.83-10.147-12.138-22.6-12.147-35.417a58.05 58.05 0 0 1 26.173-48.465z" fill="#b4cc38" transform="translate(-22.812 -69.168)"/></svg>
+          </div>
+        </div>
+        <div class="big-number" style="color:var(--text)">142</div>
+        <div class="sub-line">capteurs actifs</div>
+        <div class="sub-line"><span class="down">3 Down</span> &middot; <span class="warn">1 Warning</span></div>
+        <div class="sparkline"><svg viewBox="0 0 120 28"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f99e1c" stop-opacity="0.3"/><stop offset="100%" stop-color="#f99e1c" stop-opacity="0"/></linearGradient></defs><polyline fill="url(#g1)" stroke="none" points="0,28 0,20 15,18 30,22 45,14 60,16 75,10 90,12 105,8 120,5 120,28"/><polyline fill="none" stroke="#f99e1c" stroke-width="2" stroke-linejoin="round" points="0,20 15,18 30,22 45,14 60,16 75,10 90,12 105,8 120,5"/></svg></div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-bar" style="background:linear-gradient(180deg,var(--vmware),rgba(135,154,195,0.3))"></div>
+        <div class="card-header">
+          <span class="card-title">Infrastructure</span>
+          <div class="card-icon" style="background:rgba(135,154,195,0.12);padding:4px">
+            <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#879AC3" fill-rule="evenodd" d="M5.574 0c-.959 0-1.728.754-1.728 1.68v5.744H1.728C.77 7.424 0 8.18 0 9.104v12.438c0 .926.77 1.68 1.728 1.68H14.58c.96 0 1.753-.754 1.753-1.68v-2.045h5.939c.958 0 1.728-.757 1.728-1.68V5.38c0-.924-.77-1.655-1.728-1.655h-2.118V1.68c0-.926-.771-1.68-1.728-1.68zm0 .95h12.852c.42 0 .755.323.755.73v2.044H9.42c-.957 0-1.753.731-1.753 1.655v2.045H4.82V1.68c0-.407.332-.73.755-.73m3.846 3.7h9.76v9.443a.76.76 0 0 1-.754.755h-2.093V9.103c0-.923-.794-1.68-1.753-1.68h-5.94V5.38c0-.406.36-.73.779-.73m10.734 0h2.118c.42 0 .754.323.754.73v12.437c0 .406-.334.73-.754.73h-5.94v-2.75h2.094c.957 0 1.728-.778 1.728-1.704zM1.728 8.372h2.118v5.72c0 .926.769 1.704 1.728 1.704h2.093v2.02c0 .923.796 1.68 1.753 1.68h5.939v2.045c0 .406-.356.73-.779.73H1.728a.735.735 0 0 1-.754-.73V9.103c0-.405.329-.73.754-.73m3.091 0h2.848v6.475H5.574a.757.757 0 0 1-.755-.755zm3.822 0h5.94c.422 0 .778.325.778.73v5.745H8.641zm0 7.424h6.718v2.75h-5.94c-.419 0-.778-.324-.778-.73z"/></svg>
+          </div>
+        </div>
+        <div class="big-number" style="color:var(--text)">38</div>
+        <div class="sub-line">VMs en fonctionnement</div>
+        <div class="sub-line"><span class="ok">3 hosts</span> &middot; 42 total</div>
+        <div class="sparkline"><svg viewBox="0 0 120 28"><defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#879AC3" stop-opacity="0.3"/><stop offset="100%" stop-color="#879AC3" stop-opacity="0"/></linearGradient></defs><polyline fill="url(#g2)" stroke="none" points="0,28 0,14 15,12 30,16 45,10 60,8 75,12 90,10 105,8 120,10 120,28"/><polyline fill="none" stroke="#879AC3" stroke-width="2" stroke-linejoin="round" points="0,14 15,12 30,16 45,10 60,8 75,12 90,10 105,8 120,10"/></svg></div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-bar" style="background:linear-gradient(180deg,var(--veeam),rgba(76,175,80,0.3))"></div>
+        <div class="card-header">
+          <span class="card-title">Sauvegardes</span>
+          <div class="card-icon" style="background:rgba(76,175,80,0.12);padding:4px">
+            <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#4caf50" d="M6 6v24.75S6.093 42 17.25 42H42v-8H19s-8-.125-8-8V6z"/><path fill="#90a4ae" d="M15 6h6l7.5 18L36 6h6L32 30h-7z"/></svg>
+          </div>
+        </div>
+        <div class="big-number" style="color:var(--text)">18</div>
+        <div class="sub-line">succes (24h)</div>
+        <div class="sub-line"><span class="down">2 echecs</span> &middot; <span class="warn">1 warning</span></div>
+        <div class="sparkline"><svg viewBox="0 0 120 28"><defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4caf50" stop-opacity="0.3"/><stop offset="100%" stop-color="#4caf50" stop-opacity="0"/></linearGradient></defs><polyline fill="url(#g3)" stroke="none" points="0,28 0,10 15,8 30,12 45,6 60,18 75,8 90,6 105,10 120,8 120,28"/><polyline fill="none" stroke="#4caf50" stroke-width="2" stroke-linejoin="round" points="0,10 15,8 30,12 45,6 60,18 75,8 90,6 105,10 120,8"/></svg></div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-bar" style="background:linear-gradient(180deg,var(--glpi),rgba(0,165,243,0.3))"></div>
+        <div class="card-header">
+          <span class="card-title">Tickets</span>
+          <div class="card-icon" style="background:rgba(0,165,243,0.12);padding:4px">
+            <svg width="18" height="18" viewBox="-10 145 190 230" xmlns="http://www.w3.org/2000/svg"><path fill="#00a5f3" opacity="0.6" d="M128.5 308.4c-7.9-.6-15.7-2.3-23.1-4.9 19.7-11.1 33.1-27.1 38.2-49.3 1.4-6-2.7-9.1-7.8-11-10.2-3.8-21-4.2-31.8-4.6-5.4 0-10.8-.2-16.2-.8 16.4-7.2 33.7-12.3 51.4-15.1 9.1-1.8 18.6-1.8 27.7 0 12.6 3 19 12.8 16.1 25.4-4.5 19.5-19.1 31.5-33 43.9-6.6 6.1-14.3 11-21.5 16.4m-33.4 18.2-17.8-3.8c-.5 4.7-4.9 5.5-7.9 7.2-14.8 8.3-54.7 27.4-55.7 30.6 3 0 59.6-21.8 81.4-34"/><path fill="#00a5f3" d="M104.1 176.7c19.2-7 39.1-8.9 59.3-8.8 4.9 0 9.3.8 9.6-6.4.3-6.6-2-9.3-8.8-9.7-19.5-1.1-39.1-.1-58.4 2.9-26.7 4-52.6 10.6-74.9 26.9C-2.5 206-10 252.8 14.2 286.4c5.3 7.4 12 13.7 19.6 18.7 13.3 8.5 28 14.5 43.4 17.7l17.8 3.8c22.3 2.1 44.6 3.9 67.1 1.9 7.4-.7 7.4-4.4 7.4-9.7.2-5.9-1.8-8.4-8.1-8.2-11.1.6-22.2-.1-33-2.2-7.9-.6-15.7-2.3-23.1-4.9-33.6-11.2-49.5-31.3-49.7-62.6-.1-30.9 16.3-52.4 48.5-64.2"/></svg>
+          </div>
+        </div>
+        <div class="big-number" style="color:var(--text)">12</div>
+        <div class="sub-line">tickets ouverts</div>
+        <div class="sub-line"><span class="down">1 critique</span> &middot; 4 nouveaux</div>
+        <div class="sparkline"><svg viewBox="0 0 120 28"><defs><linearGradient id="g4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00a5f3" stop-opacity="0.3"/><stop offset="100%" stop-color="#00a5f3" stop-opacity="0"/></linearGradient></defs><polyline fill="url(#g4)" stroke="none" points="0,28 0,16 15,14 30,18 45,12 60,20 75,16 90,14 105,18 120,12 120,28"/><polyline fill="none" stroke="#00a5f3" stroke-width="2" stroke-linejoin="round" points="0,16 15,14 30,18 45,12 60,20 75,16 90,14 105,18 120,12"/></svg></div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-bar" style="background:linear-gradient(180deg,var(--st),rgba(217,39,45,0.3))"></div>
+        <div class="card-header">
+          <span class="card-title">Transferts</span>
+          <div class="card-icon" style="background:rgba(217,39,45,0.12);padding:4px">
+            <svg width="18" height="18" viewBox="0 6 64 44" xmlns="http://www.w3.org/2000/svg"><path fill="#D9272D" d="M64.01,27.362V18.562L50.71,12.062v13.3l-50.7,-24.2v8.8l58,27.6v-13z"/><path fill="#D9272D" d="M13,33.7v8.8l9.4,4.4l-15.1,15.9h9.9l17.7,-18.7z"/><path fill="#D9272D" d="M58,42.1l-51,-24.5v8.8l40.6,19.5z"/></svg>
+          </div>
+        </div>
+        <div class="big-number" style="color:var(--text)">45</div>
+        <div class="sub-line">comptes actifs</div>
+        <div class="sub-line"><span class="warn">2 certs expirants</span> &middot; 156 sites</div>
+        <div class="sparkline"><svg viewBox="0 0 120 28"><defs><linearGradient id="g5" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D9272D" stop-opacity="0.3"/><stop offset="100%" stop-color="#D9272D" stop-opacity="0"/></linearGradient></defs><polyline fill="url(#g5)" stroke="none" points="0,28 0,18 15,14 30,16 45,10 60,12 75,8 90,14 105,10 120,8 120,28"/><polyline fill="none" stroke="#D9272D" stroke-width="2" stroke-linejoin="round" points="0,18 15,14 30,16 45,10 60,12 75,8 90,14 105,10 120,8"/></svg></div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Gauges + Hypervisor + Activity -->
+    <div class="infra-row">
+      <!-- Gauges -->
+      <div class="infra-panel">
+        <div class="section-label">Ressources</div>
+        <div class="gauges-row">
+          <div class="gauge-item">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="29" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="29" fill="none" stroke="url(#gc1)" stroke-width="5" stroke-dasharray="122 182" stroke-dashoffset="-91" stroke-linecap="round" transform="rotate(-90 36 36)"/>
+              <defs><linearGradient id="gc1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient></defs>
+              <text x="36" y="34" text-anchor="middle" fill="var(--text)" font-size="15" font-weight="800" font-family="Inter">67</text>
+              <text x="50" y="30" text-anchor="start" fill="var(--text-muted)" font-size="8" font-weight="600">%</text>
+              <text x="36" y="47" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-weight="600">CPU</text>
+            </svg>
+          </div>
+          <div class="gauge-item">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="29" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="29" fill="none" stroke="url(#gc2)" stroke-width="5" stroke-dasharray="149 182" stroke-dashoffset="-91" stroke-linecap="round" transform="rotate(-90 36 36)"/>
+              <defs><linearGradient id="gc2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient></defs>
+              <text x="36" y="34" text-anchor="middle" fill="var(--text)" font-size="15" font-weight="800" font-family="Inter">82</text>
+              <text x="50" y="30" text-anchor="start" fill="var(--text-muted)" font-size="8" font-weight="600">%</text>
+              <text x="36" y="47" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-weight="600">RAM</text>
+            </svg>
+          </div>
+          <div class="gauge-item">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r="29" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="5"/>
+              <circle cx="36" cy="36" r="29" fill="none" stroke="url(#gc3)" stroke-width="5" stroke-dasharray="82 182" stroke-dashoffset="-91" stroke-linecap="round" transform="rotate(-90 36 36)"/>
+              <defs><linearGradient id="gc3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#10b981"/></linearGradient></defs>
+              <text x="36" y="34" text-anchor="middle" fill="var(--text)" font-size="15" font-weight="800" font-family="Inter">45</text>
+              <text x="50" y="30" text-anchor="start" fill="var(--text-muted)" font-size="8" font-weight="600">%</text>
+              <text x="36" y="47" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-weight="600">DISK</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hypervisor tabs -->
+      <div class="infra-panel">
+        <div class="hyper-tabs">
+          <div class="hyper-tab active-vcenter" onclick="switchHyper('vcenter',this)" style="display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" fill-rule="evenodd" d="M5.574 0c-.959 0-1.728.754-1.728 1.68v5.744H1.728C.77 7.424 0 8.18 0 9.104v12.438c0 .926.77 1.68 1.728 1.68H14.58c.96 0 1.753-.754 1.753-1.68v-2.045h5.939c.958 0 1.728-.757 1.728-1.68V5.38c0-.924-.77-1.655-1.728-1.655h-2.118V1.68c0-.926-.771-1.68-1.728-1.68zm0 .95h12.852c.42 0 .755.323.755.73v2.044H9.42c-.957 0-1.753.731-1.753 1.655v2.045H4.82V1.68c0-.407.332-.73.755-.73m3.846 3.7h9.76v9.443a.76.76 0 0 1-.754.755h-2.093V9.103c0-.923-.794-1.68-1.753-1.68h-5.94V5.38c0-.406.36-.73.779-.73m10.734 0h2.118c.42 0 .754.323.754.73v12.437c0 .406-.334.73-.754.73h-5.94v-2.75h2.094c.957 0 1.728-.778 1.728-1.704zM1.728 8.372h2.118v5.72c0 .926.769 1.704 1.728 1.704h2.093v2.02c0 .923.796 1.68 1.753 1.68h5.939v2.045c0 .406-.356.73-.779.73H1.728a.735.735 0 0 1-.754-.73V9.103c0-.405.329-.73.754-.73m3.091 0h2.848v6.475H5.574a.757.757 0 0 1-.755-.755zm3.822 0h5.94c.422 0 .778.325.778.73v5.745H8.641zm0 7.424h6.718v2.75h-5.94c-.419 0-.778-.324-.778-.73z"/></svg>
+            vCenter
+          </div>
+          <div class="hyper-tab" onclick="switchHyper('proxmox',this)" style="display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" viewBox="0 34 512 444" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M137.9 34.1c-10.5 0-19.7 1.9-28.5 5.7-8.6 3.8-16.2 8.9-22.9 15.6l170 186.4L426.1 55.3c-6.7-6.7-14.3-11.8-23.4-15.6-8.3-3.8-18-5.7-28-5.7-10.5 0-20.5 2.2-29.4 6.2-9.2 4-16.7 10-23.7 17l-65.2 72.2-66-72.2c-6.7-7-14.3-12.9-23.7-17-8.3-4-18.3-6.1-28.8-6.1M256.4 270l-170 186.7c6.7 6.5 14.3 11.8 22.9 15.6 8.9 3.8 18.1 5.7 28 5.7 11 0 20.5-2.4 29.4-6.2 9.4-4.3 17.5-10 24.2-17l65.5-72.2 65.4 72.2c6.7 7 14.3 12.7 23.4 17 8.9 3.8 18.6 6.2 29.4 6.2 10 0 19.7-1.9 28-5.7 9.2-3.8 16.7-9.2 23.4-15.6z"/><path fill="currentColor" d="M56 90.1c-10.8.3-21.3 2.4-30.7 6.5-9.7 4-18 9.7-25.3 16.7L129.8 256 0 398.5c7.3 7.3 15.6 12.9 25.3 17.2 9.4 4.3 19.9 6.2 30.7 6.7 11.6-.5 22.4-2.4 32.3-7.3q15-6.9 25.8-18.6l128-140.5-127.9-140.3c-7.8-7.5-16.2-13.7-26.1-18.6-10-4.6-20.5-6.7-32.1-7m399.7 0c-11.6.3-21.8 2.4-31.8 7-10 4.8-18.6 11-26.1 18.6L270.4 256l127.4 140.6q11.25 11.7 26.1 18.6c10 4.8 20.2 6.7 31.8 7.3 11.6-.5 21.5-2.4 31-6.7 10.2-4.3 18-10 25.3-17.2L382.5 256 512 113.3c-7.3-7-15.1-12.7-25.3-16.7-9.4-4.1-19.4-6.2-31-6.5"/></svg>
+            Proxmox
+          </div>
+        </div>
+
+        <div class="hyper-content active" id="hyper-vcenter">
+          <div class="host-row">
+            <div class="host-name">esxi-01 <span class="badge success">Connected</span></div>
+            <div class="host-model">Intel Xeon Gold 6248 (2x) &middot; ESXi 8.0 U2</div>
+            <div class="host-detail">12 VMs &middot; 24 vCPU &middot; 64 Go RAM &middot; uptime 127j</div>
+            <div class="mini-gauges">
+              <div class="mini-gauge"><span class="mg-label">CPU</span><div class="mg-bar"><div class="mg-fill" style="width:72%;background:linear-gradient(90deg,#fbbf24,#f59e0b)"></div></div><span class="mg-val">72%</span></div>
+              <div class="mini-gauge"><span class="mg-label">RAM</span><div class="mg-bar"><div class="mg-fill" style="width:85%;background:linear-gradient(90deg,#f87171,#ef4444)"></div></div><span class="mg-val">85%</span></div>
+              <div class="mini-gauge"><span class="mg-label">Disk</span><div class="mg-bar"><div class="mg-fill" style="width:58%;background:linear-gradient(90deg,#60a5fa,#3b82f6)"></div></div><span class="mg-val">58%</span></div>
+            </div>
+          </div>
+          <div class="host-row">
+            <div class="host-name">esxi-02 <span class="badge success">Connected</span></div>
+            <div class="host-model">Intel Xeon Gold 6248 (2x) &middot; ESXi 8.0 U2</div>
+            <div class="host-detail">18 VMs &middot; 32 vCPU &middot; 128 Go RAM &middot; uptime 127j</div>
+            <div class="mini-gauges">
+              <div class="mini-gauge"><span class="mg-label">CPU</span><div class="mg-bar"><div class="mg-fill" style="width:55%;background:linear-gradient(90deg,#60a5fa,#3b82f6)"></div></div><span class="mg-val">55%</span></div>
+              <div class="mini-gauge"><span class="mg-label">RAM</span><div class="mg-bar"><div class="mg-fill" style="width:78%;background:linear-gradient(90deg,#fbbf24,#f59e0b)"></div></div><span class="mg-val">78%</span></div>
+              <div class="mini-gauge"><span class="mg-label">Disk</span><div class="mg-bar"><div class="mg-fill" style="width:42%;background:linear-gradient(90deg,#34d399,#10b981)"></div></div><span class="mg-val">42%</span></div>
+            </div>
+          </div>
+          <div class="host-row">
+            <div class="host-name">esxi-03 <span class="badge warning">Warning</span></div>
+            <div class="host-model">Intel Xeon E5-2680 v4 (2x) &middot; ESXi 7.0 U3</div>
+            <div class="host-detail">8 VMs &middot; 16 vCPU &middot; 64 Go RAM &middot; uptime 42j</div>
+            <div class="mini-gauges">
+              <div class="mini-gauge"><span class="mg-label">CPU</span><div class="mg-bar"><div class="mg-fill" style="width:91%;background:linear-gradient(90deg,#f87171,#ef4444)"></div></div><span class="mg-val">91%</span></div>
+              <div class="mini-gauge"><span class="mg-label">RAM</span><div class="mg-bar"><div class="mg-fill" style="width:82%;background:linear-gradient(90deg,#fbbf24,#f59e0b)"></div></div><span class="mg-val">82%</span></div>
+              <div class="mini-gauge"><span class="mg-label">Disk</span><div class="mg-bar"><div class="mg-fill" style="width:35%;background:linear-gradient(90deg,#34d399,#10b981)"></div></div><span class="mg-val">35%</span></div>
+            </div>
+          </div>
+          <div class="hyper-summary">
+            <strong>38</strong> VMs &middot; <strong>3</strong> hosts &middot; <span style="color:var(--green)">3/3 connected</span>
+          </div>
+        </div>
+
+        <div class="hyper-content" id="hyper-proxmox">
+          <div class="host-row">
+            <div class="host-name">pve-01 <span class="badge success">Online</span></div>
+            <div class="host-model">AMD EPYC 7543 &middot; Proxmox VE 8.1.4</div>
+            <div class="host-detail">6 VMs &middot; 2 LXC &middot; 16 vCPU &middot; 64 Go RAM &middot; uptime 42j</div>
+            <div class="mini-gauges">
+              <div class="mini-gauge"><span class="mg-label">CPU</span><div class="mg-bar"><div class="mg-fill" style="width:45%;background:linear-gradient(90deg,#34d399,#10b981)"></div></div><span class="mg-val">45%</span></div>
+              <div class="mini-gauge"><span class="mg-label">RAM</span><div class="mg-bar"><div class="mg-fill" style="width:78%;background:linear-gradient(90deg,#fbbf24,#f59e0b)"></div></div><span class="mg-val">78%</span></div>
+              <div class="mini-gauge"><span class="mg-label">Disk</span><div class="mg-bar"><div class="mg-fill" style="width:52%;background:linear-gradient(90deg,#60a5fa,#3b82f6)"></div></div><span class="mg-val">52%</span></div>
+            </div>
+          </div>
+          <div class="host-row">
+            <div class="host-name">pve-02 <span class="badge success">Online</span></div>
+            <div class="host-model">AMD EPYC 7543 &middot; Proxmox VE 8.1.4</div>
+            <div class="host-detail">4 VMs &middot; 1 LXC &middot; 8 vCPU &middot; 32 Go RAM &middot; uptime 42j</div>
+            <div class="mini-gauges">
+              <div class="mini-gauge"><span class="mg-label">CPU</span><div class="mg-bar"><div class="mg-fill" style="width:32%;background:linear-gradient(90deg,#34d399,#10b981)"></div></div><span class="mg-val">32%</span></div>
+              <div class="mini-gauge"><span class="mg-label">RAM</span><div class="mg-bar"><div class="mg-fill" style="width:61%;background:linear-gradient(90deg,#60a5fa,#3b82f6)"></div></div><span class="mg-val">61%</span></div>
+              <div class="mini-gauge"><span class="mg-label">Disk</span><div class="mg-bar"><div class="mg-fill" style="width:38%;background:linear-gradient(90deg,#34d399,#10b981)"></div></div><span class="mg-val">38%</span></div>
+            </div>
+          </div>
+          <div class="hyper-summary">
+            <strong>10</strong> VMs &middot; <strong>3</strong> LXC &middot; <span style="color:var(--green)">2/2 nodes online</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity -->
+      <div class="infra-panel" style="overflow-y:auto; max-height:360px;">
+        <div class="panel-title" style="margin-bottom:10px">
+          <span class="icon" style="background:rgba(148,163,184,0.08)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
+          Activite recente
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--prtg);color:var(--prtg)"></div>
+          <div class="timeline-content">
+            <div class="title">Ping &mdash; srv-db-02 <span class="badge error">Down</span></div>
+            <div class="meta">PRTG &middot; il y a 5 min</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--veeam);color:var(--veeam)"></div>
+          <div class="timeline-content">
+            <div class="title">Backup VM-SQL-01 <span class="badge success">Success</span></div>
+            <div class="meta">Veeam &middot; il y a 12 min &middot; 2.3 GB</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--glpi);color:var(--glpi)"></div>
+          <div class="timeline-content">
+            <div class="title">Ticket #1842 &mdash; Imprimante RDC <span class="badge info">Assigne</span></div>
+            <div class="meta">GLPI &middot; il y a 25 min</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--st);color:var(--st)"></div>
+          <div class="timeline-content">
+            <div class="title">invoice_feb2026.pdf &rarr; Partner-A <span class="badge success">OK</span></div>
+            <div class="meta">SecureTransport &middot; il y a 32 min</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--veeam);color:var(--veeam)"></div>
+          <div class="timeline-content">
+            <div class="title">Backup DC-FS-01 <span class="badge error">Failed</span></div>
+            <div class="meta">Veeam &middot; il y a 45 min</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--prtg);color:var(--prtg)"></div>
+          <div class="timeline-content">
+            <div class="title">CPU &mdash; esxi-03 <span class="badge warning">Warning</span></div>
+            <div class="meta">PRTG &middot; il y a 1h</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--st);color:var(--st)"></div>
+          <div class="timeline-content">
+            <div class="title">report_q4.csv &rarr; Bank-B <span class="badge success">OK</span></div>
+            <div class="meta">SecureTransport &middot; il y a 1h 15</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:var(--glpi);color:var(--glpi)"></div>
+          <div class="timeline-content">
+            <div class="title">Ticket #1839 &mdash; VPN lent <span class="badge warning">En attente</span></div>
+            <div class="meta">GLPI &middot; il y a 2h</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: Calendar + Tickets -->
+    <div class="row-3">
+      <div class="panel">
+        <div class="panel-title">
+          <span class="icon" style="background:rgba(76,175,80,0.12)">
+            <svg width="14" height="14" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#4caf50" d="M6 6v24.75S6.093 42 17.25 42H42v-8H19s-8-.125-8-8V6z"/><path fill="#90a4ae" d="M15 6h6l7.5 18L36 6h6L32 30h-7z"/></svg>
+          </span>
+          Sauvegardes &mdash; Fevrier 2026
+        </div>
+        <div class="calendar-wrapper">
+          <div class="calendar-mini">
+            <div class="day-header">Lu</div><div class="day-header">Ma</div><div class="day-header">Me</div><div class="day-header">Je</div><div class="day-header">Ve</div><div class="day-header">Sa</div><div class="day-header">Di</div>
+            <div class="day empty"></div><div class="day empty"></div><div class="day empty"></div><div class="day empty"></div><div class="day empty"></div><div class="day empty"></div>
+            <div class="day success">1</div>
+            <div class="day success">2</div><div class="day success">3</div><div class="day mixed">4</div><div class="day success">5</div><div class="day success">6</div><div class="day success">7</div><div class="day success">8</div>
+            <div class="day success">9</div><div class="day fail">10</div><div class="day success">11</div><div class="day success">12</div><div class="day success">13</div><div class="day success">14</div><div class="day success">15</div>
+            <div class="day success">16</div><div class="day success">17</div><div class="day success">18</div><div class="day mixed">19</div><div class="day future">20</div><div class="day future">21</div><div class="day future">22</div>
+            <div class="day future">23</div><div class="day future">24</div><div class="day future">25</div><div class="day future">26</div><div class="day future">27</div><div class="day future">28</div><div class="day empty"></div>
+          </div>
+        </div>
+        <div class="cal-legend">
+          <span><span class="dot" style="background:var(--green)"></span>Succes</span>
+          <span><span class="dot" style="background:var(--yellow)"></span>Mixte</span>
+          <span><span class="dot" style="background:var(--red)"></span>Echec</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">
+          <span class="icon" style="background:rgba(0,165,243,0.12)">
+            <svg width="14" height="14" viewBox="-10 145 190 230" xmlns="http://www.w3.org/2000/svg"><path fill="#00a5f3" opacity="0.6" d="M128.5 308.4c-7.9-.6-15.7-2.3-23.1-4.9 19.7-11.1 33.1-27.1 38.2-49.3 1.4-6-2.7-9.1-7.8-11-10.2-3.8-21-4.2-31.8-4.6-5.4 0-10.8-.2-16.2-.8 16.4-7.2 33.7-12.3 51.4-15.1 9.1-1.8 18.6-1.8 27.7 0 12.6 3 19 12.8 16.1 25.4-4.5 19.5-19.1 31.5-33 43.9-6.6 6.1-14.3 11-21.5 16.4m-33.4 18.2-17.8-3.8c-.5 4.7-4.9 5.5-7.9 7.2-14.8 8.3-54.7 27.4-55.7 30.6 3 0 59.6-21.8 81.4-34"/><path fill="#00a5f3" d="M104.1 176.7c19.2-7 39.1-8.9 59.3-8.8 4.9 0 9.3.8 9.6-6.4.3-6.6-2-9.3-8.8-9.7-19.5-1.1-39.1-.1-58.4 2.9-26.7 4-52.6 10.6-74.9 26.9C-2.5 206-10 252.8 14.2 286.4c5.3 7.4 12 13.7 19.6 18.7 13.3 8.5 28 14.5 43.4 17.7l17.8 3.8c22.3 2.1 44.6 3.9 67.1 1.9 7.4-.7 7.4-4.4 7.4-9.7.2-5.9-1.8-8.4-8.1-8.2-11.1.6-22.2-.1-33-2.2-7.9-.6-15.7-2.3-23.1-4.9-33.6-11.2-49.5-31.3-49.7-62.6-.1-30.9 16.3-52.4 48.5-64.2"/></svg>
+          </span>
+          Tickets &mdash; Repartition
+        </div>
+        <div class="h-bar">
+          <div class="label">Nouveau</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:33%;background:linear-gradient(90deg,#60a5fa,#3b82f6)">4</div></div>
+        </div>
+        <div class="h-bar">
+          <div class="label">Assigne</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:50%;background:linear-gradient(90deg,#2dd4bf,#14b8a6)">6</div></div>
+        </div>
+        <div class="h-bar">
+          <div class="label">En attente</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:17%;background:linear-gradient(90deg,#fbbf24,#f59e0b)">2</div></div>
+        </div>
+        <div class="h-bar">
+          <div class="label">Resolu</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:67%;background:linear-gradient(90deg,#34d399,#10b981)">8</div></div>
+        </div>
+        <div class="ticket-footer">
+          <span>Resolution moyenne <strong style="color:var(--text)">4.2h</strong></span>
+          <span>Critiques <strong style="color:var(--red)">1</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 4: Jobs Veeam -->
+    <div class="row-4">
+      <div class="panel">
+        <div class="panel-title">
+          <span class="icon" style="background:rgba(76,175,80,0.12)">
+            <svg width="14" height="14" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#4caf50" d="M6 6v24.75S6.093 42 17.25 42H42v-8H19s-8-.125-8-8V6z"/><path fill="#90a4ae" d="M15 6h6l7.5 18L36 6h6L32 30h-7z"/></svg>
+          </span>
+          Jobs Veeam &mdash; Dernier resultat
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
+          <div class="job-item">
+            <div><div class="job-name">Backup VM-SQL-01</div><div class="job-type">VMware Backup</div></div>
+            <div class="job-meta"><span class="badge success">Success</span><div class="job-time">il y a 12 min</div></div>
+          </div>
+          <div class="job-item">
+            <div><div class="job-name">Backup DC-FS-01</div><div class="job-type">VMware Backup</div></div>
+            <div class="job-meta"><span class="badge error">Failed</span><div class="job-time">il y a 45 min</div></div>
+          </div>
+          <div class="job-item">
+            <div><div class="job-name">Backup VM-AD-01</div><div class="job-type">VMware Backup</div></div>
+            <div class="job-meta"><span class="badge success">Success</span><div class="job-time">il y a 1h</div></div>
+          </div>
+          <div class="job-item">
+            <div><div class="job-name">Backup VM-MAIL</div><div class="job-type">VMware Backup</div></div>
+            <div class="job-meta"><span class="badge warning">Warning</span><div class="job-time">il y a 2h</div></div>
+          </div>
+          <div class="job-item">
+            <div><div class="job-name">Backup NAS-01</div><div class="job-type">NAS Backup</div></div>
+            <div class="job-meta"><span class="badge success">Success</span><div class="job-time">il y a 3h</div></div>
+          </div>
+          <div class="job-item">
+            <div><div class="job-name">Copy VM-SQL offsite</div><div class="job-type">Backup Copy</div></div>
+            <div class="job-meta"><span class="badge success">Success</span><div class="job-time">il y a 4h</div></div>
+          </div>
+          <div class="job-item">
+            <div><div class="job-name">Backup Proxmox-LXC</div><div class="job-type">Proxmox Backup</div></div>
+            <div class="job-meta"><span class="badge success">Success</span><div class="job-time">il y a 5h</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function switchHyper(id, btn) {
+  document.querySelectorAll('.hyper-tab').forEach(t => {
+    t.classList.remove('active-vcenter', 'active-proxmox');
+  });
+  document.querySelectorAll('.hyper-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('hyper-' + id).classList.add('active');
+  btn.classList.add('active-' + id);
+}
+</script>
+
+</body>
+</html>

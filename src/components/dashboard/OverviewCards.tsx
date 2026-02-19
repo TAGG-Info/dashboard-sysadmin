@@ -22,13 +22,45 @@ interface OverviewCardProps {
   children: React.ReactNode;
 }
 
+const SPARKLINE_DATA: Record<string, number[]> = {
+  '#f99e1c': [20, 18, 22, 14, 16, 10, 12, 8, 5],
+  '#879AC3': [14, 12, 16, 10, 8, 12, 10, 8, 10],
+  '#4caf50': [10, 8, 12, 6, 18, 8, 6, 10, 8],
+  '#00a5f3': [16, 14, 18, 12, 20, 16, 14, 18, 12],
+  '#D9272D': [18, 14, 16, 10, 12, 8, 14, 10, 8],
+};
+
+function Sparkline({ color }: { color: string }) {
+  const points = SPARKLINE_DATA[color] ?? [14, 12, 16, 10, 8, 12, 10, 8, 10];
+  const step = 120 / (points.length - 1);
+  const linePoints = points.map((y, i) => `${i * step},${y}`).join(' ');
+  const areaPoints = `0,28 ${linePoints} 120,28`;
+  const gradientId = `spark-${color.replace('#', '')}`;
+
+  return (
+    <div className="mt-2 h-[28px] opacity-80">
+      <svg viewBox="0 0 120 28" className="h-full w-full" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <polyline fill={`url(#${gradientId})`} stroke="none" points={areaPoints} />
+        <polyline fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" points={linePoints} />
+      </svg>
+    </div>
+  );
+}
+
 function OverviewCard({ title, icon, href, accentColor, children }: OverviewCardProps) {
   return (
     <Link href={href}>
-      <Card
-        className="group h-full cursor-pointer border-t-2 transition-all duration-200 hover:bg-white/[0.03]"
-        style={{ borderTopColor: accentColor }}
-      >
+      <Card className="group relative h-full cursor-pointer overflow-hidden transition-all duration-200 hover:bg-white/[0.03]">
+        <div
+          className="absolute top-0 bottom-0 left-0 w-[3px] rounded-l-xl"
+          style={{ background: `linear-gradient(180deg, ${accentColor}, ${accentColor}30)` }}
+        />
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{title}</CardTitle>
           <div
@@ -38,7 +70,10 @@ function OverviewCard({ title, icon, href, accentColor, children }: OverviewCard
             {icon}
           </div>
         </CardHeader>
-        <CardContent>{children}</CardContent>
+        <CardContent>
+          {children}
+          <Sparkline color={accentColor} />
+        </CardContent>
       </Card>
     </Link>
   );
@@ -47,7 +82,7 @@ function OverviewCard({ title, icon, href, accentColor, children }: OverviewCard
 function PlaceholderContent() {
   return (
     <div className="space-y-1">
-      <p className="text-muted-foreground/50 text-lg font-bold">Non configure</p>
+      <p className="text-muted-foreground/50 text-2xl font-bold">Non configure</p>
       <StatusBadge status="neutral" label="Inactif" />
     </div>
   );
@@ -97,7 +132,7 @@ function InfrastructureContent() {
 
   return (
     <div className="space-y-1">
-      <p className="text-foreground text-lg font-bold">
+      <p className="text-foreground text-2xl font-bold">
         {runningVMs} <span className="text-muted-foreground text-sm font-normal">running</span>
       </p>
       <div className="flex items-center gap-2">
@@ -181,9 +216,9 @@ function BackupsContent({ veeamSessions }: { veeamSessions: UseAutoRefreshReturn
     <div className="space-y-1">
       <div className="flex items-center gap-2">
         {stats.failures > 0 ? (
-          <p className="text-lg font-bold text-[#ef4444]">{stats.failures} echec(s)</p>
+          <p className="text-2xl font-bold text-[#ef4444]">{stats.failures} echec(s)</p>
         ) : (
-          <p className="text-lg font-bold text-[#22c55e]">Tout OK</p>
+          <p className="text-2xl font-bold text-[#22c55e]">Tout OK</p>
         )}
       </div>
       <div className="flex items-center gap-2">
@@ -220,7 +255,7 @@ function TicketsContent() {
 
   return (
     <div className="space-y-1">
-      <p className="text-foreground text-lg font-bold">
+      <p className="text-foreground text-2xl font-bold">
         {summary.openCount} <span className="text-muted-foreground text-sm font-normal">ouverts</span>
         {summary.criticalCount > 0 && (
           <span className="text-sm font-normal text-[#ef4444]"> ({summary.criticalCount} critiques)</span>
@@ -266,7 +301,7 @@ function TransfersContent() {
 
   return (
     <div className="space-y-1">
-      <p className="text-foreground text-lg font-bold">
+      <p className="text-foreground text-2xl font-bold">
         {summary.accounts.active} <span className="text-muted-foreground text-sm font-normal">comptes actifs</span>
       </p>
       <div className="flex flex-wrap items-center gap-2">
@@ -297,7 +332,7 @@ export function OverviewCards({ prtgAlerts, veeamSessions }: OverviewCardsProps)
         title="Monitoring"
         icon={<SourceLogo source="prtg" size={20} />}
         href="/monitoring"
-        accentColor="#3b82f6"
+        accentColor="#f99e1c"
       >
         {loading && !alerts ? (
           <div className="space-y-2">
@@ -310,9 +345,9 @@ export function OverviewCards({ prtgAlerts, veeamSessions }: OverviewCardsProps)
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               {downCount > 0 ? (
-                <p className="text-lg font-bold text-[#ef4444]">{downCount} down</p>
+                <p className="text-2xl font-bold text-[#ef4444]">{downCount} down</p>
               ) : (
-                <p className="text-lg font-bold text-[#22c55e]">Tout OK</p>
+                <p className="text-2xl font-bold text-[#22c55e]">Tout OK</p>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -329,7 +364,7 @@ export function OverviewCards({ prtgAlerts, veeamSessions }: OverviewCardsProps)
         title="Infrastructure"
         icon={<SourceLogo source="vcenter" size={20} />}
         href="/infrastructure"
-        accentColor="#22c55e"
+        accentColor="#879AC3"
       >
         <InfrastructureContent />
       </OverviewCard>
@@ -339,13 +374,13 @@ export function OverviewCards({ prtgAlerts, veeamSessions }: OverviewCardsProps)
         title="Backups"
         icon={<SourceLogo source="veeam" size={20} />}
         href="/backups"
-        accentColor="#22c55e"
+        accentColor="#4caf50"
       >
         <BackupsContent veeamSessions={veeamSessions} />
       </OverviewCard>
 
       {/* Tickets */}
-      <OverviewCard title="Tickets" icon={<SourceLogo source="glpi" size={20} />} href="/tickets" accentColor="#f59e0b">
+      <OverviewCard title="Tickets" icon={<SourceLogo source="glpi" size={20} />} href="/tickets" accentColor="#00a5f3">
         <TicketsContent />
       </OverviewCard>
 
@@ -354,7 +389,7 @@ export function OverviewCards({ prtgAlerts, veeamSessions }: OverviewCardsProps)
         title="Transferts"
         icon={<SourceLogo source="securetransport" size={20} />}
         href="/transfers"
-        accentColor="#f97316"
+        accentColor="#D9272D"
       >
         <TransfersContent />
       </OverviewCard>

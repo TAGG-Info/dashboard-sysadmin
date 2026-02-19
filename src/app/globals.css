@@ -115,6 +115,14 @@ html {
   --sidebar-accent-foreground: oklch(0.93 0.005 230);
   --sidebar-border: oklch(0.20 0.010 230);
   --sidebar-ring: oklch(0.72 0.14 195);
+
+  /* Brand colors — source logos */
+  --brand-prtg: #f99e1c;
+  --brand-vmware: #879AC3;
+  --brand-proxmox: #E57000;
+  --brand-veeam: #4caf50;
+  --brand-glpi: #00a5f3;
+  --brand-st: #D9272D;
 }
 
 .dark {
@@ -145,6 +153,14 @@ html {
   --border: oklch(0.30 0.012 230);
   --input: oklch(0.20 0.010 230);
   --ring: oklch(0.72 0.14 195);
+
+  /* Brand colors — source logos */
+  --brand-prtg: #f99e1c;
+  --brand-vmware: #879AC3;
+  --brand-proxmox: #E57000;
+  --brand-veeam: #4caf50;
+  --brand-glpi: #00a5f3;
+  --brand-st: #D9272D;
 }
 
 body {
