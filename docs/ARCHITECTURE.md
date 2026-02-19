@@ -48,7 +48,9 @@ dashboard-tagg/
 │   │   ├── cache.ts                # Cache Redis + fallback Map memoire
 │   │   ├── config.ts               # Config chiffree (data/config.json)
 │   │   ├── config-types.ts         # Interfaces et types de config (extraits de config.ts)
-│   │   ├── api-handler.ts          # Factory createApiRoute
+│   │   ├── api-handler.ts          # Factory createApiRoute + circuit breaker
+│   │   ├── circuit-breaker.ts     # Circuit breaker par cle de cache (3 echecs → 30s open)
+│   │   ├── cache-warmup.ts        # Warm-up cache direct (appels upstream, pas HTTP)
 │   │   ├── constants.ts            # TTLs, routes, couleurs
 │   │   ├── status-mappers.ts       # Fonctions statut→couleur/label (Veeam, vCenter, PRTG)
 │   │   ├── formatters.ts           # formatBytes, formatMemory, formatDateFR (date-fns)
@@ -244,8 +246,9 @@ export const GET = createSummaryApiRoute<'prtg', PRTGSummary, PRTGSummary>({
 1. Verifier la session JWT (`auth()`) — retourne 401 si absent
 2. Recuperer toutes les instances configurees pour la source
 3. Pour chaque instance en parallele (`Promise.allSettled`) :
-   - Tenter `cacheFetch(key, ttl, fetcher)`
-   - Si le fetcher echoue : tenter `cacheGetStale(key)` (donnees perimees)
+   - **Circuit breaker** : si le circuit est ouvert pour cette cle, aller directement au stale fallback sans tenter l'appel upstream
+   - Tenter `cacheFetch(key, ttl, fetcher)` → `recordSuccess(key)` si ok
+   - Si le fetcher echoue : `recordFailure(key)` + tenter `cacheGetStale(key)` (donnees perimees)
    - Enrichir chaque resultat avec `_instanceId` et `_instanceName`
 4. Agregation :
    - `createApiRoute` : fusionne les tableaux de toutes les instances
@@ -253,6 +256,18 @@ export const GET = createSummaryApiRoute<'prtg', PRTGSummary, PRTGSummary>({
 5. Retourner `{ data, _source, _timestamp, _stale, _partial }`
 
 `_partial: true` est retourne si certaines instances ont echoue mais d'autres ont fourni des donnees.
+
+### Circuit breaker (`src/lib/circuit-breaker.ts`)
+
+Protege les API routes contre les cascades de timeout quand un upstream est down :
+
+| Parametre | Valeur |
+|---|---|
+| Seuil d'ouverture | 3 echecs consecutifs |
+| Duree d'ouverture | 30 secondes |
+| Half-open | Apres 30s, laisse passer 1 requete probe |
+
+Le circuit breaker est indexe par cle de cache (= par instance + endpoint). Un succes remet le compteur a zero. Quand le circuit est ouvert, les factories servent directement les donnees stale sans appeler l'upstream.
 
 ---
 
@@ -273,15 +288,25 @@ La connexion Redis est lazy avec timeout de 3 secondes et max 1 retry. Si la con
 |---|---|
 | `cacheGet(key)` | Lecture donnee fraiche (dans TTL) |
 | `cacheSet(key, data, ttl)` | Ecriture avec timestamp |
-| `cacheFetch(key, ttl, fetcher)` | Get ou fetch avec deduplication |
+| `cacheFetch(key, ttl, fetcher)` | True SWR : frais → retour / stale → retour + revalidation background / froid → bloquer |
 | `cacheGetStale(key)` | Lecture donnee perimee (dans TTL x 5) |
 
-### Stale-while-revalidate
+### Stale-while-revalidate (true SWR)
+
+`cacheFetch` implemente un vrai pattern SWR en 3 niveaux :
+
+1. **Cache frais** (dans TTL) → retour instantane
+2. **Cache stale** (expire mais < TTL x 5) → retour instantane + revalidation en background (fire-and-forget via `inFlight`)
+3. **Cache froid** (rien) → bloque sur le fetch (deduplique via `inFlight`)
 
 Chaque entree de cache stocke `{ data, timestamp, ttl }`. Le TTL total en Redis est `ceil(ttl * 5 / 1000)` secondes (STALE_MULTIPLIER = 5). Cela permet :
-- **Reponse rapide** : servir depuis le cache sans attendre l'API
+- **Reponse rapide** : servir depuis le cache sans attendre l'API, meme avec des donnees stale
 - **Resilience** : si l'API est down, afficher les dernieres donnees connues jusqu'a 5x le TTL
 - **Anti-stampede** : la Map `inFlight` deduplique les requetes concurrentes sur un cache froid
+
+### LRU memoire
+
+Le cache memoire (fallback Map) est borne a **500 entrees max** (`MAX_MEMORY_ENTRIES`). Quand la limite est atteinte, l'entree la plus ancienne (par insertion order) est supprimee (approximation FIFO). Les timers d'expiration sont nettoyes proprement.
 
 ### TTLs par source
 
@@ -293,12 +318,12 @@ Chaque entree de cache stocke `{ data, timestamp, ttl }`. Le TTL total en Redis 
 | Veeam | tous | 120 s | 600 s | 120 000 ms |
 | GLPI | tous | 60 s | 300 s | 60 000 ms |
 | SecureTransport | `/transfers` (resume) | 120 s | 600 s | 120 000 ms |
-| SecureTransport | `/logs` (data) | 300 s | 1 500 s | — |
-| SecureTransport | `/logs` (count seul) | 600 s | — | — |
+| SecureTransport | `/logs` (data) | 15 s | 75 s | configurable (RefreshIntervalsProvider) |
+| SecureTransport | `/logs` (count seul) | 120 s | — | — |
 
-TTLs configurables via `CACHE_TTL_*` (en secondes).
+TTLs configurables via `CACHE_TTL_*` (en secondes). Le refresh UI des logs ST est configurable via `RefreshIntervalsProvider` (defaut 30s, min 10s).
 
-> Le cache `/logs` utilise **deux niveaux** : le cache data (TTL 5 min) et un cache count separe (TTL 10 min). Quand le cache data expire, le count est encore valide, ce qui reduit les appels ST de 2 a 1. Voir [docs/api/securetransport.md](api/securetransport.md#double-cache-pour-le-count).
+> Le cache `/logs` utilise **deux niveaux** : le cache data (TTL 15s) et un cache count separe (TTL 2 min). Quand le cache data expire, le count est encore valide, ce qui reduit les appels ST de 2 a 1. Voir [docs/api/securetransport.md](api/securetransport.md#double-cache-pour-le-count).
 
 ---
 
@@ -452,6 +477,8 @@ Chaque source accepte un tableau d'instances dans la configuration. Exemple pour
 
 **Cle de cache** : une cle par instance (`dashboard:prtg:{instanceId}:devices`), les instances sont independantes en cache.
 
+**Cache partage vCenter** : les routes `/api/vcenter/vms` et `/api/vcenter/hosts` partagent un cache commun `dashboard:vcenter:{id}:vm-host-map` qui contient le mapping VM→Host. Cela evite le probleme N+1 (N appels `getVMsByHost` par host) en ne faisant le mapping qu'une fois par TTL.
+
 **Priorite config** : `data/config.json` > variables d'environnement. Si le fichier config contient des instances pour une source, les variables d'environnement sont ignorees pour cette source.
 
 ---
@@ -471,6 +498,10 @@ DashboardShell
         ├── Stats (grille de StatCard)
         └── Contenu (tables, grilles, sidebar, etc.)
 ```
+
+### Dashboard (page.tsx) — hooks partages
+
+La page dashboard est un composant client (`'use client'`) qui remonte les hooks `usePRTGAlerts()` et `useVeeamSessions()` au niveau page. Les donnees sont passees en props a `OverviewCards` et `RecentActivity`, evitant la duplication de fetches (6 hooks au lieu de 9).
 
 ### PageHeader (`src/components/layout/PageHeader.tsx`)
 
@@ -511,6 +542,7 @@ interface UseAutoRefreshOptions {
   interval: number;        // ms
   enabled?: boolean;       // defaut: true
   trackCountdown?: boolean; // defaut: false
+  autoRefresh?: boolean;   // defaut: true
 }
 ```
 
@@ -528,11 +560,23 @@ const { data } = useAutoRefresh({ url, interval, trackCountdown: true });
 const { data } = useAutoRefresh({ url, interval }); // trackCountdown: false par defaut
 ```
 
+### autoRefresh
+
+**Par defaut `true`**. Mettre a `false` pour faire le fetch initial mais desactiver le polling periodique. Utile pour les donnees a la demande qui ne doivent pas creer de timer independant.
+
+```typescript
+// Sensors per-device : fetch une fois a l'expand, pas de polling
+const { data } = useAutoRefresh({ url, interval, autoRefresh: false });
+```
+
+Cas d'usage : `usePRTGSensors(deviceId)` passe `autoRefresh: !deviceId` — les sensors globaux polleraient, mais les sensors par device ne font qu'un fetch initial.
+
 ### Comportements
 
 - **Retry backoff** : en cas d'echec initial, retente 2 fois (2s, 4s) avant d'abandonner
 - **Slowdown auto** : apres N echecs consecutifs, saute les ticks programmes (2x, 4x, max 8x l'intervalle) pour ne pas saturer une API en panne
 - **Stale detection** : si la reponse contient `_stale: true`, expose `isStale: true`
+- **Reset interval apres refresh manuel** : `refresh()` incremente un `refreshEpoch` interne qui redeclenche le setup de l'intervalle — le prochain auto-refresh est exactement `interval` ms apres le refresh manuel, et le countdown reste synchronise
 - **refreshSignal** : pattern pour rafraichir un composant avec etat interne (ex: `TransferLogTable`) sans le remonter — passer un `number` incrementable qui declenche `refresh()` via `useEffect`
 
 ---
@@ -725,9 +769,25 @@ Le fichier `src/instrumentation.ts` (hook Next.js `register()`) initialise des t
 
 | Cron | Fréquence | Action |
 |---|---|---|
-| `*/2 * * * *` | Toutes les 2 min | Warm-up cache : appelle `/api/health` pour maintenir les connexions API chaudes |
+| `*/2 * * * *` | Toutes les 2 min | Warm-up cache direct via `warmupAllSources()` |
 
 Les tâches ne tournent qu'en runtime Node.js (`process.env.NEXT_RUNTIME === 'nodejs'`), pas en Edge.
+
+### Cache warm-up (`src/lib/cache-warmup.ts`)
+
+Le warm-up appelle directement les clients API upstream (pas de HTTP vers nos propres routes, ce qui evite les problemes d'auth). Pour chaque source configuree :
+
+1. Recupere les instances via `getSourceConfig(source)`
+2. Appelle les fetchers des clients (memes cles de cache que les routes API)
+3. Popule le cache avec `cacheSet()` et les memes TTLs que les routes
+
+Sources warm-up : PRTG (summary + sensors), vCenter (vms + hosts + vm-host-map), Proxmox (vms), Veeam (sessions), GLPI (tickets), SecureTransport (logs recents).
+
+Chaque source est isolee via `Promise.allSettled` — un echec n'impacte pas les autres.
+
+### Timeouts API
+
+Tous les clients API ont un timeout de **10 secondes** via `AbortSignal.timeout(10_000)` sur chaque `fetch()`. Couvre aussi les appels auth (getSession, getToken). Les retries 401 (vCenter, Veeam) ont leur propre timeout.
 
 ---
 
