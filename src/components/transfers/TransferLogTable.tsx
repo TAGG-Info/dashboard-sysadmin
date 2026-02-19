@@ -51,7 +51,11 @@ function StatusCell({ status }: { status: string }) {
             ? 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20'
             : 'bg-muted/30 text-muted-foreground border-border/50';
   return (
-    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium ${cls}`}>{status}</span>
+    <span
+      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium whitespace-nowrap ${cls}`}
+    >
+      {status}
+    </span>
   );
 }
 
