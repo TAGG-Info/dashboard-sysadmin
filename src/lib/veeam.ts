@@ -39,8 +39,8 @@ export class VeeamClient {
       method: 'POST',
       headers: {
         Authorization: `Basic ${this.basicAuth}`,
-        'Content-Length': '0',
       },
+      body: '',
       signal: AbortSignal.timeout(10_000),
     });
 

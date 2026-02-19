@@ -117,8 +117,8 @@ export async function GET() {
           method: 'POST',
           headers: {
             Authorization: `Basic ${Buffer.from(`${inst.username}:${inst.password}`).toString('base64')}`,
-            'Content-Length': '0',
           },
+          body: '',
           signal: AbortSignal.timeout(5000),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

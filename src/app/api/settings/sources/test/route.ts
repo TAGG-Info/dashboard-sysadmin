@@ -88,10 +88,16 @@ async function testSource(source: SourceKey, config: Record<string, string>): Pr
         return { success: false, latency: Date.now() - start, error: `Unknown source: ${source}` };
     }
   } catch (error) {
+    // Extract meaningful error: DNS (ENOTFOUND), connection (ECONNREFUSED), TLS, timeout...
+    let message = 'Connection failed';
+    if (error instanceof Error) {
+      const cause = (error as Error & { cause?: Error })?.cause;
+      message = cause ? `${error.message} (${cause.message})` : error.message;
+    }
     return {
       success: false,
       latency: Date.now() - start,
-      error: error instanceof Error ? error.message : 'Connection failed',
+      error: message,
     };
   }
 }
@@ -168,8 +174,8 @@ async function testVeeam(config: Record<string, string>, start: number): Promise
     method: 'POST',
     headers: {
       Authorization: `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
-      'Content-Length': '0',
     },
+    body: '',
     signal: AbortSignal.timeout(10000),
   });
 
