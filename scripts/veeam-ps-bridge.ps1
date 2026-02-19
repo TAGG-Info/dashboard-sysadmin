@@ -203,6 +203,87 @@ function Refresh-Cache {
             Write-Warning "Get-VBRComputerBackupJob failed: $_"
         }
 
+        # Tape jobs (Veeam 12+: Get-VBRTapeJob)
+        try {
+            $tapeJobs = @(Get-VBRTapeJob)
+            foreach ($j in $tapeJobs) {
+                try {
+                    $lastRun = $null
+                    $lastResult = "None"
+                    $lastSession = $allSessions | Where-Object { $_.JobName -eq $j.Name } | Select-Object -First 1
+                    if ($lastSession) {
+                        $lastRun = $lastSession.CreationTimeUTC.ToString("o")
+                        $lastResult = "$($lastSession.Result)"
+                    }
+
+                    $objectsCount = 0
+                    try { $objectsCount = @($j.Object).Count } catch {
+                        try { $objectsCount = @($j.GetObjectsInJob()).Count } catch {}
+                    }
+
+                    $status = "Stopped"
+                    try { if ($j.LastState -eq 'Working' -or $j.IsRunning) { $status = "Working" } } catch {}
+
+                    $nextRunStr = $null
+                    try {
+                        $opts = $j.GetScheduleOptions()
+                        if ($opts) {
+                            if ($opts.OptionsScheduleAfterJob.IsEnabled) {
+                                $afterId = $opts.OptionsScheduleAfterJob.Id
+                                # Search in all job lists (vbrJobs + tapeJobs)
+                                $afterJob = $vbrJobs | Where-Object { $_.Id -eq $afterId } | Select-Object -First 1
+                                if (-not $afterJob) {
+                                    $afterJob = $tapeJobs | Where-Object { $_.Id -eq $afterId } | Select-Object -First 1
+                                }
+                                if ($afterJob) { $nextRunStr = "Apres [$($afterJob.Name)]" }
+                            } elseif ($j.Enabled) {
+                                try {
+                                    $timeOfDay = $opts.OptionsDaily.TimeLocal
+                                    if ($timeOfDay) {
+                                        $nextRun = [datetime]::Today.Add($timeOfDay)
+                                        if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
+                                        $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
+                                    }
+                                } catch {}
+                            }
+                        }
+                    } catch {}
+
+                    $target = ""
+                    try { $target = "$($j.Target.Name)" } catch {
+                        try { $target = "$($j.GetTargetRepository().Name)" } catch {}
+                    }
+
+                    # Tape job type resolution
+                    $typeStr = "$($j.Type)"
+                    if (-not $typeStr) { $typeStr = "BackupToTape" }
+
+                    $isDisabled = $true
+                    try { $isDisabled = (-not $j.Enabled) } catch {
+                        try { $isDisabled = (-not $j.IsScheduleEnabled) } catch {}
+                    }
+
+                    $jobs += @{
+                        id         = "$($j.Id)"
+                        name       = "$($j.Name)"
+                        type       = $typeStr
+                        isDisabled = $isDisabled
+                        schedule   = @{ isEnabled = (-not $isDisabled) }
+                        lastRun    = $lastRun
+                        lastResult = $lastResult
+                        objects    = $objectsCount
+                        status     = $status
+                        nextRun    = $nextRunStr
+                        target     = $target
+                    }
+                } catch {
+                    Write-Warning "Tape job '$($j.Name)' skipped: $_"
+                }
+            }
+        } catch {
+            Write-Warning "Get-VBRTapeJob failed: $_"
+        }
+
         $script:jobsCache = ($jobs | ConvertTo-Json -Depth 5 -Compress)
         if (-not $jobs) { $script:jobsCache = "[]" }
 
@@ -280,39 +361,41 @@ try {
         $request = $context.Request
         $response = $context.Response
 
-        $path = $request.Url.AbsolutePath
-        $response.ContentType = "application/json; charset=utf-8"
-        $response.AddHeader("Access-Control-Allow-Origin", "*")
+        try {
+            $path = $request.Url.AbsolutePath
+            $response.ContentType = "application/json; charset=utf-8"
+            $response.AddHeader("Access-Control-Allow-Origin", "*")
 
-        # Auth check
-        $authHeader = $request.Headers["Authorization"]
-        if (-not (Test-BasicAuth -AuthHeader $authHeader)) {
-            $response.StatusCode = 401
-            $body = [System.Text.Encoding]::UTF8.GetBytes('{"error":"Unauthorized"}')
+            # Auth check
+            $authHeader = $request.Headers["Authorization"]
+            if (-not (Test-BasicAuth -AuthHeader $authHeader)) {
+                $response.StatusCode = 401
+                $body = [System.Text.Encoding]::UTF8.GetBytes('{"error":"Unauthorized"}')
+                $response.OutputStream.Write($body, 0, $body.Length)
+                $response.Close()
+                continue
+            }
+
+            # Refresh cache if stale
+            if ((Get-Date) - $script:lastRefresh -gt [TimeSpan]::FromSeconds($CacheRefreshSeconds)) {
+                Refresh-Cache
+            }
+
+            $responseBody = switch -Wildcard ($path) {
+                "/api/jobs"     { $script:jobsCache }
+                "/api/sessions" { $script:sessionsCache }
+                "/api/health"   { '{"status":"ok"}' }
+                default         { $response.StatusCode = 404; '{"error":"Not found"}' }
+            }
+
+            $body = [System.Text.Encoding]::UTF8.GetBytes($responseBody)
             $response.OutputStream.Write($body, 0, $body.Length)
             $response.Close()
-            continue
+        } catch {
+            # Client disconnected or network error — log and continue serving
+            Write-Warning "Request error: $($_.Exception.Message)"
+            try { $response.Close() } catch {}
         }
-
-        # Refresh cache if stale
-        if ((Get-Date) - $script:lastRefresh -gt [TimeSpan]::FromSeconds($CacheRefreshSeconds)) {
-            Refresh-Cache
-        }
-
-        $responseBody = switch -Wildcard ($path) {
-            "/api/jobs"     { $script:jobsCache }
-            "/api/sessions" {
-                $query = $request.Url.Query
-                # limit param is handled at cache level (already 50)
-                $script:sessionsCache
-            }
-            "/api/health"   { '{"status":"ok"}' }
-            default         { $response.StatusCode = 404; '{"error":"Not found"}' }
-        }
-
-        $body = [System.Text.Encoding]::UTF8.GetBytes($responseBody)
-        $response.OutputStream.Write($body, 0, $body.Length)
-        $response.Close()
     }
 } catch {
     Write-Error "Listener error: $_"
