@@ -23,7 +23,7 @@ export default function DashboardPage() {
       <OverviewCards prtgAlerts={prtgAlerts} veeamSessions={veeamSessions} />
 
       {/* Row 2: Gauges + Hyperviseur + Activité */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[auto_1fr_1fr]">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[auto_1fr_1fr]">
         <ResourceGauges />
         <DashboardHypervisor />
         <RecentActivity prtgAlerts={prtgAlerts} veeamSessions={veeamSessions} />
