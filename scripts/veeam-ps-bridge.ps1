@@ -78,6 +78,7 @@ function Refresh-Cache {
             $status = "Stopped"
             try { if ($j.IsRunning) { $status = "Working" } } catch {}
 
+            # Compute next run from schedule options
             $nextRunStr = $null
             try {
                 $opts = $j.GetScheduleOptions()
@@ -85,26 +86,47 @@ function Refresh-Cache {
                     $afterId = $opts.OptionsScheduleAfterJob.Id
                     $afterJob = $vbrJobs | Where-Object { $_.Id -eq $afterId } | Select-Object -First 1
                     if ($afterJob) { $nextRunStr = "Apres [$($afterJob.Name)]" }
-                } else {
+                } elseif ($j.IsScheduleEnabled) {
+                    # Daily schedule: compute next occurrence from time of day
                     try {
-                        $nr = $j.NextRun
-                        if ($nr -and $nr -gt $now) {
-                            $nextRunStr = $nr.ToUniversalTime().ToString("o")
+                        $timeOfDay = $opts.OptionsDaily.TimeLocal
+                        if ($timeOfDay) {
+                            $nextRun = [datetime]::Today.Add($timeOfDay)
+                            if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
+                            $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
                         }
-                    } catch {}
+                    } catch {
+                        # Fallback: StartDateTime
+                        try {
+                            $start = $opts.StartDateTime
+                            if ($start -and $start.TimeOfDay) {
+                                $nextRun = [datetime]::Today.Add($start.TimeOfDay)
+                                if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
+                                $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
+                            }
+                        } catch {}
+                    }
                 }
             } catch {}
 
             $target = ""
             try { $target = $j.GetTargetRepository().Name } catch {}
 
+            # Distinguish Hyper-V from VMware (both have JobType=Backup)
+            $typeStr = $j.JobType.ToString()
+            try {
+                if ($typeStr -eq 'Backup' -and "$($j.BackupPlatform)" -eq 'EHyperV') {
+                    $typeStr = 'HyperVBackup'
+                }
+            } catch {}
+
             $jobs += @{
                 id         = $j.Id.ToString()
                 name       = $j.Name
-                type       = $j.JobType.ToString()
+                type       = $typeStr
                 isDisabled = (-not $j.IsScheduleEnabled)
                 schedule   = @{ isEnabled = $j.IsScheduleEnabled }
-                lastRun    = if ($lastSession) { $lastSession.CreationTime.ToUniversalTime().ToString("o") } else { $null }
+                lastRun    = if ($lastSession) { $lastSession.CreationTimeUTC.ToString("o") } else { $null }
                 lastResult = if ($lastSession) { $lastSession.Result.ToString() } else { "None" }
                 objects    = $objectsCount
                 status     = $status
@@ -117,48 +139,64 @@ function Refresh-Cache {
         try {
             $agentJobs = @(Get-VBRComputerBackupJob)
             foreach ($j in $agentJobs) {
-                # Find last session by job name from pre-fetched sessions
-                $lastRun = $null
-                $lastResult = "None"
-                $lastSession = $allSessions | Where-Object { $_.JobName -eq $j.Name } | Select-Object -First 1
-                if ($lastSession) {
-                    $lastRun = $lastSession.CreationTimeUTC.ToString("o")
-                    $lastResult = $lastSession.Result.ToString()
-                }
-
-                $objectsCount = 0
-                try { $objectsCount = @($j.BackupObject).Count } catch {
-                    try { $objectsCount = @($j.GetObjectsInJob()).Count } catch {}
-                }
-
-                $status = "Stopped"
-                try { if ($j.IsRunning) { $status = "Working" } } catch {}
-
-                $nextRunStr = $null
                 try {
-                    $nr = $j.NextRun
-                    if ($nr -and $nr -gt $now) {
-                        $nextRunStr = $nr.ToUniversalTime().ToString("o")
+                    # Find last session by job name from pre-fetched sessions
+                    $lastRun = $null
+                    $lastResult = "None"
+                    $lastSession = $allSessions | Where-Object { $_.JobName -eq $j.Name } | Select-Object -First 1
+                    if ($lastSession) {
+                        $lastRun = $lastSession.CreationTimeUTC.ToString("o")
+                        $lastResult = "$($lastSession.Result)"
                     }
-                } catch {}
 
-                $target = ""
-                try { $target = $j.BackupRepository.Name } catch {
-                    try { $target = $j.GetTargetRepository().Name } catch {}
-                }
+                    $objectsCount = 0
+                    try { $objectsCount = @($j.BackupObject).Count } catch {
+                        try { $objectsCount = @($j.GetObjectsInJob()).Count } catch {}
+                    }
 
-                $jobs += @{
-                    id         = $j.Id.ToString()
-                    name       = $j.Name
-                    type       = $j.JobType.ToString()
-                    isDisabled = (-not $j.IsScheduleEnabled)
-                    schedule   = @{ isEnabled = $j.IsScheduleEnabled }
-                    lastRun    = $lastRun
-                    lastResult = $lastResult
-                    objects    = $objectsCount
-                    status     = $status
-                    nextRun    = $nextRunStr
-                    target     = $target
+                    $status = "Stopped"
+                    try { if ($j.IsRunning) { $status = "Working" } } catch {}
+
+                    $nextRunStr = $null
+                    try {
+                        $opts = $j.GetScheduleOptions()
+                        if ($opts -and $j.IsScheduleEnabled) {
+                            $timeOfDay = $opts.OptionsDaily.TimeLocal
+                            if ($timeOfDay) {
+                                $nextRun = [datetime]::Today.Add($timeOfDay)
+                                if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
+                                $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
+                            }
+                        }
+                    } catch {}
+
+                    $target = ""
+                    try { $target = "$($j.BackupRepository.Name)" } catch {
+                        try { $target = "$($j.GetTargetRepository().Name)" } catch {}
+                    }
+
+                    # Resolve agent job type (JobType may be empty on VBRComputerBackupJob)
+                    $typeStr = "$($j.JobType)"
+                    if (-not $typeStr) {
+                        try { $typeStr = "$($j.Type)" } catch {}
+                    }
+                    if (-not $typeStr) { $typeStr = "EpAgentBackup" }
+
+                    $jobs += @{
+                        id         = "$($j.Id)"
+                        name       = "$($j.Name)"
+                        type       = $typeStr
+                        isDisabled = (-not $j.IsScheduleEnabled)
+                        schedule   = @{ isEnabled = [bool]$j.IsScheduleEnabled }
+                        lastRun    = $lastRun
+                        lastResult = $lastResult
+                        objects    = $objectsCount
+                        status     = $status
+                        nextRun    = $nextRunStr
+                        target     = $target
+                    }
+                } catch {
+                    Write-Warning "Agent job '$($j.Name)' skipped: $_"
                 }
             }
         } catch {

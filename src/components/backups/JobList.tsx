@@ -78,7 +78,7 @@ export function JobList() {
       {instanceGroups.map(({ instanceId, instanceName, items }) => (
         <div key={instanceId}>
           {multipleInstances && <InstanceSectionHeader instanceName={instanceName} className="mb-2" />}
-          <div className="border-border/50 overflow-x-auto rounded-lg border">
+          <div className="border-border/50 max-h-[900px] overflow-auto rounded-lg border">
             <table className="table-fixed text-sm" style={{ width: tableWidth }}>
               <colgroup>
                 {widths.map((w, i) => (
@@ -92,7 +92,7 @@ export function JobList() {
                     return (
                       <th
                         key={col.label}
-                        className={`text-muted-foreground relative px-3 py-2 text-xs font-medium select-none text-${col.align}`}
+                        className={`bg-muted/20 text-muted-foreground relative sticky top-0 z-10 px-3 py-2 text-xs font-medium select-none text-${col.align}`}
                       >
                         <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{col.label}</span>
                         {!isLast && (
