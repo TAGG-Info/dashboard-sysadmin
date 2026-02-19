@@ -5,7 +5,7 @@ export const CACHE_TTL = {
   VEEAM: Number(process.env.CACHE_TTL_VEEAM || 120) * 1000,
   GLPI: Number(process.env.CACHE_TTL_GLPI || 60) * 1000,
   ST: Number(process.env.CACHE_TTL_ST || 120) * 1000,
-  ST_LOGS: Number(process.env.CACHE_TTL_ST_LOGS || 30) * 1000,
+  ST_LOGS: Number(process.env.CACHE_TTL_ST_LOGS || 15) * 1000,
   ST_COUNT: Number(process.env.CACHE_TTL_ST_COUNT || 120) * 1000,
   STALE_MULTIPLIER: 5,
 } as const;
