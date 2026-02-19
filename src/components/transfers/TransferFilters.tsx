@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export interface TransferFilterValues {
   account?: string;
@@ -134,60 +135,64 @@ export function TransferFilters({ onFilterChange, onPageReset, hideDirection }: 
       </div>
 
       {!hideDirection && (
-        <select
-          value={incoming}
-          onChange={(e) => setIncoming(e.target.value)}
-          className="bg-muted/20 border-border/50 focus:ring-ring h-8 rounded border px-2 text-sm focus:ring-1 focus:outline-none"
-        >
-          <option value="">Tous sens</option>
-          <option value="true">↓ Entrant</option>
-          <option value="false">↑ Sortant</option>
-        </select>
+        <Select value={incoming || '__all__'} onValueChange={(v) => setIncoming(v === '__all__' ? '' : v)}>
+          <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[110px] text-sm">
+            <SelectValue placeholder="Tous sens" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Tous sens</SelectItem>
+            <SelectItem value="true">Entrant</SelectItem>
+            <SelectItem value="false">Sortant</SelectItem>
+          </SelectContent>
+        </Select>
       )}
 
       {/* Protocol */}
-      <select
-        value={protocol}
-        onChange={(e) => setProtocol(e.target.value)}
-        className="bg-muted/20 border-border/50 focus:ring-ring h-8 rounded border px-2 text-sm focus:ring-1 focus:outline-none"
-      >
-        <option value="">Protocole</option>
-        <option value="ssh">SSH</option>
-        <option value="ftp">FTP</option>
-        <option value="https">HTTPS</option>
-        <option value="as2">AS2</option>
-        <option value="pesit">PeSIT</option>
-      </select>
+      <Select value={protocol || '__all__'} onValueChange={(v) => setProtocol(v === '__all__' ? '' : v)}>
+        <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[110px] text-sm">
+          <SelectValue placeholder="Protocole" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">Protocole</SelectItem>
+          <SelectItem value="ssh">SSH</SelectItem>
+          <SelectItem value="ftp">FTP</SelectItem>
+          <SelectItem value="https">HTTPS</SelectItem>
+          <SelectItem value="as2">AS2</SelectItem>
+          <SelectItem value="pesit">PeSIT</SelectItem>
+        </SelectContent>
+      </Select>
 
       {/* Status */}
-      <select
-        value={status}
-        onChange={(e) => setStatus(e.target.value)}
-        className="bg-muted/20 border-border/50 focus:ring-ring h-8 rounded border px-2 text-sm focus:ring-1 focus:outline-none"
-      >
-        <option value="">Statut</option>
-        <option value="Processed">Processed</option>
-        <option value="Failed">Failed</option>
-        <option value="Failed Subtransmission">Failed Subtransmission</option>
-        <option value="In Progress">In Progress</option>
-        <option value="Aborted">Aborted</option>
-        <option value="Paused">Paused</option>
-        <option value="Waiting">Waiting</option>
-        <option value="Pending receipt">Pending receipt</option>
-      </select>
+      <Select value={status || '__all__'} onValueChange={(v) => setStatus(v === '__all__' ? '' : v)}>
+        <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[110px] text-sm">
+          <SelectValue placeholder="Statut" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">Statut</SelectItem>
+          <SelectItem value="Processed">Processed</SelectItem>
+          <SelectItem value="Failed">Failed</SelectItem>
+          <SelectItem value="Failed Subtransmission">Failed Subtransmission</SelectItem>
+          <SelectItem value="In Progress">In Progress</SelectItem>
+          <SelectItem value="Aborted">Aborted</SelectItem>
+          <SelectItem value="Paused">Paused</SelectItem>
+          <SelectItem value="Waiting">Waiting</SelectItem>
+          <SelectItem value="Pending receipt">Pending receipt</SelectItem>
+        </SelectContent>
+      </Select>
 
       {/* Date range */}
-      <select
-        value={dateRange}
-        onChange={(e) => setDateRange(e.target.value)}
-        className="bg-muted/20 border-border/50 focus:ring-ring h-8 rounded border px-2 text-sm focus:ring-1 focus:outline-none"
-      >
-        {DATE_RANGES.map((r) => (
-          <option key={r.value} value={r.value}>
-            {r.label}
-          </option>
-        ))}
-      </select>
+      <Select value={dateRange} onValueChange={setDateRange}>
+        <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[140px] text-sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {DATE_RANGES.map((r) => (
+            <SelectItem key={r.value} value={r.value}>
+              {r.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
       {/* Clear filters */}
       {hasFilters && (
@@ -196,7 +201,7 @@ export function TransferFilters({ onFilterChange, onPageReset, hideDirection }: 
           className="text-muted-foreground hover:text-foreground flex h-8 items-center gap-1 text-xs transition-colors"
         >
           <X className="h-3 w-3" />
-          Réinitialiser
+          Reinitialiser
         </button>
       )}
     </div>

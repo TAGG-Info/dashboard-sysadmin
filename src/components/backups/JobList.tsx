@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { Search, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -219,44 +220,47 @@ export function JobList() {
           />
         </div>
 
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="bg-muted/20 border-border/50 focus:ring-ring h-8 rounded border px-2 text-sm focus:ring-1 focus:outline-none"
-        >
-          <option value="">Tous types</option>
-          {TYPE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        <Select value={filterType} onValueChange={(v) => setFilterType(v === '__all__' ? '' : v)}>
+          <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[130px] text-sm">
+            <SelectValue placeholder="Tous types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Tous types</SelectItem>
+            {TYPE_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <select
-          value={filterResult}
-          onChange={(e) => setFilterResult(e.target.value)}
-          className="bg-muted/20 border-border/50 focus:ring-ring h-8 rounded border px-2 text-sm focus:ring-1 focus:outline-none"
-        >
-          <option value="">Tous resultats</option>
-          {RESULT_OPTIONS.map((r) => (
-            <option key={r} value={r}>
-              {resultLabel(r)}
-            </option>
-          ))}
-        </select>
+        <Select value={filterResult} onValueChange={(v) => setFilterResult(v === '__all__' ? '' : v)}>
+          <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[130px] text-sm">
+            <SelectValue placeholder="Tous resultats" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Tous resultats</SelectItem>
+            {RESULT_OPTIONS.map((r) => (
+              <SelectItem key={r} value={r}>
+                {resultLabel(r)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="bg-muted/20 border-border/50 focus:ring-ring h-8 rounded border px-2 text-sm focus:ring-1 focus:outline-none"
-        >
-          <option value="">Tous statuts</option>
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>
-              {jobStatusLabel(s)}
-            </option>
-          ))}
-        </select>
+        <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v === '__all__' ? '' : v)}>
+          <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[110px] text-sm">
+            <SelectValue placeholder="Tous statuts" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Tous statuts</SelectItem>
+            {STATUS_OPTIONS.map((s) => (
+              <SelectItem key={s} value={s}>
+                {jobStatusLabel(s)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {hasFilters && (
           <button

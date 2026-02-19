@@ -78,34 +78,55 @@ function Refresh-Cache {
             $status = "Stopped"
             try { if ($j.IsRunning) { $status = "Working" } } catch {}
 
-            # Compute next run from schedule options
+            # Compute next run
             $nextRunStr = $null
             try {
                 $opts = $j.GetScheduleOptions()
+                # 1. Check "after job" chain
                 if ($opts.OptionsScheduleAfterJob.IsEnabled) {
                     $afterId = $opts.OptionsScheduleAfterJob.Id
                     $afterJob = $vbrJobs | Where-Object { $_.Id -eq $afterId } | Select-Object -First 1
                     if ($afterJob) { $nextRunStr = "Apres [$($afterJob.Name)]" }
-                } elseif ($j.IsScheduleEnabled) {
-                    # Daily schedule: compute next occurrence from time of day
+                }
+                # 2. Try direct NextRun property on job (Veeam 12+)
+                if (-not $nextRunStr) {
+                    try {
+                        $nr = $j.NextRun
+                        if ($nr -and $nr -gt [datetime]::MinValue) {
+                            $nextRunStr = $nr.ToUniversalTime().ToString("o")
+                        }
+                    } catch {}
+                }
+                # 3. Try NextRun on schedule options
+                if (-not $nextRunStr) {
+                    try {
+                        $nr = $opts.NextRun
+                        if ($nr -and $nr -gt [datetime]::MinValue) {
+                            $nextRunStr = $nr.ToUniversalTime().ToString("o")
+                        }
+                    } catch {}
+                }
+                # 4. Compute from daily schedule time
+                if (-not $nextRunStr -and $j.IsScheduleEnabled) {
                     try {
                         $timeOfDay = $opts.OptionsDaily.TimeLocal
-                        if ($timeOfDay) {
+                        if ($timeOfDay -and $timeOfDay -ne [TimeSpan]::Zero) {
                             $nextRun = [datetime]::Today.Add($timeOfDay)
                             if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
                             $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
                         }
-                    } catch {
-                        # Fallback: StartDateTime
-                        try {
-                            $start = $opts.StartDateTime
-                            if ($start -and $start.TimeOfDay) {
-                                $nextRun = [datetime]::Today.Add($start.TimeOfDay)
-                                if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
-                                $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
-                            }
-                        } catch {}
-                    }
+                    } catch {}
+                }
+                # 5. Fallback: StartDateTime
+                if (-not $nextRunStr -and $j.IsScheduleEnabled) {
+                    try {
+                        $start = $opts.StartDateTime
+                        if ($start -and $start -gt [datetime]::MinValue) {
+                            $nextRun = [datetime]::Today.Add($start.TimeOfDay)
+                            if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
+                            $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
+                        }
+                    } catch {}
                 }
             } catch {}
 
@@ -159,13 +180,32 @@ function Refresh-Cache {
 
                     $nextRunStr = $null
                     try {
-                        $opts = $j.GetScheduleOptions()
-                        if ($opts -and $j.IsScheduleEnabled) {
-                            $timeOfDay = $opts.OptionsDaily.TimeLocal
-                            if ($timeOfDay) {
-                                $nextRun = [datetime]::Today.Add($timeOfDay)
-                                if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
-                                $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
+                        # Direct NextRun property
+                        try {
+                            $nr = $j.NextRun
+                            if ($nr -and $nr -gt [datetime]::MinValue) {
+                                $nextRunStr = $nr.ToUniversalTime().ToString("o")
+                            }
+                        } catch {}
+                        if (-not $nextRunStr) {
+                            $opts = $j.GetScheduleOptions()
+                            if ($opts) {
+                                try {
+                                    $nr = $opts.NextRun
+                                    if ($nr -and $nr -gt [datetime]::MinValue) {
+                                        $nextRunStr = $nr.ToUniversalTime().ToString("o")
+                                    }
+                                } catch {}
+                            }
+                            if (-not $nextRunStr -and $opts -and $j.IsScheduleEnabled) {
+                                try {
+                                    $timeOfDay = $opts.OptionsDaily.TimeLocal
+                                    if ($timeOfDay -and $timeOfDay -ne [TimeSpan]::Zero) {
+                                        $nextRun = [datetime]::Today.Add($timeOfDay)
+                                        if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
+                                        $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
+                                    }
+                                } catch {}
                             }
                         }
                     } catch {}
@@ -228,24 +268,44 @@ function Refresh-Cache {
                     try {
                         $opts = $j.GetScheduleOptions()
                         if ($opts) {
+                            # 1. After-job chain
                             if ($opts.OptionsScheduleAfterJob.IsEnabled) {
                                 $afterId = $opts.OptionsScheduleAfterJob.Id
-                                # Search in all job lists (vbrJobs + tapeJobs)
                                 $afterJob = $vbrJobs | Where-Object { $_.Id -eq $afterId } | Select-Object -First 1
                                 if (-not $afterJob) {
                                     $afterJob = $tapeJobs | Where-Object { $_.Id -eq $afterId } | Select-Object -First 1
                                 }
                                 if ($afterJob) { $nextRunStr = "Apres [$($afterJob.Name)]" }
-                            } elseif ($j.Enabled) {
-                                try {
-                                    $timeOfDay = $opts.OptionsDaily.TimeLocal
-                                    if ($timeOfDay) {
-                                        $nextRun = [datetime]::Today.Add($timeOfDay)
-                                        if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
-                                        $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
-                                    }
-                                } catch {}
                             }
+                        }
+                        # 2. Direct NextRun property
+                        if (-not $nextRunStr) {
+                            try {
+                                $nr = $j.NextRun
+                                if ($nr -and $nr -gt [datetime]::MinValue) {
+                                    $nextRunStr = $nr.ToUniversalTime().ToString("o")
+                                }
+                            } catch {}
+                        }
+                        # 3. Schedule options NextRun
+                        if (-not $nextRunStr -and $opts) {
+                            try {
+                                $nr = $opts.NextRun
+                                if ($nr -and $nr -gt [datetime]::MinValue) {
+                                    $nextRunStr = $nr.ToUniversalTime().ToString("o")
+                                }
+                            } catch {}
+                        }
+                        # 4. Daily time fallback
+                        if (-not $nextRunStr -and $j.Enabled -and $opts) {
+                            try {
+                                $timeOfDay = $opts.OptionsDaily.TimeLocal
+                                if ($timeOfDay -and $timeOfDay -ne [TimeSpan]::Zero) {
+                                    $nextRun = [datetime]::Today.Add($timeOfDay)
+                                    if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
+                                    $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
+                                }
+                            } catch {}
                         }
                     } catch {}
 
