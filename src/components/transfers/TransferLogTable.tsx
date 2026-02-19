@@ -161,7 +161,7 @@ export function TransferLogTable({ direction }: TransferLogTableProps) {
         <CardContent className="p-0">
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full table-fixed text-sm">
               <colgroup>
                 {widths.map((w, i) => (
                   <col key={i} style={{ width: w }} />
