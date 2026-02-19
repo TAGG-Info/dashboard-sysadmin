@@ -168,6 +168,7 @@ export function TransferFilters({ onFilterChange, onPageReset, hideDirection }: 
         <option value="">Statut</option>
         <option value="Processed">Processed</option>
         <option value="Failed">Failed</option>
+        <option value="Failed Subtransmission">Failed Subtransmission</option>
         <option value="In Progress">In Progress</option>
         <option value="Aborted">Aborted</option>
         <option value="Paused">Paused</option>
