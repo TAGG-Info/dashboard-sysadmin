@@ -95,27 +95,31 @@ function Refresh-Cache {
             $status = "Stopped"
             try { if ($j.IsRunning) { $status = "Working" } } catch {}
 
-            # Next run (5-level fallback)
+            # Next run — each level independent (never skip $j.NextRun if GetScheduleOptions throws)
             $nextRunStr = $null
-            try {
-                $opts = $j.GetScheduleOptions()
-                if ($opts.OptionsScheduleAfterJob.IsEnabled) {
-                    $aName = $jobIdToName[$opts.OptionsScheduleAfterJob.Id.ToString()]
-                    if ($aName) { $nextRunStr = "Apres [$aName]" }
-                }
-                if (-not $nextRunStr) {
-                    try { $nr = $j.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
-                }
-                if (-not $nextRunStr) {
-                    try { $nr = $opts.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
-                }
-                if (-not $nextRunStr -and $j.IsScheduleEnabled) {
-                    try { $td = $opts.OptionsDaily.TimeLocal; if ($td -and $td -ne [TimeSpan]::Zero) { $nr = [datetime]::Today.Add($td); if ($nr -le $now) { $nr = $nr.AddDays(1) }; $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
-                }
-                if (-not $nextRunStr -and $j.IsScheduleEnabled) {
-                    try { $st = $opts.StartDateTime; if ($st -and $st -gt [datetime]::MinValue) { $nr = [datetime]::Today.Add($st.TimeOfDay); if ($nr -le $now) { $nr = $nr.AddDays(1) }; $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
-                }
-            } catch {}
+            # 1. Direct NextRun property (Veeam 12+, most reliable)
+            try { $nr = $j.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
+            # 2-5. Schedule options fallbacks
+            if (-not $nextRunStr) {
+                try {
+                    $opts = $j.GetScheduleOptions()
+                    try {
+                        if ($opts.OptionsScheduleAfterJob -and $opts.OptionsScheduleAfterJob.IsEnabled) {
+                            $aName = $jobIdToName[$opts.OptionsScheduleAfterJob.Id.ToString()]
+                            if ($aName) { $nextRunStr = "Apres [$aName]" }
+                        }
+                    } catch {}
+                    if (-not $nextRunStr) {
+                        try { $nr = $opts.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
+                    }
+                    if (-not $nextRunStr -and $j.IsScheduleEnabled) {
+                        try { $td = $opts.OptionsDaily.TimeLocal; if ($td -and $td -ne [TimeSpan]::Zero) { $nr = [datetime]::Today.Add($td); if ($nr -le $now) { $nr = $nr.AddDays(1) }; $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
+                    }
+                    if (-not $nextRunStr -and $j.IsScheduleEnabled) {
+                        try { $st = $opts.StartDateTime; if ($st -and $st -gt [datetime]::MinValue) { $nr = [datetime]::Today.Add($st.TimeOfDay); if ($nr -le $now) { $nr = $nr.AddDays(1) }; $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
+                    }
+                } catch {}
+            }
 
             $target = ""
             try { $target = $j.GetTargetRepository().Name } catch {}
@@ -216,22 +220,24 @@ function Refresh-Cache {
                     try { if ($j.LastState -eq 'Working' -or $j.IsRunning) { $status = "Working" } } catch {}
 
                     $nextRunStr = $null
-                    try {
-                        $opts = $j.GetScheduleOptions()
-                        if ($opts -and $opts.OptionsScheduleAfterJob.IsEnabled) {
-                            $aName = $jobIdToName[$opts.OptionsScheduleAfterJob.Id.ToString()]
-                            if ($aName) { $nextRunStr = "Apres [$aName]" }
-                        }
-                        if (-not $nextRunStr) {
-                            try { $nr = $j.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
-                        }
-                        if (-not $nextRunStr -and $opts) {
-                            try { $nr = $opts.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
-                        }
-                        if (-not $nextRunStr -and $j.Enabled -and $opts) {
-                            try { $td = $opts.OptionsDaily.TimeLocal; if ($td -and $td -ne [TimeSpan]::Zero) { $nr = [datetime]::Today.Add($td); if ($nr -le $now) { $nr = $nr.AddDays(1) }; $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
-                        }
-                    } catch {}
+                    try { $nr = $j.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
+                    if (-not $nextRunStr) {
+                        try {
+                            $opts = $j.GetScheduleOptions()
+                            try {
+                                if ($opts -and $opts.OptionsScheduleAfterJob -and $opts.OptionsScheduleAfterJob.IsEnabled) {
+                                    $aName = $jobIdToName[$opts.OptionsScheduleAfterJob.Id.ToString()]
+                                    if ($aName) { $nextRunStr = "Apres [$aName]" }
+                                }
+                            } catch {}
+                            if (-not $nextRunStr -and $opts) {
+                                try { $nr = $opts.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
+                            }
+                            if (-not $nextRunStr -and $j.Enabled -and $opts) {
+                                try { $td = $opts.OptionsDaily.TimeLocal; if ($td -and $td -ne [TimeSpan]::Zero) { $nr = [datetime]::Today.Add($td); if ($nr -le $now) { $nr = $nr.AddDays(1) }; $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
+                            }
+                        } catch {}
+                    }
 
                     $target = ""
                     try { $target = "$($j.Target.Name)" } catch {
@@ -269,8 +275,29 @@ function Refresh-Cache {
 
         $script:jobsCache = if ($jobs.Count -gt 0) { ($jobs.ToArray() | ConvertTo-Json -Depth 5 -Compress) } else { "[]" }
 
-        # --- 3. SESSIONS (last 50 from pre-fetched) ---
-        $sessions = $allSessions | Select-Object -First 50 | ForEach-Object {
+        # --- 3. SESSIONS (last 50, filter out failed retries) ---
+        # Sessions are sorted desc (most recent first).
+        # If a job has a Success/Warning AFTER a Failed within 2h, the Failed is a retry → skip it.
+        $jobSuccessTime = @{} # job name → CreationTimeUTC of most recent non-failed session
+        $filteredSessions = [System.Collections.Generic.List[object]]::new()
+        foreach ($s in $allSessions) {
+            $result = $s.Result.ToString()
+            if ($result -ne 'Failed') {
+                if (-not $jobSuccessTime.ContainsKey($s.JobName)) {
+                    $jobSuccessTime[$s.JobName] = $s.CreationTimeUTC
+                }
+                $filteredSessions.Add($s)
+            } else {
+                # Failed — skip if same job had a more recent success within 2h
+                if ($jobSuccessTime.ContainsKey($s.JobName)) {
+                    $gap = ($jobSuccessTime[$s.JobName] - $s.CreationTimeUTC).TotalHours
+                    if ($gap -ge 0 -and $gap -lt 2) { continue }
+                }
+                $filteredSessions.Add($s)
+            }
+            if ($filteredSessions.Count -ge 50) { break }
+        }
+        $sessions = $filteredSessions | ForEach-Object {
             @{
                 id           = $_.Id.ToString()
                 name         = $_.JobName
@@ -296,7 +323,8 @@ function Refresh-Cache {
 
         $script:lastRefresh = Get-Date
         $sw.Stop()
-        Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Cache refreshed: $($jobs.Count) jobs, $(@($sessions).Count) sessions in $($sw.Elapsed.TotalSeconds.ToString('F1'))s"
+        $withNextRun = ($jobs | Where-Object { $_.nextRun }).Count
+        Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Cache refreshed: $($jobs.Count) jobs ($withNextRun with nextRun), $(@($sessions).Count) sessions in $($sw.Elapsed.TotalSeconds.ToString('F1'))s"
     } catch {
         Write-Warning "Cache refresh failed: $_"
     }
