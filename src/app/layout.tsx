@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { RefreshIntervalsProvider } from '@/components/providers/RefreshIntervalsProvider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { DashboardShell } from '@/components/layout/DashboardShell';
+import { Toaster } from 'sonner';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -29,20 +30,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className="dark" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased`}>
         <SessionProvider>
           <ThemeProvider>
             <RefreshIntervalsProvider>
               <TooltipProvider delayDuration={300}>
-                <DashboardShell>
-                  {children}
-                </DashboardShell>
+                <DashboardShell>{children}</DashboardShell>
               </TooltipProvider>
             </RefreshIntervalsProvider>
           </ThemeProvider>
         </SessionProvider>
+        <Toaster richColors position="bottom-right" theme="dark" />
       </body>
     </html>
   );

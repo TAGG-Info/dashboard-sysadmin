@@ -1,3 +1,6 @@
+import { format, parseISO, formatDistance } from 'date-fns';
+import { fr } from 'date-fns/locale';
+
 // From TransferLogTable.tsx
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -14,12 +17,20 @@ export function formatMemory(mib: number): string {
   return `${mib} MiB`;
 }
 
-// From TransferLogTable.tsx
 export function formatDateFR(dateStr: string): string {
   try {
-    return new Date(dateStr).toLocaleString('fr-FR', {
-      day: '2-digit', month: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    });
-  } catch { return dateStr; }
+    const date = typeof dateStr === 'string' && dateStr.includes('T') ? parseISO(dateStr) : new Date(dateStr);
+    return format(date, 'dd/MM HH:mm:ss', { locale: fr });
+  } catch {
+    return dateStr;
+  }
+}
+
+export function formatTimeAgo(dateStr: string): string {
+  try {
+    const date = typeof dateStr === 'string' && dateStr.includes('T') ? parseISO(dateStr) : new Date(dateStr);
+    return formatDistance(date, new Date(), { addSuffix: true, locale: fr });
+  } catch {
+    return dateStr;
+  }
 }

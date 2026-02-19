@@ -1,5 +1,6 @@
 import type { CacheEntry } from '@/types/common';
 import { CACHE_TTL } from '@/lib/constants';
+import { loggers } from '@/lib/logger';
 
 let redis: import('ioredis').default | null = null;
 let redisFailed = false;
@@ -24,6 +25,7 @@ async function getRedis(): Promise<import('ioredis').default | null> {
     await redis.connect();
     return redis;
   } catch {
+    loggers.cache.warn('Redis connection failed, using in-memory fallback');
     redisFailed = true;
     redis = null;
     return null;
@@ -115,7 +117,7 @@ export async function cacheSet<T>(key: string, data: T, ttlMs: number): Promise<
       memorySet(key, json, totalTtlMs);
     }
   } catch {
-    // Fallback to memory on Redis error
+    loggers.cache.warn({ key }, 'Redis set failed, falling back to memory');
     memorySet(key, json, totalTtlMs);
   }
 }
@@ -124,11 +126,7 @@ export async function cacheSet<T>(key: string, data: T, ttlMs: number): Promise<
  * Fetch-with-deduplication: checks cache first, then deduplicates concurrent fetches
  * for the same key to prevent cache stampede on cold start or simultaneous expiry.
  */
-export async function cacheFetch<T>(
-  key: string,
-  ttlMs: number,
-  fetcher: () => Promise<T>,
-): Promise<T> {
+export async function cacheFetch<T>(key: string, ttlMs: number, fetcher: () => Promise<T>): Promise<T> {
   const cached = await cacheGet<T>(key);
   if (cached !== null) return cached;
 

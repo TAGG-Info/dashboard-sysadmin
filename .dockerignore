@@ -14,3 +14,9 @@ src/__tests__
 vitest.config.*
 .DS_Store
 Thumbs.db
+.github
+.husky
+*.md
+.prettierrc
+.prettierignore
+.env

@@ -1,5 +1,6 @@
 import type { ProxmoxNode, ProxmoxVM, ProxmoxStorage } from '@/types/proxmox';
 import type { ProxmoxInstance } from '@/lib/config';
+import { loggers } from '@/lib/logger';
 
 export class ProxmoxClient {
   private baseUrl: string;
@@ -15,10 +16,13 @@ export class ProxmoxClient {
   async request<T>(path: string): Promise<T> {
     const res = await fetch(`${this.baseUrl}/api2/json${path}`, {
       headers: {
-        'Authorization': `PVEAPIToken=${this.tokenId}=${this.tokenSecret}`,
+        Authorization: `PVEAPIToken=${this.tokenId}=${this.tokenSecret}`,
       },
     });
-    if (!res.ok) throw new Error(`Proxmox error: ${res.status}`);
+    if (!res.ok) {
+      loggers.proxmox.error({ status: res.status, path }, 'Proxmox API error');
+      throw new Error(`Proxmox error: ${res.status}`);
+    }
     const json = await res.json();
     return json.data; // Proxmox wrappe toujours dans { data: ... }
   }
@@ -44,15 +48,15 @@ export class ProxmoxClient {
     const nodes = await this.getNodes();
     const results = await Promise.all(
       nodes
-        .filter(node => node.status === 'online')
+        .filter((node) => node.status === 'online')
         .map(async (node) => {
           const [vms, cts] = await Promise.all([
             this.getVMs(node.node).catch(() => [] as ProxmoxVM[]),
             this.getContainers(node.node).catch(() => [] as ProxmoxVM[]),
           ]);
           return [
-            ...vms.map(vm => ({ ...vm, type: 'qemu' as const, node: node.node })),
-            ...cts.map(ct => ({ ...ct, type: 'lxc' as const, node: node.node })),
+            ...vms.map((vm) => ({ ...vm, type: 'qemu' as const, node: node.node })),
+            ...cts.map((ct) => ({ ...ct, type: 'lxc' as const, node: node.node })),
           ];
         }),
     );

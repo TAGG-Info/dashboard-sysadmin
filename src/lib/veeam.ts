@@ -1,5 +1,6 @@
 import type { VeeamJob, VeeamSession, VeeamRepository } from '@/types/veeam';
 import type { VeeamInstance } from '@/lib/config';
+import { loggers } from '@/lib/logger';
 
 export class VeeamClient {
   private baseUrl: string;
@@ -25,7 +26,10 @@ export class VeeamClient {
       },
       body: `grant_type=password&username=${encodeURIComponent(this.username)}&password=${encodeURIComponent(this.password)}`,
     });
-    if (!res.ok) throw new Error(`Veeam auth failed: ${res.status}`);
+    if (!res.ok) {
+      loggers.veeam.error({ status: res.status }, 'Veeam auth failed');
+      throw new Error(`Veeam auth failed: ${res.status}`);
+    }
 
     const data = await res.json();
     if (!data.access_token) {
@@ -40,7 +44,7 @@ export class VeeamClient {
     const token = await this.getToken();
     const res = await fetch(`${this.baseUrl}/api/v1${path}`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'x-api-version': '1.2-rev1',
       },
     });
@@ -50,15 +54,21 @@ export class VeeamClient {
       const newToken = await this.getToken();
       const retry = await fetch(`${this.baseUrl}/api/v1${path}`, {
         headers: {
-          'Authorization': `Bearer ${newToken}`,
+          Authorization: `Bearer ${newToken}`,
           'x-api-version': '1.2-rev1',
         },
       });
-      if (!retry.ok) throw new Error(`Veeam error: ${retry.status}`);
+      if (!retry.ok) {
+        loggers.veeam.error({ status: retry.status, path }, 'Veeam API error after re-auth');
+        throw new Error(`Veeam error: ${retry.status}`);
+      }
       return retry.json();
     }
 
-    if (!res.ok) throw new Error(`Veeam error: ${res.status}`);
+    if (!res.ok) {
+      loggers.veeam.error({ status: res.status, path }, 'Veeam API error');
+      throw new Error(`Veeam error: ${res.status}`);
+    }
     return res.json();
   }
 
@@ -69,7 +79,7 @@ export class VeeamClient {
 
   async getSessions(limit = 50) {
     const result = await this.request<{ data: VeeamSession[] }>(
-      `/sessions?typeFilter=Job&limit=${limit}&orderColumn=creationTime&orderAsc=false`
+      `/sessions?typeFilter=Job&limit=${limit}&orderColumn=creationTime&orderAsc=false`,
     );
     return result.data || result;
   }

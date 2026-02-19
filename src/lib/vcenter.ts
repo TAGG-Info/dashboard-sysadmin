@@ -1,5 +1,6 @@
 import type { VCenterVM, VCenterHost, VCenterDatastore, VCenterCluster } from '@/types/vcenter';
 import type { VCenterInstance } from '@/lib/config';
+import { loggers } from '@/lib/logger';
 
 export class VCenterClient {
   private baseUrl: string;
@@ -22,11 +23,14 @@ export class VCenterClient {
     const res = await fetch(`${this.baseUrl}/api/session`, {
       method: 'POST',
       headers: {
-        'Authorization': 'Basic ' + Buffer.from(`${this.username}:${this.password}`).toString('base64'),
+        Authorization: 'Basic ' + Buffer.from(`${this.username}:${this.password}`).toString('base64'),
         'Content-Type': 'application/json',
       },
     });
-    if (!res.ok) throw new Error(`vCenter auth failed: ${res.status}`);
+    if (!res.ok) {
+      loggers.vcenter.error({ status: res.status }, 'vCenter auth failed');
+      throw new Error(`vCenter auth failed: ${res.status}`);
+    }
 
     // La reponse est un string JSON (le session ID)
     const sessionId = await res.json();
@@ -48,11 +52,17 @@ export class VCenterClient {
       const retry = await fetch(`${this.baseUrl}${path}`, {
         headers: { 'vmware-api-session-id': newSessionId },
       });
-      if (!retry.ok) throw new Error(`vCenter error: ${retry.status}`);
+      if (!retry.ok) {
+        loggers.vcenter.error({ status: retry.status, path }, 'vCenter API error after re-auth');
+        throw new Error(`vCenter error: ${retry.status}`);
+      }
       return retry.json();
     }
 
-    if (!res.ok) throw new Error(`vCenter error: ${res.status}`);
+    if (!res.ok) {
+      loggers.vcenter.error({ status: res.status, path }, 'vCenter API error');
+      throw new Error(`vCenter error: ${res.status}`);
+    }
     return res.json();
   }
 

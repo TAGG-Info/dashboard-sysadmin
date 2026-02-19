@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
+    include: ['src/**/*.test.ts'],
   },
   resolve: {
     alias: {

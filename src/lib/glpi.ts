@@ -1,5 +1,6 @@
 import type { GLPITicket, GLPITicketSummary } from '@/types/glpi';
 import type { GLPIInstance } from '@/lib/config';
+import { loggers } from '@/lib/logger';
 
 export class GLPIClient {
   private baseUrl: string;
@@ -22,12 +23,13 @@ export class GLPIClient {
     const res = await fetch(`${this.baseUrl}/initSession`, {
       headers: {
         'App-Token': this.appToken,
-        'Authorization': `user_token ${this.userToken}`,
+        Authorization: `user_token ${this.userToken}`,
         'Content-Type': 'application/json',
       },
     });
 
     if (!res.ok) {
+      loggers.glpi.error({ status: res.status }, 'GLPI auth failed');
       throw new Error(`GLPI auth failed: ${res.status}`);
     }
 
@@ -60,11 +62,17 @@ export class GLPIClient {
           'Content-Type': 'application/json',
         },
       });
-      if (!retry.ok) throw new Error(`GLPI error: ${retry.status}`);
+      if (!retry.ok) {
+        loggers.glpi.error({ status: retry.status, path }, 'GLPI API error after re-auth');
+        throw new Error(`GLPI error: ${retry.status}`);
+      }
       return retry.json();
     }
 
-    if (!res.ok) throw new Error(`GLPI error: ${res.status}`);
+    if (!res.ok) {
+      loggers.glpi.error({ status: res.status, path }, 'GLPI API error');
+      throw new Error(`GLPI error: ${res.status}`);
+    }
     return res.json();
   }
 
@@ -72,7 +80,7 @@ export class GLPIClient {
   async getTickets(status?: string): Promise<GLPITicket[]> {
     const statusFilter = status || '1,2,3,4';
     return this.request<GLPITicket[]>(
-      `/Ticket?range=0-50&order=DESC&sort=15&expand_dropdowns=true&searchText[status]=${statusFilter}`
+      `/Ticket?range=0-50&order=DESC&sort=15&expand_dropdowns=true&searchText[status]=${statusFilter}`,
     );
   }
 
@@ -93,8 +101,7 @@ export class GLPIClient {
       byPriority[t.priority] = (byPriority[t.priority] || 0) + 1;
       if (t.solvedate && t.date) {
         solvedCount++;
-        totalResolutionMs +=
-          new Date(t.solvedate).getTime() - new Date(t.date).getTime();
+        totalResolutionMs += new Date(t.solvedate).getTime() - new Date(t.date).getTime();
       }
     }
 
@@ -104,10 +111,7 @@ export class GLPIClient {
       byPriority,
       openCount: tickets.filter((t) => t.status <= 4).length,
       criticalCount: tickets.filter((t) => t.priority >= 5).length,
-      avgResolutionHours:
-        solvedCount > 0
-          ? totalResolutionMs / solvedCount / 3600000
-          : undefined,
+      avgResolutionHours: solvedCount > 0 ? totalResolutionMs / solvedCount / 3600000 : undefined,
     };
   }
 }

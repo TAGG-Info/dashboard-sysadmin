@@ -7,6 +7,7 @@ import type {
   STTransferLogList,
 } from '@/types/securetransport';
 import type { STInstance } from '@/lib/config';
+import { loggers } from '@/lib/logger';
 
 export class SecureTransportClient {
   private baseUrl: string;
@@ -28,41 +29,36 @@ export class SecureTransportClient {
   async request<T>(path: string): Promise<T> {
     const res = await fetch(`${this.apiUrl}${path}`, {
       headers: {
-        'Authorization':
-          'Basic ' +
-          Buffer.from(`${this.username}:${this.password}`).toString('base64'),
-        'Accept': 'application/json',
+        Authorization: 'Basic ' + Buffer.from(`${this.username}:${this.password}`).toString('base64'),
+        Accept: 'application/json',
       },
     });
-    if (!res.ok) throw new Error(`SecureTransport error: ${res.status}`);
+    if (!res.ok) {
+      loggers.st.error({ status: res.status, path }, 'SecureTransport API error');
+      throw new Error(`SecureTransport error: ${res.status}`);
+    }
     return res.json();
   }
 
   async getAccounts(): Promise<STAccount[]> {
     const result = await this.request<{ result?: STAccount[] } | STAccount[]>(
-      '/accounts?fields=name,businessUnit,type,disabled&limit=100'
+      '/accounts?fields=name,businessUnit,type,disabled&limit=100',
     );
     return (result as { result?: STAccount[] }).result ?? (result as STAccount[]);
   }
 
   async getCertificates(): Promise<STCertificate[]> {
-    const result = await this.request<{ result?: STCertificate[] } | STCertificate[]>(
-      '/certificates'
-    );
+    const result = await this.request<{ result?: STCertificate[] } | STCertificate[]>('/certificates');
     return (result as { result?: STCertificate[] }).result ?? (result as STCertificate[]);
   }
 
   async getTransferSites(): Promise<STTransferSite[]> {
     try {
-      const result = await this.request<{ result?: STTransferSite[] } | STTransferSite[]>(
-        '/transferSites'
-      );
+      const result = await this.request<{ result?: STTransferSite[] } | STTransferSite[]>('/transferSites');
       return (result as { result?: STTransferSite[] }).result ?? (result as STTransferSite[]);
     } catch {
-      // Fallback to /sites if transferSites not available
-      const result = await this.request<{ result?: STTransferSite[] } | STTransferSite[]>(
-        '/sites'
-      );
+      loggers.st.warn('transferSites endpoint unavailable, falling back to /sites');
+      const result = await this.request<{ result?: STTransferSite[] } | STTransferSite[]>('/sites');
       return (result as { result?: STTransferSite[] }).result ?? (result as STTransferSite[]);
     }
   }
@@ -80,14 +76,14 @@ export class SecureTransportClient {
     const p: Record<string, string> = {};
     // Wrap in wildcards for substring matching (ST API supports * natively).
     // Skip if the user already included a wildcard themselves.
-    if (filters.account)  p.account  = filters.account.includes('*')  ? filters.account  : `*${filters.account}*`;
+    if (filters.account) p.account = filters.account.includes('*') ? filters.account : `*${filters.account}*`;
     if (filters.filename) p.filename = filters.filename.includes('*') ? filters.filename : `*${filters.filename}*`;
-    if (filters.status)   p.status          = filters.status;
-    if (filters.protocol) p.protocol        = filters.protocol;
+    if (filters.status) p.status = filters.status;
+    if (filters.protocol) p.protocol = filters.protocol;
     if (filters.incoming !== undefined) p.incoming = String(filters.incoming);
     // ST API expects RFC2822: "EEE, d MMM yyyy HH:mm:ss Z"
     if (filters.startDate) p.startTimeAfter = new Date(filters.startDate).toUTCString();
-    if (filters.endDate)   p.endTimeBefore  = new Date(filters.endDate).toUTCString();
+    if (filters.endDate) p.endTimeBefore = new Date(filters.endDate).toUTCString();
     return p;
   }
 
@@ -95,9 +91,7 @@ export class SecureTransportClient {
   async getTransferLogsCount(filters: Parameters<typeof this.buildFilterParams>[0] = {}): Promise<number> {
     const p = this.buildFilterParams(filters);
     const qs = new URLSearchParams({ limit: '1', offset: '0', ...p });
-    const res = await this.request<{ resultSet: { totalCount: number } }>(
-      `/logs/transfers?${qs.toString()}`
-    );
+    const res = await this.request<{ resultSet: { totalCount: number } }>(`/logs/transfers?${qs.toString()}`);
     return res.resultSet.totalCount;
   }
 
@@ -115,14 +109,14 @@ export class SecureTransportClient {
       protocol?: string;
       incoming?: boolean;
       startDate?: number; // ms epoch → RFC2822 startTimeAfter
-      endDate?: number;   // ms epoch → RFC2822 endTimeBefore
-      filename?: string;  // wildcard search supported natively
+      endDate?: number; // ms epoch → RFC2822 endTimeBefore
+      filename?: string; // wildcard search supported natively
     } = {},
-    knownTotalCount?: number  // skip count query if already cached
+    knownTotalCount?: number, // skip count query if already cached
   ): Promise<STTransferLogList> {
     const filterParams = this.buildFilterParams(filters);
 
-    const totalCount = knownTotalCount ?? await this.getTransferLogsCount(filters);
+    const totalCount = knownTotalCount ?? (await this.getTransferLogsCount(filters));
 
     // Reverse pagination: ST returns oldest first, so we read from the tail
     const actualLimit = Math.min(limit, Math.max(0, totalCount - offset));
@@ -155,9 +149,7 @@ export class SecureTransportClient {
     ]);
 
     const now = new Date();
-    const thirtyDaysFromNow = new Date(
-      now.getTime() + 30 * 24 * 60 * 60 * 1000
-    );
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
     const expiringSoon = certificates.filter((c) => {
       const expiry = new Date(c.notAfter);
       return expiry <= thirtyDaysFromNow && expiry > now;
