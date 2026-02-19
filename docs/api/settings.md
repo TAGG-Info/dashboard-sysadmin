@@ -4,7 +4,9 @@
 
 Ces endpoints sont reserves au role **admin** uniquement.
 
-La configuration est stockee dans `data/config.json` avec les champs sensibles chiffres en AES-256-GCM (cle derivee de `NEXTAUTH_SECRET`).
+## Sources
+
+La configuration des sources est stockee dans `data/config.json` avec les champs sensibles chiffres en AES-256-GCM (cle derivee de `NEXTAUTH_SECRET`).
 
 **Champs sensibles par source (masques en `"****"` dans les reponses GET) :**
 
@@ -310,3 +312,154 @@ curl -b cookies.txt -X POST https://<host>/api/settings/sources/test \
     }
   }'
 ```
+
+---
+
+## Roles
+
+Les roles sont stockes dans `data/roles.json` (JSON clair). Ils mappent des groupes AD vers des pages du dashboard.
+
+### GET /api/settings/roles
+
+**Description** : Retourne tous les roles configures (systeme + custom).
+
+**Authentification** : session requise (role `admin` uniquement)
+
+#### Reponse (200)
+
+```json
+{
+  "roles": [
+    {
+      "id": "admin",
+      "name": "Administrateur",
+      "adGroups": ["Dashboard-Admins"],
+      "pages": ["/", "/monitoring", "/infrastructure", "/backups", "/transfers", "/tickets", "/settings"],
+      "isSystem": true
+    },
+    {
+      "id": "viewer",
+      "name": "Lecteur",
+      "adGroups": [],
+      "pages": ["/", "/monitoring", "/infrastructure", "/backups", "/transfers", "/tickets"],
+      "isSystem": true
+    },
+    {
+      "id": "compta",
+      "name": "Comptabilite",
+      "adGroups": ["GS-COMPTA"],
+      "pages": ["/", "/tickets"]
+    }
+  ]
+}
+```
+
+---
+
+### POST /api/settings/roles
+
+**Description** : Cree un nouveau role.
+
+**Authentification** : session requise (role `admin` uniquement)
+
+#### Corps de la requete (JSON)
+
+```json
+{
+  "id": "compta",
+  "name": "Comptabilite",
+  "adGroups": ["GS-COMPTA"],
+  "pages": ["/", "/tickets"]
+}
+```
+
+| Champ | Type | Requis | Description |
+|-------|------|--------|-------------|
+| `id` | string | Oui | Slug unique (minuscules, chiffres, tirets, 2-32 chars) |
+| `name` | string | Oui | Nom d'affichage |
+| `adGroups` | string[] | Non | Noms CN des groupes AD (defaut: []) |
+| `pages` | string[] | Oui | Pages autorisees (au moins une) |
+
+#### Reponse (201)
+
+```json
+{
+  "success": true,
+  "role": { "id": "compta", "name": "Comptabilite", "adGroups": ["GS-COMPTA"], "pages": ["/", "/tickets"] }
+}
+```
+
+**Codes d'erreur** :
+
+| Code | Cas |
+|------|-----|
+| 400 | Champs requis manquants, format id invalide, pages invalides |
+| 409 | Un role avec cet id existe deja |
+
+---
+
+### PUT /api/settings/roles
+
+**Description** : Met a jour un role existant.
+
+**Authentification** : session requise (role `admin` uniquement)
+
+#### Corps de la requete (JSON)
+
+```json
+{
+  "id": "compta",
+  "name": "Comptabilite & Finance",
+  "adGroups": ["GS-COMPTA", "GS-FINANCE"],
+  "pages": ["/", "/tickets", "/transfers"]
+}
+```
+
+| Champ | Type | Requis | Description |
+|-------|------|--------|-------------|
+| `id` | string | Oui | ID du role a modifier |
+| `name` | string | Non | Nouveau nom d'affichage |
+| `adGroups` | string[] | Non | Nouveaux groupes AD |
+| `pages` | string[] | Non | Nouvelles pages autorisees |
+
+**Contraintes role admin** : le role `admin` conserve toujours toutes les pages (y compris `/settings`) et ses groupes AD ne peuvent pas etre modifies via l'API.
+
+#### Reponse (200)
+
+```json
+{ "success": true, "role": { ... } }
+```
+
+**Codes d'erreur** :
+
+| Code | Cas |
+|------|-----|
+| 400 | Pages vides ou invalides |
+| 404 | Role introuvable |
+
+---
+
+### DELETE /api/settings/roles
+
+**Description** : Supprime un role custom. Les roles systeme (admin, viewer) ne peuvent pas etre supprimes.
+
+**Authentification** : session requise (role `admin` uniquement)
+
+#### Corps de la requete (JSON)
+
+```json
+{ "id": "compta" }
+```
+
+#### Reponse (200)
+
+```json
+{ "success": true }
+```
+
+**Codes d'erreur** :
+
+| Code | Cas |
+|------|-----|
+| 403 | Tentative de suppression d'un role systeme |
+| 404 | Role introuvable |

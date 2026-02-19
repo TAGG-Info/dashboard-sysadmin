@@ -75,12 +75,15 @@ Tous les tableaux du dashboard (tickets, jobs, VMs, transferts) ont des colonnes
 
 ### Rôles et droits d'accès
 
-Deux rôles existent dans le dashboard :
+Les rôles contrôlent quelles pages du dashboard sont accessibles. Deux rôles systèmes sont prédéfinis, et l'administrateur peut en créer d'autres depuis les Paramètres.
 
 | Rôle | Accès |
 |------|-------|
 | **Admin** | Accès à toutes les pages, y compris les Paramètres |
-| **Viewer** | Accès à toutes les pages sauf Paramètres. Toute tentative d'accès aux Paramètres redirige vers le Dashboard |
+| **Viewer** | Accès à toutes les pages sauf Paramètres (rôle par défaut) |
+| **Rôles custom** | Accès configurable — l'admin choisit les pages autorisées par rôle |
+
+Le rôle est déterminé automatiquement à la connexion par l'appartenance aux groupes Active Directory. Le menu latéral n'affiche que les pages autorisées par votre rôle. Si vous tentez d'accéder à une page non autorisée, vous êtes redirigé vers votre première page autorisée.
 
 ---
 
@@ -424,6 +427,32 @@ Pour chaque source, vous pouvez :
 **Champs secrets** (mots de passe, tokens) : les valeurs sont masquées par défaut. Un bouton oeil permet d'afficher/masquer la valeur. Si un secret est déjà configuré, le champ affiche `****`. Laisser ce champ vide lors d'une sauvegarde conserve l'ancienne valeur.
 
 Les configurations sont stockées sur le serveur avec chiffrement AES-256-GCM des champs sensibles.
+
+### Rôles & Accès (RoleManager)
+
+Section permettant de gérer les rôles du dashboard et leur mapping avec les groupes Active Directory.
+
+#### Rôles systèmes
+
+Deux rôles sont présents par défaut et ne peuvent pas être supprimés :
+- **Administrateur** (`admin`) : accès à toutes les pages y compris les Paramètres. Le groupe AD est défini par la variable `LDAP_ADMIN_GROUP`.
+- **Lecteur** (`viewer`) : accès à toutes les pages sauf Paramètres. Rôle attribué par défaut si aucun groupe AD ne correspond.
+
+#### Créer un rôle custom
+
+1. Cliquez sur **Ajouter** en haut à droite de la section
+2. Renseignez le **nom d'affichage** (ex : "Comptabilité") — l'identifiant est généré automatiquement
+3. Ajoutez un ou plusieurs **groupes AD** : saisissez le nom CN du groupe (ex : `GS-COMPTA`) et appuyez sur Entrée
+4. Cochez les **pages autorisées** pour ce rôle
+5. Cliquez sur **Enregistrer**
+
+#### Modifier un rôle
+
+Cliquez sur l'icône crayon à côté du rôle. Vous pouvez modifier le nom, les groupes AD et les pages autorisées. L'identifiant ne peut pas être changé après la création.
+
+#### Supprimer un rôle
+
+Cliquez sur l'icône corbeille à côté du rôle. Une confirmation est demandée. Les rôles systèmes ne peuvent pas être supprimés.
 
 ### Health Checks
 

@@ -19,7 +19,7 @@ Le SysAdmin Dashboard est une application Next.js 16 (App Router) qui agrege en 
 dashboard-tagg/
 ├── src/
 │   ├── app/                        # App Router Next.js
-│   │   ├── api/                    # 19 routes API (server-side uniquement)
+│   │   ├── api/                    # 20 routes API (server-side uniquement)
 │   │   │   ├── auth/[...nextauth]/ # Handlers NextAuth
 │   │   │   ├── prtg/               # devices, sensors, alerts, summary
 │   │   │   ├── vcenter/            # vms, hosts, datastores
@@ -28,6 +28,7 @@ dashboard-tagg/
 │   │   │   ├── glpi/               # tickets, summary
 │   │   │   ├── securetransport/    # transfers, logs
 │   │   │   ├── settings/sources/   # CRUD config instances (admin)
+│   │   │   ├── settings/roles/     # CRUD roles AD (admin)
 │   │   │   └── health/             # health check
 │   │   ├── login/                  # Page de connexion
 │   │   ├── monitoring/             # Page PRTG
@@ -39,8 +40,11 @@ dashboard-tagg/
 │   │   └── page.tsx                # Dashboard home
 │   │
 │   ├── lib/                        # Logique serveur partagee
-│   │   ├── auth.ts                 # Configuration NextAuth
+│   │   ├── auth.config.ts          # Config NextAuth Edge-safe (callbacks, pages, session)
+│   │   ├── auth.ts                 # NextAuth complet avec providers (Node.js only)
 │   │   ├── ldap.ts                 # Client LDAP (bind, search, verify)
+│   │   ├── roles.ts                # Lecture/ecriture roles sur disque (data/roles.json)
+│   │   ├── roles-resolver.ts       # Resolution de role pure (Edge-safe, pas d'I/O)
 │   │   ├── cache.ts                # Cache Redis + fallback Map memoire
 │   │   ├── config.ts               # Config chiffree (data/config.json)
 │   │   ├── config-types.ts         # Interfaces et types de config (extraits de config.ts)
@@ -63,6 +67,7 @@ dashboard-tagg/
 │   │   ├── usePageRefresh.ts       # Hook DRY pour refresh manuel des pages
 │   │   ├── useColumnResize.ts      # Hook resize colonnes (pointer drag)
 │   │   ├── useRefreshSignal.ts     # Hook refreshSignal (partage par 6 composants)
+│   │   ├── useRoles.ts             # Hook CRUD roles (fetch, create, update, delete)
 │   │   ├── usePRTG.ts
 │   │   ├── useInfrastructure.ts
 │   │   ├── useVeeam.ts
@@ -71,7 +76,8 @@ dashboard-tagg/
 │   │
 │   ├── types/                      # Interfaces TypeScript
 │   │   ├── common.ts               # ApiResponse<T>, WithInstance<T>, CacheEntry<T>
-│   │   ├── next-auth.d.ts          # Augmentation User/JWT (role, authSource)
+│   │   ├── roles.ts                # DashboardRole, DASHBOARD_PAGES, ALL_PAGE_PATHS
+│   │   ├── next-auth.d.ts          # Augmentation User/JWT (role, allowedPages, authSource)
 │   │   ├── prtg.ts
 │   │   ├── vcenter.ts
 │   │   ├── proxmox.ts
@@ -87,6 +93,10 @@ dashboard-tagg/
 │   │   │   ├── PageHeader.tsx      # Header standardise des pages
 │   │   │   ├── MobileNav.tsx       # Navigation mobile (drawer)
 │   │   │   └── SourceStatusDots.tsx # Indicateurs 6 sources
+│   │   ├── ui/
+│   │   ├── settings/
+│   │   │   ├── RoleManager.tsx     # UI CRUD gestion des roles AD
+│   │   │   └── SourceItem.tsx      # Item source extracte de SourceConfigs
 │   │   ├── ui/
 │   │   │   ├── StatCard.tsx        # Carte statistique standardisee
 │   │   │   ├── StatusBadge.tsx     # Badge de statut colore
@@ -104,7 +114,8 @@ dashboard-tagg/
 │   └── middleware.ts               # Protection globale des routes (auth + RBAC)
 │
 ├── data/
-│   └── config.json                 # Config instances chiffree AES-256-GCM
+│   ├── config.json                 # Config instances chiffree AES-256-GCM
+│   └── roles.json                  # Roles et mapping groupes AD (JSON clair)
 │
 │   └── instrumentation.ts           # Initialisation runtime (cron, logging)
 │
@@ -300,9 +311,10 @@ TTLs configurables via `CACHE_TTL_*` (en secondes).
 2. Recherche utilisateur par filtre (LDAP_USER_SEARCH_FILTER, defaut: sAMAccountName)
 3. Bind avec le DN de l'utilisateur + mot de passe fourni (verification)
 4. Lecture de l'attribut memberOf
-5. isAdmin(groups) : recherche de LDAP_ADMIN_GROUP dans les groupes
-   -> role "admin" si trouve, "viewer" sinon
-6. JWT signe (NextAuth) avec role et authSource="ldap", duree 8h
+5. resolveRole(groups) : resolution du role via mapping groupes AD → roles
+   -> Compare les CN des groupes memberOf avec les adGroups de chaque role
+   -> Priorite au role admin si match, puis premier role custom, sinon viewer
+6. JWT signe (NextAuth) avec role, allowedPages et authSource="ldap", duree 8h
 ```
 
 ### Fallback admin local
@@ -312,10 +324,21 @@ Si LDAP est down OU si l'utilisateur n'est pas trouve en LDAP, le systeme tente 
 ```
 username == LOCAL_ADMIN_USERNAME
   && bcrypt.compare(password, LOCAL_ADMIN_PASSWORD_HASH)
-  --> JWT avec role="admin", authSource="local"
+  --> JWT avec role="admin", allowedPages=[toutes], authSource="local"
 ```
 
 Le compte local est toujours disponible meme si l'AD est indisponible.
+
+### Split auth Edge/Node
+
+NextAuth est split en deux fichiers pour la compatibilite Edge Runtime :
+
+| Fichier | Runtime | Role |
+|---|---|---|
+| `auth.config.ts` | Edge-safe | Callbacks JWT/session, pages, session config. Importe par middleware. |
+| `auth.ts` | Node.js only | Config complete avec providers (Credentials, LDAP, roles). Importe par API routes. |
+
+Le middleware cree sa propre instance NextAuth legere depuis `auth.config.ts` (verification JWT uniquement). Les API routes utilisent l'instance complete depuis `auth.ts` (avec `authorize()` et resolution de role).
 
 ### Protection des routes (middleware.ts)
 
@@ -332,6 +355,10 @@ Toute requete entrante
   |     +-- role == "admin" ----------> Passe
   |     +-- sinon (API) ------------->  403 Forbidden
   |     +-- sinon (page) ------------>  Redirect /
+  +-- Page dashboard (non-API) ?
+  |     +-- role == "admin" ----------> Passe (bypass page check)
+  |     +-- allowedPages contient la page ? --> Passe
+  |     +-- sinon ------------------->  Redirect vers premiere page autorisee
   +-- Tout le reste ------------------> Passe
 ```
 
@@ -339,12 +366,72 @@ Toute requete entrante
 
 - Strategie : `jwt` (pas de base de donnees de sessions)
 - Duree de vie : 8 heures
-- Champs personnalises : `role` (`"admin"` | `"viewer"`), `authSource` (`"ldap"` | `"local"`)
+- Champs personnalises : `role` (string, ex: `"admin"`, `"viewer"`, `"compta"`), `allowedPages` (string[]), `authSource` (`"ldap"` | `"local"`)
 - Augmentation de type dans `src/types/next-auth.d.ts`
 
 ### Rate limiting
 
 Un rate limiter en memoire (`src/lib/rate-limit.ts`) protege la route de connexion contre le brute-force. Apres un nombre de tentatives depasse, les requetes pour ce nom d'utilisateur sont bloquees temporairement.
+
+---
+
+## Systeme de roles
+
+### Concept
+
+Les roles permettent de mapper des **groupes Active Directory** vers des **pages du dashboard**. Un utilisateur qui se connecte via LDAP est associe au role dont un des `adGroups` correspond a l'un de ses groupes AD (`memberOf`). Le JWT stocke alors le `role.id` et `role.pages` (les pages autorisees).
+
+### Fichiers
+
+| Fichier | Role |
+|---|---|
+| `src/types/roles.ts` | Type `DashboardRole`, constantes `DASHBOARD_PAGES`, `ALL_PAGE_PATHS` |
+| `src/lib/roles-resolver.ts` | Logique pure (Edge-safe) : `resolveRoleFromList()`, `extractCN()`, `validateRole()`, `getDefaultRoles()` |
+| `src/lib/roles.ts` | I/O disque : `readRoles()`, `writeRoles()`, `resolveRole()` (importe `fs/promises`, Node.js only) |
+| `src/app/api/settings/roles/route.ts` | API CRUD (GET/POST/PUT/DELETE), protege admin |
+| `src/hooks/useRoles.ts` | Hook React : fetch, create, update, delete avec refresh auto |
+| `src/components/settings/RoleManager.tsx` | UI de gestion dans la page Settings |
+
+### Structure d'un role
+
+```typescript
+interface DashboardRole {
+  id: string;        // slug unique (ex: "compta", "admin")
+  name: string;      // nom d'affichage (ex: "Comptabilite")
+  adGroups: string[]; // noms CN des groupes AD (ex: ["GS-COMPTA"])
+  pages: string[];   // pages autorisees (ex: ["/", "/tickets"])
+  isSystem?: boolean; // true pour admin et viewer (non supprimables)
+}
+```
+
+### Roles systeme
+
+Deux roles systeme sont crees par defaut et ne peuvent pas etre supprimes :
+
+| Role | ID | Groupe AD par defaut | Pages |
+|---|---|---|---|
+| Administrateur | `admin` | `LDAP_ADMIN_GROUP` (env) ou `Dashboard-Admins` | Toutes + `/settings` |
+| Lecteur | `viewer` | aucun (fallback) | Toutes sauf `/settings` |
+
+### Resolution de role
+
+```
+1. Extraire les CN des groupes memberOf de l'utilisateur
+2. Pour chaque role (sauf viewer) :
+   a. Comparer les adGroups du role avec les CN (case-insensitive)
+   b. Si match → ajouter a la liste des candidats
+3. Si aucun match → retourner le role viewer (fallback)
+4. Si match admin → retourner admin (priorite absolue)
+5. Sinon → retourner le premier role custom qui matche
+```
+
+### Stockage
+
+Les roles sont stockes dans `data/roles.json` (JSON clair, pas chiffre). Si le fichier est absent ou invalide, les roles systeme par defaut sont utilises. Le repertoire `data/` est configure par `DATA_DIR` (defaut: `./data`).
+
+### Navigation filtree
+
+Le `Sidebar` et le `MobileNav` lisent `session.user.allowedPages` pour n'afficher que les liens vers les pages autorisees. Le lien Settings n'apparait que pour le role `admin`.
 
 ---
 

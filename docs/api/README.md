@@ -45,6 +45,9 @@ Toutes les requetes suivantes doivent inclure le cookie de session (option `-b c
 |---------|--------------------------------------------|
 | `admin` | Tous les endpoints, y compris `/api/settings/*` |
 | `viewer`| Tous les endpoints sauf `/api/settings/*`   |
+| custom  | Depend des pages autorisees configurees dans le role |
+
+Les roles sont configurables via l'API `/api/settings/roles` ou depuis la page Settings. Voir [Settings](settings.md#roles) pour la documentation complete.
 
 **Reponse en cas d'echec d'authentification :**
 

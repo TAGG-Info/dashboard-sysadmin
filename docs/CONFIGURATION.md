@@ -210,11 +210,44 @@ Ces variables controlent la frequence d'actualisation automatique cote client.
 
 ## Roles utilisateur
 
-| Role | Acces |
-|---|---|
-| `admin` | Toutes les pages + `/settings` (lecture et ecriture de la configuration) |
-| `viewer` | Toutes les pages de consultation sauf `/settings`. Toute tentative d'acces aux Settings redirige vers le Dashboard. |
+Les roles sont configurables depuis la page **Settings > Roles & Acces** (admin uniquement). Ils mappent des groupes Active Directory vers des pages du dashboard.
 
-**Attribution du role en LDAP :** l'appartenance au groupe defini dans `LDAP_ADMIN_GROUP` donne le role `admin`. Tout autre utilisateur authentifie en LDAP recoit le role `viewer`.
+### Roles systeme (non supprimables)
+
+| Role | ID | Groupe AD | Acces |
+|---|---|---|---|
+| Administrateur | `admin` | `LDAP_ADMIN_GROUP` (env) ou `Dashboard-Admins` | Toutes les pages + `/settings` |
+| Lecteur | `viewer` | aucun (fallback) | Toutes les pages sauf `/settings` |
+
+### Roles custom
+
+L'administrateur peut creer des roles supplementaires depuis l'interface. Exemple :
+
+| Role | ID | Groupes AD | Pages autorisees |
+|---|---|---|---|
+| Comptabilite | `compta` | `GS-COMPTA` | Accueil, Tickets |
+| Supervision | `supervision` | `GS-SUPERVISION` | Accueil, Monitoring, Infrastructure |
+
+Chaque role custom definit :
+- **ID** : slug unique (minuscules, chiffres, tirets, 2-32 chars)
+- **Nom d'affichage** : visible dans l'interface
+- **Groupes AD** : noms CN des groupes Active Directory (comparaison case-insensitive)
+- **Pages autorisees** : les pages du dashboard accessibles pour ce role
+
+### Resolution du role a la connexion
+
+Lors de la connexion LDAP, le systeme lit l'attribut `memberOf` de l'utilisateur et extrait les CN. Il compare ensuite ces CN avec les `adGroups` de chaque role :
+
+1. Si un match avec le role `admin` → role admin
+2. Si un match avec un role custom → premier role custom qui matche
+3. Aucun match → role `viewer` (fallback)
 
 **Compte admin local :** recoit toujours le role `admin`, independamment de toute configuration de groupe.
+
+### Stockage
+
+Les roles sont stockes dans `data/roles.json` (meme repertoire que `config.json`, configurable via `DATA_DIR`). Le fichier est cree automatiquement avec les roles systeme par defaut au premier acces.
+
+### Navigation filtree
+
+La sidebar et la navigation mobile n'affichent que les pages autorisees par le role de l'utilisateur connecte. Le middleware redirige vers la premiere page autorisee si l'utilisateur tente d'acceder a une page non autorisee.
