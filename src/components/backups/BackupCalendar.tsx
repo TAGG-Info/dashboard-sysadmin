@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useVeeamSessions } from '@/hooks/useVeeam';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SourceLogo } from '@/components/ui/SourceLogo';
 import { cn } from '@/lib/utils';
 
 type DayStatus = 'success' | 'warning' | 'failed' | 'none';
@@ -139,14 +140,21 @@ export function BackupCalendar() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-foreground text-base font-semibold">Calendrier des backups</h3>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goToPreviousMonth}>
-            <ChevronLeft className="h-4 w-4" />
+        <div className="flex items-center gap-2">
+          <span
+            className="flex h-[22px] w-[22px] items-center justify-center rounded-md"
+            style={{ background: 'rgba(76,175,80,0.12)' }}
+          >
+            <SourceLogo source="veeam" size={14} />
+          </span>
+          <h3 className="text-foreground text-[13px] font-semibold capitalize">Sauvegardes &mdash; {monthLabel}</h3>
+        </div>
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={goToPreviousMonth}>
+            <ChevronLeft className="h-3.5 w-3.5" />
           </Button>
-          <span className="text-foreground min-w-[120px] text-center text-sm font-medium capitalize">{monthLabel}</span>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goToNextMonth}>
-            <ChevronRight className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={goToNextMonth}>
+            <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>

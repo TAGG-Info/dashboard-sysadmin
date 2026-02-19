@@ -4,7 +4,6 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SourceLogo } from '@/components/ui/SourceLogo';
-import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVCenterVMs, useProxmoxVMs } from '@/hooks/useInfrastructure';
@@ -81,9 +80,9 @@ function OverviewCard({ title, icon, href, accentColor, children }: OverviewCard
 
 function PlaceholderContent() {
   return (
-    <div className="space-y-1">
-      <p className="text-muted-foreground/50 text-2xl font-bold">Non configure</p>
-      <StatusBadge status="neutral" label="Inactif" />
+    <div>
+      <p className="text-muted-foreground/30 text-3xl font-extrabold tracking-tight">—</p>
+      <p className="text-muted-foreground mt-1 text-xs">non configure</p>
     </div>
   );
 }
@@ -130,16 +129,23 @@ function InfrastructureContent() {
   const totalVMs = allVMs.length;
   const runningVMs = allVMs.filter((vm) => vm.running).length;
 
+  const hostCount =
+    (vcenterVMs ? new Set(vcenterVMs.map((vm) => vm.host)).size : 0) +
+    (proxmoxVMs ? new Set(proxmoxVMs.map((vm) => vm.node)).size : 0);
+
   return (
-    <div className="space-y-1">
-      <p className="text-foreground text-2xl font-bold">
-        {runningVMs} <span className="text-muted-foreground text-sm font-normal">running</span>
+    <div>
+      <p className="text-foreground text-3xl font-extrabold tracking-tight">{runningVMs}</p>
+      <p className="text-muted-foreground mt-1 text-xs">VMs en fonctionnement</p>
+      <p className="mt-1.5 text-xs font-semibold">
+        <span className="text-muted-foreground">
+          {hostCount > 0 ? `${hostCount} hosts` : ''}
+          {hostCount > 0 && totalVMs > 0 ? ' · ' : ''}
+          {totalVMs} total
+        </span>
+        {vcenterError && !vcenterVMs && <span className="text-yellow-400"> · VMware err</span>}
+        {proxmoxError && !proxmoxVMs && <span className="text-yellow-400"> · Proxmox err</span>}
       </p>
-      <div className="flex items-center gap-2">
-        <StatusBadge status={runningVMs > 0 ? 'healthy' : 'neutral'} label={`${runningVMs}/${totalVMs} VMs`} />
-        {vcenterError && !vcenterVMs && <StatusBadge status="warning" label="VMware err" />}
-        {proxmoxError && !proxmoxVMs && <StatusBadge status="warning" label="Proxmox err" />}
-      </div>
     </div>
   );
 }
@@ -155,18 +161,16 @@ function BackupsContent({ veeamSessions }: { veeamSessions: UseAutoRefreshReturn
 
     const recentSessions = sessions.filter((s) => new Date(s.creationTime) >= last24h);
 
+    const successes = recentSessions.filter((s) => s.result.result.toLowerCase() === 'success').length;
     const failures = recentSessions.filter(
       (s) => s.result.result.toLowerCase() === 'failed' || s.result.result.toLowerCase() === 'error',
     ).length;
-
-    // Find last completed session
-    const lastCompleted = [...sessions]
-      .filter((s) => s.endTime)
-      .sort((a, b) => new Date(b.endTime!).getTime() - new Date(a.endTime!).getTime())[0];
+    const warnings = recentSessions.filter((s) => s.result.result.toLowerCase() === 'warning').length;
 
     return {
+      successes,
       failures,
-      lastResult: lastCompleted?.result.result,
+      warnings,
     };
   }, [sessions]);
 
@@ -185,46 +189,21 @@ function BackupsContent({ veeamSessions }: { veeamSessions: UseAutoRefreshReturn
 
   if (!stats) return <PlaceholderContent />;
 
-  const lastResultStatus = (() => {
-    switch (stats.lastResult?.toLowerCase()) {
-      case 'success':
-        return 'healthy' as const;
-      case 'warning':
-        return 'warning' as const;
-      case 'failed':
-      case 'error':
-        return 'critical' as const;
-      default:
-        return 'neutral' as const;
-    }
-  })();
-
-  const lastResultLabel = (() => {
-    switch (stats.lastResult?.toLowerCase()) {
-      case 'success':
-        return 'Success';
-      case 'warning':
-        return 'Warning';
-      case 'failed':
-        return 'Failed';
-      default:
-        return stats.lastResult || 'N/A';
-    }
-  })();
-
   return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2">
-        {stats.failures > 0 ? (
-          <p className="text-2xl font-bold text-[#ef4444]">{stats.failures} echec(s)</p>
+    <div>
+      <p className="text-foreground text-3xl font-extrabold tracking-tight">{stats.successes}</p>
+      <p className="text-muted-foreground mt-1 text-xs">succes (24h)</p>
+      <p className="mt-1.5 text-xs font-semibold">
+        {stats.failures > 0 || stats.warnings > 0 ? (
+          <>
+            {stats.failures > 0 && <span className="text-red-400">{stats.failures} echec(s)</span>}
+            {stats.failures > 0 && stats.warnings > 0 && <span className="text-muted-foreground"> · </span>}
+            {stats.warnings > 0 && <span className="text-yellow-400">{stats.warnings} warning</span>}
+          </>
         ) : (
-          <p className="text-2xl font-bold text-[#22c55e]">Tout OK</p>
+          <span className="text-emerald-400">Tout OK</span>
         )}
-      </div>
-      <div className="flex items-center gap-2">
-        <StatusBadge status={lastResultStatus} label={`Dernier: ${lastResultLabel}`} />
-        {stats.failures > 0 && <StatusBadge status="critical" label={`${stats.failures} fail 24h`} />}
-      </div>
+      </p>
     </div>
   );
 }
@@ -247,32 +226,22 @@ function TicketsContent() {
 
   if (!summary) return <PlaceholderContent />;
 
-  const overallStatus = (() => {
-    if (summary.criticalCount > 0) return 'critical' as const;
-    if (summary.openCount > 10) return 'warning' as const;
-    return 'healthy' as const;
-  })();
+  const newCount = summary.byStatus?.[1] ?? 0;
 
   return (
-    <div className="space-y-1">
-      <p className="text-foreground text-2xl font-bold">
-        {summary.openCount} <span className="text-muted-foreground text-sm font-normal">ouverts</span>
+    <div>
+      <p className="text-foreground text-3xl font-extrabold tracking-tight">{summary.openCount}</p>
+      <p className="text-muted-foreground mt-1 text-xs">tickets ouverts</p>
+      <p className="mt-1.5 text-xs font-semibold">
         {summary.criticalCount > 0 && (
-          <span className="text-sm font-normal text-[#ef4444]"> ({summary.criticalCount} critiques)</span>
+          <span className="text-red-400">
+            {summary.criticalCount} critique{summary.criticalCount > 1 ? 's' : ''}
+          </span>
         )}
+        {summary.criticalCount > 0 && newCount > 0 && <span className="text-muted-foreground"> · </span>}
+        {newCount > 0 && <span className="text-blue-400">{newCount} nouveaux</span>}
+        {summary.criticalCount === 0 && newCount === 0 && <span className="text-emerald-400">Sous controle</span>}
       </p>
-      <div className="flex items-center gap-2">
-        <StatusBadge
-          status={overallStatus}
-          label={
-            overallStatus === 'critical'
-              ? `${summary.criticalCount} critiques`
-              : overallStatus === 'warning'
-                ? `${summary.openCount} ouverts`
-                : 'Sous controle'
-          }
-        />
-      </div>
     </div>
   );
 }
@@ -299,17 +268,22 @@ function TransfersContent() {
 
   const expiringSoonCount = summary.certificates.expiringSoon?.length ?? 0;
 
+  const siteCount = summary.accounts.total ?? 0;
+
   return (
-    <div className="space-y-1">
-      <p className="text-foreground text-2xl font-bold">
-        {summary.accounts.active} <span className="text-muted-foreground text-sm font-normal">comptes actifs</span>
+    <div>
+      <p className="text-foreground text-3xl font-extrabold tracking-tight">{summary.accounts.active}</p>
+      <p className="text-muted-foreground mt-1 text-xs">comptes actifs</p>
+      <p className="mt-1.5 text-xs font-semibold">
+        {expiringSoonCount > 0 && (
+          <span className="text-yellow-400">
+            {expiringSoonCount} cert(s) expirant{expiringSoonCount > 1 ? 's' : ''}
+          </span>
+        )}
+        {expiringSoonCount > 0 && siteCount > 0 && <span className="text-muted-foreground"> · </span>}
+        {siteCount > 0 && <span className="text-muted-foreground">{siteCount} sites</span>}
+        {expiringSoonCount === 0 && siteCount === 0 && <span className="text-emerald-400">Tout OK</span>}
       </p>
-      <div className="flex flex-wrap items-center gap-2">
-        <StatusBadge
-          status={expiringSoonCount > 0 ? 'warning' : 'healthy'}
-          label={expiringSoonCount > 0 ? `${expiringSoonCount} cert(s) expirent bientot` : 'Tout OK'}
-        />
-      </div>
     </div>
   );
 }
@@ -342,19 +316,20 @@ export function OverviewCards({ prtgAlerts, veeamSessions }: OverviewCardsProps)
         ) : error && !alerts ? (
           <ErrorState title="Erreur PRTG" message={error.message} source="PRTG" onRetry={refresh} />
         ) : (
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              {downCount > 0 ? (
-                <p className="text-2xl font-bold text-[#ef4444]">{downCount} down</p>
+          <div>
+            <p className="text-foreground text-3xl font-extrabold tracking-tight">{alerts?.length ?? 0}</p>
+            <p className="text-muted-foreground mt-1 text-xs">capteurs en alerte</p>
+            <p className="mt-1.5 text-xs font-semibold">
+              {downCount > 0 || warningCount > 0 ? (
+                <>
+                  {downCount > 0 && <span className="text-red-400">{downCount} Down</span>}
+                  {downCount > 0 && warningCount > 0 && <span className="text-muted-foreground"> · </span>}
+                  {warningCount > 0 && <span className="text-yellow-400">{warningCount} Warning</span>}
+                </>
               ) : (
-                <p className="text-2xl font-bold text-[#22c55e]">Tout OK</p>
+                <span className="text-emerald-400">Aucune alerte</span>
               )}
-            </div>
-            <div className="flex items-center gap-2">
-              {downCount > 0 && <StatusBadge status="critical" label={`${downCount} down`} />}
-              {warningCount > 0 && <StatusBadge status="warning" label={`${warningCount} warn`} />}
-              {downCount === 0 && warningCount === 0 && <StatusBadge status="healthy" label="Aucune alerte" />}
-            </div>
+            </p>
           </div>
         )}
       </OverviewCard>

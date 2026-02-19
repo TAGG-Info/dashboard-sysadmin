@@ -2,11 +2,9 @@
 
 import { useMemo } from 'react';
 import { Inbox } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { SourceIndicator } from '@/components/ui/SourceIndicator';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { TimeAgo } from '@/components/ui/TimeAgo';
-import { ExternalLink } from '@/components/ui/ExternalLink';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTickets } from '@/hooks/useTickets';
 import type { UseAutoRefreshReturn } from '@/hooks/useAutoRefresh';
@@ -143,89 +141,91 @@ export function RecentActivity({ prtgAlerts, veeamSessions }: RecentActivityProp
   const isLoading = alertsLoading && !alerts && sessionsLoading && !sessions && ticketsLoading && !tickets;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-foreground text-base font-semibold">Activite recente</h2>
-        {events.length > 0 && <span className="text-muted-foreground text-sm">{events.length} evenements</span>}
-      </div>
-
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="border-border/50 flex gap-3 rounded-lg border p-3">
-              <Skeleton className="h-5 w-5 shrink-0 rounded-full" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-              </div>
-              <Skeleton className="h-3 w-16 shrink-0" />
-            </div>
-          ))}
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span
+              className="flex h-[22px] w-[22px] items-center justify-center rounded-md"
+              style={{ background: 'rgba(148,163,184,0.08)' }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="var(--muted-foreground)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </span>
+            <span className="text-foreground text-[13px] font-semibold">Activite recente</span>
+          </div>
+          {events.length > 0 && <span className="text-muted-foreground text-[11px]">{events.length} ev.</span>}
         </div>
-      ) : events.length === 0 ? (
-        <div className="border-border flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
-          <Inbox className="text-muted-foreground/40 mb-3 h-8 w-8" />
-          <p className="text-muted-foreground text-sm font-medium">Aucun evenement recent</p>
-          <p className="text-muted-foreground/60 mt-1 text-sm">Les evenements des sources actives apparaitront ici</p>
-        </div>
-      ) : (
-        <div className="relative space-y-0">
-          {/* Vertical timeline line */}
-          <div className="bg-border/50 absolute top-3 bottom-3 left-[15px] w-px" />
-
-          {events.map((event) => (
-            <div key={event.id} className="group relative flex gap-3 py-2.5 pl-1">
-              {/* Timeline dot */}
-              <div className="relative z-10 mt-0.5 shrink-0">
-                <div
-                  className="border-background ring-border/30 group-hover:ring-primary/30 h-[10px] w-[10px] rounded-full border-2 ring-2 transition-all"
-                  style={{
-                    backgroundColor:
-                      event.status === 'critical'
-                        ? '#ef4444'
-                        : event.status === 'warning'
-                          ? '#f59e0b'
-                          : event.status === 'healthy'
-                            ? '#10b981'
-                            : event.status === 'info'
-                              ? '#3b82f6'
-                              : '#6b7280',
-                  }}
-                />
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex gap-3 py-1.5">
+                <Skeleton className="mt-1 h-2 w-2 shrink-0 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3 w-3/4" />
+                  <Skeleton className="h-2.5 w-1/2" />
+                </div>
               </div>
-
-              {/* Event content */}
-              <div className="border-border/30 bg-card/50 hover:bg-accent/20 min-w-0 flex-1 rounded-lg border p-2.5 transition-colors">
-                <div className="flex items-start justify-between gap-2">
+            ))}
+          </div>
+        ) : events.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <Inbox className="text-muted-foreground/40 mb-2 h-6 w-6" />
+            <p className="text-muted-foreground text-[11px]">Aucun evenement recent</p>
+          </div>
+        ) : (
+          <div className="max-h-[360px] overflow-y-auto pr-1">
+            {events.map((event) => {
+              const dotColor =
+                event.status === 'critical'
+                  ? '#ef4444'
+                  : event.status === 'warning'
+                    ? '#f59e0b'
+                    : event.status === 'healthy'
+                      ? '#10b981'
+                      : event.status === 'info'
+                        ? '#3b82f6'
+                        : '#6b7280';
+              return (
+                <div key={event.id} className="border-border flex items-start gap-3 border-b py-[7px] last:border-b-0">
+                  <div
+                    className="mt-[5px] h-2 w-2 shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: dotColor,
+                      boxShadow: `0 0 8px ${dotColor}`,
+                    }}
+                  />
                   <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <SourceIndicator source={event.source} connected />
+                    <div className="text-foreground flex items-center gap-1 text-xs font-medium">
+                      <span className="truncate">{event.title}</span>
                       <StatusBadge
                         status={event.status}
                         label={event.type === 'alert' ? 'Alerte' : event.type === 'backup' ? 'Backup' : 'Ticket'}
                       />
-                      {event.instanceName && (
-                        <Badge variant="outline" className="text-muted-foreground border-border/50 text-sm">
-                          {event.instanceName}
-                        </Badge>
-                      )}
                     </div>
-                    <p className="text-foreground truncate text-sm leading-snug font-medium">{event.title}</p>
-                    {event.description && (
-                      <p className="text-muted-foreground/70 mt-0.5 truncate text-sm">{event.description}</p>
-                    )}
-                  </div>
-
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    <TimeAgo date={event.timestamp} />
-                    {event.link && <ExternalLink href={event.link} label="" source={event.source} />}
+                    <div className="text-muted-foreground mt-0.5 text-[11px]">
+                      {event.source.toUpperCase()} &middot; <TimeAgo date={event.timestamp} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

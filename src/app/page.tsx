@@ -22,17 +22,17 @@ export default function DashboardPage() {
       {/* Row 1: Overview stat cards */}
       <OverviewCards prtgAlerts={prtgAlerts} veeamSessions={veeamSessions} />
 
-      {/* Row 2: Gauges + Hyperviseur + Activité */}
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[auto_1fr_1fr]">
-        <ResourceGauges />
-        <DashboardHypervisor />
+      {/* Rows 2-3: Gauges/Calendar + Hyperviseur/Tickets + Activité */}
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[auto_1fr_380px]">
+        <div className="space-y-4">
+          <ResourceGauges />
+          <BackupCalendar />
+        </div>
+        <div className="space-y-4">
+          <DashboardHypervisor />
+          <TicketsBreakdown />
+        </div>
         <RecentActivity prtgAlerts={prtgAlerts} veeamSessions={veeamSessions} />
-      </div>
-
-      {/* Row 3: Calendrier + Tickets */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[auto_1fr]">
-        <BackupCalendar />
-        <TicketsBreakdown />
       </div>
 
       {/* Row 4: Jobs Veeam */}

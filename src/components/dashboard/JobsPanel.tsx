@@ -64,8 +64,13 @@ export function JobsPanel() {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
-          <SourceLogo source="veeam" size={18} />
-          <CardTitle className="text-sm">Jobs Veeam &mdash; Dernier r&eacute;sultat</CardTitle>
+          <span
+            className="flex h-[22px] w-[22px] items-center justify-center rounded-md"
+            style={{ background: 'rgba(76,175,80,0.12)' }}
+          >
+            <SourceLogo source="veeam" size={14} />
+          </span>
+          <CardTitle className="text-[13px] font-semibold">Jobs Veeam &mdash; Dernier r&eacute;sultat</CardTitle>
         </div>
       </CardHeader>
       <CardContent>

@@ -49,8 +49,13 @@ export function TicketsBreakdown() {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
-          <SourceLogo source="glpi" size={18} />
-          <CardTitle className="text-sm">Tickets &mdash; R&eacute;partition</CardTitle>
+          <span
+            className="flex h-[22px] w-[22px] items-center justify-center rounded-md"
+            style={{ background: 'rgba(0,165,243,0.12)' }}
+          >
+            <SourceLogo source="glpi" size={14} />
+          </span>
+          <CardTitle className="text-[13px] font-semibold">Tickets &mdash; R&eacute;partition</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
