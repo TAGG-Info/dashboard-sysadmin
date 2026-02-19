@@ -82,7 +82,7 @@ export class GLPIClient {
 
   // Tickets ouverts (statuts 1=Nouveau, 2=En cours (attribue), 3=En cours (planifie), 4=En attente)
   async getTickets(): Promise<GLPITicket[]> {
-    const all = await this.request<GLPITicket[]>(`/Ticket?range=0-50&order=DESC&sort=date_mod`);
+    const all = await this.request<GLPITicket[]>(`/Ticket?range=0-50`);
     if (!Array.isArray(all)) {
       loggers.glpi.warn(
         { responseType: typeof all, response: JSON.stringify(all).slice(0, 500) },
