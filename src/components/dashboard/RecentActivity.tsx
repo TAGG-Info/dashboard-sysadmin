@@ -9,7 +9,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useTickets } from '@/hooks/useTickets';
 import type { UseAutoRefreshReturn } from '@/hooks/useAutoRefresh';
 import type { PRTGSensorWithInstance } from '@/hooks/usePRTG';
-import type { VeeamSessionWithInstance } from '@/hooks/useVeeam';
 
 import type { SourceName } from '@/types/common';
 
@@ -29,12 +28,10 @@ const MAX_EVENTS = 20;
 
 interface RecentActivityProps {
   prtgAlerts: UseAutoRefreshReturn<PRTGSensorWithInstance[]>;
-  veeamSessions: UseAutoRefreshReturn<VeeamSessionWithInstance[]>;
 }
 
-export function RecentActivity({ prtgAlerts, veeamSessions }: RecentActivityProps) {
+export function RecentActivity({ prtgAlerts }: RecentActivityProps) {
   const { data: alerts, loading: alertsLoading } = prtgAlerts;
-  const { data: sessions, loading: sessionsLoading } = veeamSessions;
   const { data: tickets, loading: ticketsLoading } = useTickets();
 
   const prtgUrl = process.env.NEXT_PUBLIC_PRTG_URL || '';
@@ -67,37 +64,6 @@ export function RecentActivity({ prtgAlerts, veeamSessions }: RecentActivityProp
           instanceName: sensor._instanceName,
         });
       });
-    }
-
-    // Veeam sessions
-    if (sessions) {
-      // Only take recent sessions (last 48h)
-      // eslint-disable-next-line react-hooks/purity
-      const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
-      sessions
-        .filter((s) => new Date(s.creationTime) >= cutoff)
-        .forEach((session) => {
-          const result = session.result.result.toLowerCase();
-          const statusLevel =
-            result === 'success'
-              ? ('healthy' as const)
-              : result === 'warning'
-                ? ('warning' as const)
-                : result === 'failed' || result === 'error'
-                  ? ('critical' as const)
-                  : ('info' as const);
-
-          allEvents.push({
-            id: `veeam-${session._instanceId ?? 'default'}-${session.id}`,
-            source: 'veeam',
-            type: 'backup',
-            title: `${session.name} - ${session.result.result}`,
-            description: session.result.message || undefined,
-            timestamp: session.endTime || session.creationTime,
-            status: statusLevel,
-            instanceName: session._instanceName,
-          });
-        });
     }
 
     // GLPI tickets (recently created or modified)
@@ -136,9 +102,9 @@ export function RecentActivity({ prtgAlerts, veeamSessions }: RecentActivityProp
 
     // Limit to MAX_EVENTS
     return allEvents.slice(0, MAX_EVENTS);
-  }, [alerts, sessions, tickets, prtgUrl, glpiUrl]);
+  }, [alerts, tickets, prtgUrl, glpiUrl]);
 
-  const isLoading = alertsLoading && !alerts && sessionsLoading && !sessions && ticketsLoading && !tickets;
+  const isLoading = alertsLoading && !alerts && ticketsLoading && !tickets;
 
   return (
     <Card>

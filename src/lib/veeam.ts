@@ -1,103 +1,153 @@
-import type { VeeamJob, VeeamSession, VeeamRepository } from '@/types/veeam';
+import type { VeeamJob, VeeamSession, VeeamSummary } from '@/types/veeam';
 import type { VeeamInstance } from '@/lib/config';
 import { loggers } from '@/lib/logger';
 
+/**
+ * Hybrid Veeam client — two backends:
+ * - VBEM (Enterprise Manager, port 9398) → reports/summary, repos, stats
+ * - PS Bridge (PowerShell HTTP bridge, port 9420) → individual jobs, sessions
+ *
+ * Auth:
+ * - VBEM: session-based (POST /api/sessionMngr → X-RestSvcSessionId header)
+ * - PS Bridge: Basic auth on every request (same credentials)
+ */
 export class VeeamClient {
-  private baseUrl: string;
+  private emBaseUrl: string; // VBEM Enterprise Manager
+  private psBaseUrl: string | null; // PowerShell bridge (optional)
   private username: string;
   private password: string;
-  private accessToken: string | null = null;
+  private sessionToken: string | null = null;
   private tokenExpiry: number = 0;
 
   constructor(config: VeeamInstance) {
-    this.baseUrl = config.baseUrl;
+    this.emBaseUrl = config.baseUrl;
+    this.psBaseUrl = config.psBaseUrl || null;
     this.username = config.username;
     this.password = config.password;
   }
 
-  private async getToken(): Promise<string> {
-    if (this.accessToken && Date.now() < this.tokenExpiry) return this.accessToken;
+  // ─── VBEM Session Auth ──────────────────────────────────────────────
 
-    const res = await fetch(`${this.baseUrl}/api/oauth2/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'x-api-version': '1.2-rev1',
-      },
-      body: `grant_type=password&username=${encodeURIComponent(this.username)}&password=${encodeURIComponent(this.password)}`,
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!res.ok) {
-      loggers.veeam.error({ status: res.status }, 'Veeam auth failed');
-      throw new Error(`Veeam auth failed: ${res.status}`);
-    }
-
-    const data = await res.json();
-    if (!data.access_token) {
-      throw new Error('Veeam: access_token manquant dans la réponse OAuth');
-    }
-    this.accessToken = data.access_token;
-    this.tokenExpiry = Date.now() + (data.expires_in || 900) * 1000;
-    return this.accessToken!;
+  private get basicAuth(): string {
+    return Buffer.from(`${this.username}:${this.password}`).toString('base64');
   }
 
-  async request<T>(path: string): Promise<T> {
-    const token = await this.getToken();
-    const res = await fetch(`${this.baseUrl}/api/v1${path}`, {
+  private async getSession(): Promise<string> {
+    if (this.sessionToken && Date.now() < this.tokenExpiry) return this.sessionToken;
+
+    const res = await fetch(`${this.emBaseUrl}/api/sessionMngr/?v=latest`, {
+      method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
-        'x-api-version': '1.2-rev1',
+        Authorization: `Basic ${this.basicAuth}`,
+        'Content-Length': '0',
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!res.ok) {
+      loggers.veeam.error({ status: res.status }, 'VBEM session auth failed');
+      throw new Error(`VBEM auth failed: ${res.status}`);
+    }
+
+    // Token is in the response HEADER, not the JSON body
+    const token = res.headers.get('X-RestSvcSessionId');
+    if (!token) {
+      throw new Error('VBEM: X-RestSvcSessionId header missing from response');
+    }
+
+    this.sessionToken = token;
+    // VBEM session timeout is 15 min of inactivity; refresh at 12 min
+    this.tokenExpiry = Date.now() + 12 * 60 * 1000;
+    return this.sessionToken;
+  }
+
+  private async emRequest<T>(path: string): Promise<T> {
+    const token = await this.getSession();
+    const res = await fetch(`${this.emBaseUrl}${path}`, {
+      headers: {
+        'X-RestSvcSessionId': token,
+        Accept: 'application/json',
       },
       signal: AbortSignal.timeout(10_000),
     });
 
     if (res.status === 401) {
-      this.accessToken = null;
-      const newToken = await this.getToken();
-      const retry = await fetch(`${this.baseUrl}/api/v1${path}`, {
+      // Session expired — re-auth once
+      this.sessionToken = null;
+      const newToken = await this.getSession();
+      const retry = await fetch(`${this.emBaseUrl}${path}`, {
         headers: {
-          Authorization: `Bearer ${newToken}`,
-          'x-api-version': '1.2-rev1',
+          'X-RestSvcSessionId': newToken,
+          Accept: 'application/json',
         },
         signal: AbortSignal.timeout(10_000),
       });
       if (!retry.ok) {
-        loggers.veeam.error({ status: retry.status, path }, 'Veeam API error after re-auth');
-        throw new Error(`Veeam error: ${retry.status}`);
+        loggers.veeam.error({ status: retry.status, path }, 'VBEM API error after re-auth');
+        throw new Error(`VBEM error: ${retry.status}`);
       }
       return retry.json();
     }
 
     if (!res.ok) {
-      loggers.veeam.error({ status: res.status, path }, 'Veeam API error');
-      throw new Error(`Veeam error: ${res.status}`);
+      loggers.veeam.error({ status: res.status, path }, 'VBEM API error');
+      throw new Error(`VBEM error: ${res.status}`);
     }
     return res.json();
   }
 
-  async getJobs() {
-    const result = await this.request<{ data: VeeamJob[] }>('/jobs');
-    return result.data || result;
+  // ─── VBEM Reports (summary) ─────────────────────────────────────────
+
+  async getSummary(): Promise<VeeamSummary> {
+    const [overview, jobStats, vmsOverview, processedVms, repositories] = await Promise.all([
+      this.emRequest<VeeamSummary['overview']>('/api/reports/summary/overview'),
+      this.emRequest<VeeamSummary['jobStats']>('/api/reports/summary/job_statistics'),
+      this.emRequest<VeeamSummary['vmsOverview']>('/api/reports/summary/vms_overview'),
+      this.emRequest<VeeamSummary['processedVms']>('/api/reports/summary/processed_vms'),
+      this.emRequest<VeeamSummary['repositories']>('/api/reports/summary/repository'),
+    ]);
+
+    return { overview, jobStats, vmsOverview, processedVms, repositories };
   }
 
-  async getSessions(limit = 50) {
-    const result = await this.request<{ data: VeeamSession[] }>(
-      `/sessions?typeFilter=Job&limit=${limit}&orderColumn=creationTime&orderAsc=false`,
-    );
-    return result.data || result;
+  // ─── PS Bridge (jobs/sessions) ──────────────────────────────────────
+
+  private async psRequest<T>(path: string): Promise<T> {
+    if (!this.psBaseUrl) {
+      throw new Error('PS bridge URL not configured');
+    }
+
+    const res = await fetch(`${this.psBaseUrl}${path}`, {
+      headers: {
+        Authorization: `Basic ${this.basicAuth}`,
+        Accept: 'application/json',
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!res.ok) {
+      loggers.veeam.error({ status: res.status, path }, 'PS bridge API error');
+      throw new Error(`PS bridge error: ${res.status}`);
+    }
+    return res.json();
   }
 
-  async getSession(id: string) {
-    return this.request<VeeamSession>(`/sessions/${id}`);
+  get hasPsBridge(): boolean {
+    return !!this.psBaseUrl;
   }
 
-  async getRepositories() {
-    const result = await this.request<{ data: VeeamRepository[] }>('/backupInfrastructure/repositories');
-    return result.data || result;
+  async getJobs(): Promise<VeeamJob[]> {
+    if (!this.psBaseUrl) return [];
+    return this.psRequest<VeeamJob[]>('/api/jobs');
+  }
+
+  async getSessions(limit = 50): Promise<VeeamSession[]> {
+    if (!this.psBaseUrl) return [];
+    return this.psRequest<VeeamSession[]>(`/api/sessions?limit=${limit}`);
   }
 }
 
-// Factory that caches clients by instanceId (OAuth2 token-based, cache is critical)
+// Factory that caches clients by instanceId
 const clientCache = new Map<string, VeeamClient>();
 
 export function getVeeamClient(instance: VeeamInstance): VeeamClient {

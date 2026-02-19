@@ -41,3 +41,62 @@ export interface VeeamRepository {
   freeGB: number;
   usedSpaceGB: number;
 }
+
+// --- VBEM Reports API types ---
+
+export interface VeeamOverview {
+  BackupServers: number;
+  ProxyServers: number;
+  RepositoryServers: number;
+  RunningJobs: number;
+  ScheduledJobs: number;
+  SuccessfulVmLastestStates: number;
+  WarningVmLastestStates: number;
+  FailedVmLastestStates: number;
+}
+
+export interface VeeamJobStatistics {
+  RunningJobs: number;
+  ScheduledJobs: number;
+  ScheduledBackupJobs: number;
+  ScheduledReplicaJobs: number;
+  TotalJobRuns: number;
+  SuccessfulJobRuns: number;
+  WarningsJobRuns: number;
+  FailedJobRuns: number;
+  MaxJobDuration: number;
+  MaxBackupJobDuration: number;
+  MaxDurationBackupJobName: string;
+}
+
+export interface VeeamVmsOverview {
+  ProtectedVms: number;
+  BackedUpVms: number;
+  ReplicatedVms: number;
+  RestorePoints: number;
+  FullBackupPointsSize: number;
+  IncrementalBackupPointsSize: number;
+  SourceVmsSize: number;
+  SuccessBackupPercents: number;
+}
+
+export interface VeeamProcessedVmsDay {
+  Timestamp: string;
+  BackupedVms: number;
+  ReplicatedVms: number;
+}
+
+export interface VeeamRepositoryReport {
+  Name: string;
+  Capacity: number;
+  FreeSpace: number;
+  BackupSize: number;
+}
+
+export interface VeeamSummary {
+  overview: VeeamOverview;
+  jobStats: VeeamJobStatistics;
+  vmsOverview: VeeamVmsOverview;
+  processedVms: VeeamProcessedVmsDay[];
+  repositories: VeeamRepositoryReport[];
+}

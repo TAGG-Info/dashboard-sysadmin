@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SourceLogo } from '@/components/ui/SourceLogo';
@@ -11,7 +10,7 @@ import { useTicketSummary } from '@/hooks/useTickets';
 import { useTransferSummary } from '@/hooks/useTransfers';
 import type { UseAutoRefreshReturn } from '@/hooks/useAutoRefresh';
 import type { PRTGSensorWithInstance } from '@/hooks/usePRTG';
-import type { VeeamSessionWithInstance } from '@/hooks/useVeeam';
+import type { VeeamSummary } from '@/types/veeam';
 
 interface OverviewCardProps {
   title: string;
@@ -150,31 +149,10 @@ function InfrastructureContent() {
   );
 }
 
-function BackupsContent({ veeamSessions }: { veeamSessions: UseAutoRefreshReturn<VeeamSessionWithInstance[]> }) {
-  const { data: sessions, loading, error, refresh } = veeamSessions;
+function BackupsContent({ veeamSummary }: { veeamSummary: UseAutoRefreshReturn<VeeamSummary> }) {
+  const { data: summary, loading, error, refresh } = veeamSummary;
 
-  const stats = useMemo(() => {
-    if (!sessions) return null;
-
-    const now = new Date();
-    const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-    const recentSessions = sessions.filter((s) => new Date(s.creationTime) >= last24h);
-
-    const successes = recentSessions.filter((s) => s.result.result.toLowerCase() === 'success').length;
-    const failures = recentSessions.filter(
-      (s) => s.result.result.toLowerCase() === 'failed' || s.result.result.toLowerCase() === 'error',
-    ).length;
-    const warnings = recentSessions.filter((s) => s.result.result.toLowerCase() === 'warning').length;
-
-    return {
-      successes,
-      failures,
-      warnings,
-    };
-  }, [sessions]);
-
-  if (loading && !sessions) {
+  if (loading && !summary) {
     return (
       <div className="space-y-2">
         <Skeleton className="h-6 w-24" />
@@ -183,22 +161,24 @@ function BackupsContent({ veeamSessions }: { veeamSessions: UseAutoRefreshReturn
     );
   }
 
-  if (error && !sessions) {
+  if (error && !summary) {
     return <ErrorState title="Erreur Veeam" message={error.message} source="Veeam" onRetry={refresh} />;
   }
 
-  if (!stats) return <PlaceholderContent />;
+  if (!summary) return <PlaceholderContent />;
+
+  const { SuccessfulJobRuns, FailedJobRuns, WarningsJobRuns } = summary.jobStats;
 
   return (
     <div>
-      <p className="text-foreground text-3xl font-extrabold tracking-tight">{stats.successes}</p>
-      <p className="text-muted-foreground mt-1 text-xs">succes (24h)</p>
+      <p className="text-foreground text-3xl font-extrabold tracking-tight">{SuccessfulJobRuns}</p>
+      <p className="text-muted-foreground mt-1 text-xs">succes</p>
       <p className="mt-1.5 text-xs font-semibold">
-        {stats.failures > 0 || stats.warnings > 0 ? (
+        {FailedJobRuns > 0 || WarningsJobRuns > 0 ? (
           <>
-            {stats.failures > 0 && <span className="text-red-400">{stats.failures} echec(s)</span>}
-            {stats.failures > 0 && stats.warnings > 0 && <span className="text-muted-foreground"> · </span>}
-            {stats.warnings > 0 && <span className="text-yellow-400">{stats.warnings} warning</span>}
+            {FailedJobRuns > 0 && <span className="text-red-400">{FailedJobRuns} echec(s)</span>}
+            {FailedJobRuns > 0 && WarningsJobRuns > 0 && <span className="text-muted-foreground"> · </span>}
+            {WarningsJobRuns > 0 && <span className="text-yellow-400">{WarningsJobRuns} warning</span>}
           </>
         ) : (
           <span className="text-emerald-400">Tout OK</span>
@@ -290,10 +270,10 @@ function TransfersContent() {
 
 interface OverviewCardsProps {
   prtgAlerts: UseAutoRefreshReturn<PRTGSensorWithInstance[]>;
-  veeamSessions: UseAutoRefreshReturn<VeeamSessionWithInstance[]>;
+  veeamSummary: UseAutoRefreshReturn<VeeamSummary>;
 }
 
-export function OverviewCards({ prtgAlerts, veeamSessions }: OverviewCardsProps) {
+export function OverviewCards({ prtgAlerts, veeamSummary }: OverviewCardsProps) {
   const { data: alerts, loading, error, refresh } = prtgAlerts;
 
   const downCount = alerts?.filter((s) => s.status === 'Down').length ?? 0;
@@ -351,7 +331,7 @@ export function OverviewCards({ prtgAlerts, veeamSessions }: OverviewCardsProps)
         href="/backups"
         accentColor="#4caf50"
       >
-        <BackupsContent veeamSessions={veeamSessions} />
+        <BackupsContent veeamSummary={veeamSummary} />
       </OverviewCard>
 
       {/* Tickets */}

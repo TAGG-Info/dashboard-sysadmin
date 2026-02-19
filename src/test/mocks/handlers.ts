@@ -22,6 +22,51 @@ export const handlers = [
     });
   }),
 
+  http.get('*/api/veeam/summary', () => {
+    return HttpResponse.json({
+      data: {
+        overview: {
+          BackupServers: 1,
+          ProxyServers: 1,
+          RepositoryServers: 5,
+          RunningJobs: 0,
+          ScheduledJobs: 11,
+          SuccessfulVmLastestStates: 96,
+          WarningVmLastestStates: 0,
+          FailedVmLastestStates: 0,
+        },
+        jobStats: {
+          RunningJobs: 0,
+          ScheduledJobs: 11,
+          ScheduledBackupJobs: 11,
+          ScheduledReplicaJobs: 0,
+          TotalJobRuns: 33,
+          SuccessfulJobRuns: 32,
+          WarningsJobRuns: 1,
+          FailedJobRuns: 0,
+          MaxJobDuration: 3720,
+          MaxBackupJobDuration: 3720,
+          MaxDurationBackupJobName: 'Test Job',
+        },
+        vmsOverview: {
+          ProtectedVms: 96,
+          BackedUpVms: 96,
+          ReplicatedVms: 0,
+          RestorePoints: 142,
+          FullBackupPointsSize: 0,
+          IncrementalBackupPointsSize: 0,
+          SourceVmsSize: 0,
+          SuccessBackupPercents: 100,
+        },
+        processedVms: [],
+        repositories: [],
+      },
+      _stale: false,
+      _source: 'veeam',
+      _timestamp: Date.now(),
+    });
+  }),
+
   // GLPI
   http.get('*/api/glpi/tickets', () => {
     return HttpResponse.json({

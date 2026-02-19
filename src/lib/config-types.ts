@@ -3,8 +3,8 @@
 // ---------------------------------------------------------------------------
 
 export interface BaseInstance {
-  id: string;    // unique slug, e.g. "vcenter-prod"
-  name: string;  // display name, e.g. "vCenter Production"
+  id: string; // unique slug, e.g. "vcenter-prod"
+  name: string; // display name, e.g. "vCenter Production"
 }
 
 export interface PRTGInstance extends BaseInstance {
@@ -32,6 +32,7 @@ export interface VeeamInstance extends BaseInstance {
   username: string;
   password: string;
   externalUrl: string;
+  psBaseUrl?: string; // PowerShell HTTP bridge URL (e.g. http://TAGGSRVBAK02:9420)
 }
 
 export interface GLPIInstance extends BaseInstance {

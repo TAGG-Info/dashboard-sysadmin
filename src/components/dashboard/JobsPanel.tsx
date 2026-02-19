@@ -1,52 +1,35 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useVeeamSessions } from '@/hooks/useVeeam';
+import { useVeeamSummary } from '@/hooks/useVeeam';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { SourceLogo } from '@/components/ui/SourceLogo';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { formatTimeAgo } from '@/lib/formatters';
-import type { VeeamResult } from '@/types/veeam';
 
-type StatusLevel = 'healthy' | 'warning' | 'critical' | 'info' | 'neutral' | 'new';
-
-function resultToStatusLevel(result: VeeamResult): StatusLevel {
-  if (result === 'Success') return 'healthy';
-  if (result === 'Warning') return 'warning';
-  if (result === 'Failed') return 'critical';
-  return 'neutral';
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  if (mins < 60) return `${mins}min`;
+  const hours = Math.floor(mins / 60);
+  const remainMins = mins % 60;
+  return remainMins > 0 ? `${hours}h${remainMins}min` : `${hours}h`;
 }
 
 export function JobsPanel() {
-  const { data: sessions, loading, error, refresh } = useVeeamSessions();
+  const { data: summary, loading, error, refresh } = useVeeamSummary();
 
-  const latestByJob = useMemo(() => {
-    if (!sessions) return [];
-    const map = new Map<string, (typeof sessions)[number]>();
-    for (const s of sessions) {
-      const existing = map.get(s.name);
-      if (!existing || new Date(s.creationTime) > new Date(existing.creationTime)) {
-        map.set(s.name, s);
-      }
-    }
-    return Array.from(map.values()).sort(
-      (a, b) => new Date(b.creationTime).getTime() - new Date(a.creationTime).getTime(),
-    );
-  }, [sessions]);
-
-  if (error && !sessions) {
-    return <ErrorState title="Jobs Veeam indisponibles" source="Veeam" onRetry={refresh} />;
+  if (error && !summary) {
+    return <ErrorState title="Statistiques Veeam indisponibles" source="Veeam" onRetry={refresh} />;
   }
 
-  if (loading && !sessions) {
+  if (loading && !summary) {
     return (
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
             <SourceLogo source="veeam" size={18} />
-            <CardTitle className="text-sm">Jobs Veeam &mdash; Dernier r&eacute;sultat</CardTitle>
+            <CardTitle className="text-sm">Statistiques Veeam</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
@@ -60,35 +43,84 @@ export function JobsPanel() {
     );
   }
 
+  if (!summary) return null;
+
+  const { jobStats, overview, vmsOverview } = summary;
+  const successRate = vmsOverview.SuccessBackupPercents;
+
+  const stats = [
+    {
+      label: 'Jobs planifies',
+      value: jobStats.ScheduledJobs,
+      sub: `${overview.RunningJobs} en cours`,
+      status: overview.RunningJobs > 0 ? ('info' as const) : ('neutral' as const),
+    },
+    {
+      label: 'Succes',
+      value: jobStats.SuccessfulJobRuns,
+      sub: `sur ${jobStats.TotalJobRuns} total`,
+      status: 'healthy' as const,
+    },
+    {
+      label: 'Warnings',
+      value: jobStats.WarningsJobRuns,
+      sub: jobStats.WarningsJobRuns > 0 ? 'attention requise' : 'aucun',
+      status: jobStats.WarningsJobRuns > 0 ? ('warning' as const) : ('neutral' as const),
+    },
+    {
+      label: 'Echecs',
+      value: jobStats.FailedJobRuns,
+      sub: jobStats.FailedJobRuns > 0 ? 'action requise' : 'aucun',
+      status: jobStats.FailedJobRuns > 0 ? ('critical' as const) : ('neutral' as const),
+    },
+  ];
+
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="flex items-center gap-2">
-          <span
-            className="flex h-[22px] w-[22px] items-center justify-center rounded-md"
-            style={{ background: 'rgba(76,175,80,0.12)' }}
-          >
-            <SourceLogo source="veeam" size={14} />
-          </span>
-          <CardTitle className="text-[13px] font-semibold">Jobs Veeam &mdash; Dernier r&eacute;sultat</CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span
+              className="flex h-[22px] w-[22px] items-center justify-center rounded-md"
+              style={{ background: 'rgba(76,175,80,0.12)' }}
+            >
+              <SourceLogo source="veeam" size={14} />
+            </span>
+            <CardTitle className="text-[13px] font-semibold">Statistiques Veeam</CardTitle>
+          </div>
+          <StatusBadge
+            status={successRate >= 99 ? 'healthy' : successRate >= 90 ? 'warning' : 'critical'}
+            label={`${Math.round(successRate)}% succes`}
+          />
         </div>
       </CardHeader>
       <CardContent>
         <div className="grid gap-x-6 gap-y-0 lg:grid-cols-2">
-          {latestByJob.map((s) => (
-            <div key={s.id} className="border-border flex items-center justify-between border-b py-2 last:border-b-0">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className="border-border flex items-center justify-between border-b py-2 last:border-b-0"
+            >
               <div>
-                <div className="text-foreground text-[13px] font-medium">{s.name}</div>
-                <div className="text-muted-foreground mt-0.5 text-[11px]">{s.sessionType}</div>
+                <div className="text-foreground text-[13px] font-medium">{s.label}</div>
+                <div className="text-muted-foreground mt-0.5 text-[11px]">{s.sub}</div>
               </div>
               <div className="flex flex-col items-end gap-0.5">
-                <StatusBadge status={resultToStatusLevel(s.result.result)} label={s.result.result} />
-                <span className="text-muted-foreground text-[11px]">{formatTimeAgo(s.creationTime)}</span>
+                <span className="text-foreground text-lg font-bold">{s.value}</span>
+                {s.status !== 'neutral' && <StatusBadge status={s.status} label={s.label} />}
               </div>
             </div>
           ))}
-          {latestByJob.length === 0 && (
-            <p className="text-muted-foreground col-span-2 py-4 text-center text-sm">Aucune session</p>
+          {jobStats.MaxDurationBackupJobName && (
+            <div className="border-border col-span-2 flex items-center justify-between border-t pt-2">
+              <div>
+                <div className="text-foreground text-[13px] font-medium">Job le plus long</div>
+                <div className="text-muted-foreground mt-0.5 text-[11px]">{jobStats.MaxDurationBackupJobName}</div>
+              </div>
+              <span className="text-muted-foreground text-sm font-medium">
+                {formatDuration(jobStats.MaxJobDuration)}
+              </span>
+            </div>
           )}
         </div>
       </CardContent>

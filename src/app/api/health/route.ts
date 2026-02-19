@@ -109,14 +109,16 @@ export async function GET() {
     );
   }
 
-  // Veeam instances
+  // Veeam instances (VBEM session auth)
   for (const inst of veeamInstances) {
     healthChecks.push(
       checkInstance('veeam', inst.id, inst.name, async () => {
-        const res = await fetch(`${inst.baseUrl}/api/oauth2/token`, {
+        const res = await fetch(`${inst.baseUrl}/api/sessionMngr/?v=latest`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'x-api-version': '1.2-rev1' },
-          body: `grant_type=password&username=${encodeURIComponent(inst.username)}&password=${encodeURIComponent(inst.password)}`,
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${inst.username}:${inst.password}`).toString('base64')}`,
+            'Content-Length': '0',
+          },
           signal: AbortSignal.timeout(5000),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

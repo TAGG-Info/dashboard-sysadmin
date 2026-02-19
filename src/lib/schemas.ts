@@ -89,6 +89,57 @@ export const veeamJobSchema = z.object({
   lastResult: z.string().optional(),
 });
 
+export const veeamSummarySchema = z.object({
+  overview: z.object({
+    BackupServers: z.number(),
+    ProxyServers: z.number(),
+    RepositoryServers: z.number(),
+    RunningJobs: z.number(),
+    ScheduledJobs: z.number(),
+    SuccessfulVmLastestStates: z.number(),
+    WarningVmLastestStates: z.number(),
+    FailedVmLastestStates: z.number(),
+  }),
+  jobStats: z.object({
+    RunningJobs: z.number(),
+    ScheduledJobs: z.number(),
+    ScheduledBackupJobs: z.number(),
+    ScheduledReplicaJobs: z.number(),
+    TotalJobRuns: z.number(),
+    SuccessfulJobRuns: z.number(),
+    WarningsJobRuns: z.number(),
+    FailedJobRuns: z.number(),
+    MaxJobDuration: z.number(),
+    MaxBackupJobDuration: z.number(),
+    MaxDurationBackupJobName: z.string(),
+  }),
+  vmsOverview: z.object({
+    ProtectedVms: z.number(),
+    BackedUpVms: z.number(),
+    ReplicatedVms: z.number(),
+    RestorePoints: z.number(),
+    FullBackupPointsSize: z.number(),
+    IncrementalBackupPointsSize: z.number(),
+    SourceVmsSize: z.number(),
+    SuccessBackupPercents: z.number(),
+  }),
+  processedVms: z.array(
+    z.object({
+      Timestamp: z.string(),
+      BackupedVms: z.number(),
+      ReplicatedVms: z.number(),
+    }),
+  ),
+  repositories: z.array(
+    z.object({
+      Name: z.string(),
+      Capacity: z.number(),
+      FreeSpace: z.number(),
+      BackupSize: z.number(),
+    }),
+  ),
+});
+
 // --- GLPI ---
 
 export const glpiTicketSchema = z.object({

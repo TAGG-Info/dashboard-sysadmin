@@ -11,9 +11,7 @@ interface TestResult {
   version?: string;
 }
 
-const VALID_SOURCES: SourceKey[] = [
-  'prtg', 'vcenter', 'proxmox', 'veeam', 'glpi', 'securetransport',
-];
+const VALID_SOURCES: SourceKey[] = ['prtg', 'vcenter', 'proxmox', 'veeam', 'glpi', 'securetransport'];
 
 /**
  * POST /api/settings/sources/test
@@ -32,7 +30,11 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { source, instanceId, config } = body as { source: string; instanceId?: string; config: Record<string, string> };
+    const { source, instanceId, config } = body as {
+      source: string;
+      instanceId?: string;
+      config: Record<string, string>;
+    };
 
     if (!source || !config) {
       return NextResponse.json({ error: 'Missing source or config in body' }, { status: 400 });
@@ -61,17 +63,11 @@ export async function POST(request: Request) {
     const result = await testSource(source as SourceKey, resolvedConfig);
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Test failed' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Test failed' }, { status: 500 });
   }
 }
 
-async function testSource(
-  source: SourceKey,
-  config: Record<string, string>,
-): Promise<TestResult> {
+async function testSource(source: SourceKey, config: Record<string, string>): Promise<TestResult> {
   const start = Date.now();
 
   try {
@@ -106,7 +102,7 @@ async function testPRTG(config: Record<string, string>, start: number): Promise<
   if (!baseUrl || !apiKey) return { success: false, latency: 0, error: 'baseUrl and apiKey are required' };
 
   const res = await fetch(`${baseUrl}/api/v2/experimental/devices?take=1`, {
-    headers: { 'Authorization': `Bearer ${apiKey}`, 'Accept': 'application/json' },
+    headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
     signal: AbortSignal.timeout(10000),
   });
 
@@ -124,7 +120,7 @@ async function testVCenter(config: Record<string, string>, start: number): Promi
   const res = await fetch(`${baseUrl}/api/session`, {
     method: 'POST',
     headers: {
-      'Authorization': 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64'),
+      Authorization: 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64'),
       'Content-Type': 'application/json',
     },
     signal: AbortSignal.timeout(10000),
@@ -150,7 +146,7 @@ async function testProxmox(config: Record<string, string>, start: number): Promi
   }
 
   const res = await fetch(`${baseUrl}/api2/json/version`, {
-    headers: { 'Authorization': `PVEAPIToken=${tokenId}=${tokenSecret}` },
+    headers: { Authorization: `PVEAPIToken=${tokenId}=${tokenSecret}` },
     signal: AbortSignal.timeout(10000),
   });
 
@@ -161,20 +157,19 @@ async function testProxmox(config: Record<string, string>, start: number): Promi
   return { success: true, latency: Date.now() - start, version };
 }
 
-// Veeam: POST /api/oauth2/token with credentials
+// Veeam: POST /api/sessionMngr with Basic auth (VBEM Enterprise Manager)
 async function testVeeam(config: Record<string, string>, start: number): Promise<TestResult> {
   const { baseUrl, username, password } = config;
   if (!baseUrl || !username || !password) {
     return { success: false, latency: 0, error: 'baseUrl, username, and password are required' };
   }
 
-  const res = await fetch(`${baseUrl}/api/oauth2/token`, {
+  const res = await fetch(`${baseUrl}/api/sessionMngr/?v=latest`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'x-api-version': '1.2-rev1',
+      Authorization: `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
+      'Content-Length': '0',
     },
-    body: `grant_type=password&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
     signal: AbortSignal.timeout(10000),
   });
 
@@ -192,7 +187,7 @@ async function testGLPI(config: Record<string, string>, start: number): Promise<
   const res = await fetch(`${baseUrl}/initSession`, {
     headers: {
       'App-Token': appToken,
-      'Authorization': `user_token ${userToken}`,
+      Authorization: `user_token ${userToken}`,
       'Content-Type': 'application/json',
     },
     signal: AbortSignal.timeout(10000),
@@ -221,8 +216,8 @@ async function testSecureTransport(config: Record<string, string>, start: number
 
   const res = await fetch(`${baseUrl}/api/${version}/myself`, {
     headers: {
-      'Authorization': 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64'),
-      'Accept': 'application/json',
+      Authorization: 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64'),
+      Accept: 'application/json',
     },
     signal: AbortSignal.timeout(10000),
   });

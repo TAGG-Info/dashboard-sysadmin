@@ -132,12 +132,23 @@ async function warmupVeeam(): Promise<void> {
   await Promise.allSettled(
     instances.map(async (instance) => {
       const client = getVeeamClient(instance);
-      const [sessions, jobs] = await Promise.all([client.getSessions(), client.getJobs()]);
-      await Promise.all([
-        cacheSet(`dashboard:veeam:${instance.id}:sessions`, sessions, CACHE_TTL.VEEAM),
-        cacheSet(`dashboard:veeam:${instance.id}:jobs`, jobs, CACHE_TTL.VEEAM),
-      ]);
-      loggers.veeam.debug({ instanceId: instance.id }, 'Veeam cache warmed');
+
+      // Always warm VBEM summary
+      const cacheOps: Promise<void>[] = [];
+      const summary = await client.getSummary();
+      cacheOps.push(cacheSet(`dashboard:veeam:${instance.id}:summary`, summary, CACHE_TTL.VEEAM));
+
+      // Warm PS bridge data only if configured
+      if (client.hasPsBridge) {
+        const [sessions, jobs] = await Promise.all([client.getSessions(), client.getJobs()]);
+        cacheOps.push(
+          cacheSet(`dashboard:veeam:${instance.id}:sessions`, sessions, CACHE_TTL.VEEAM),
+          cacheSet(`dashboard:veeam:${instance.id}:jobs`, jobs, CACHE_TTL.VEEAM),
+        );
+      }
+
+      await Promise.all(cacheOps);
+      loggers.veeam.debug({ instanceId: instance.id, hasPsBridge: client.hasPsBridge }, 'Veeam cache warmed');
     }),
   );
 }
