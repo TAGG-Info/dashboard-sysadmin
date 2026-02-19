@@ -12,23 +12,29 @@ import { formatBytes, formatDateTimeFR } from '@/lib/formatters';
 import { TransferFilters, type TransferFilterValues } from './TransferFilters';
 import { SourceLogo } from '@/components/ui/SourceLogo';
 
+interface TransferLogTableProps {
+  direction?: 'incoming' | 'outgoing';
+}
+
 const PAGE_SIZE = 25;
 
-// Default column widths in pixels: Date, Compte, Login, Fichier, Taille, Proto, Sens, TLS, Statut, Duree
-const DEFAULT_WIDTHS = [155, 130, 100, 240, 70, 75, 50, 50, 110, 70];
+const ALL_COLS = [
+  { key: 'date', label: 'Date', align: 'left' as const },
+  { key: 'account', label: 'Compte', align: 'left' as const },
+  { key: 'login', label: 'Login', align: 'left' as const },
+  { key: 'file', label: 'Fichier', align: 'left' as const },
+  { key: 'size', label: 'Taille', align: 'right' as const },
+  { key: 'protocol', label: 'Protocole', align: 'left' as const },
+  { key: 'direction', label: 'Sens', align: 'center' as const },
+  { key: 'tls', label: 'TLS', align: 'center' as const },
+  { key: 'status', label: 'Statut', align: 'left' as const },
+  { key: 'duration', label: 'Dur\u00e9e', align: 'right' as const },
+];
 
-const COLS = [
-  { label: 'Date', align: 'left' },
-  { label: 'Compte', align: 'left' },
-  { label: 'Login', align: 'left' },
-  { label: 'Fichier', align: 'left' },
-  { label: 'Taille', align: 'right' },
-  { label: 'Protocole', align: 'left' },
-  { label: 'Sens', align: 'center' },
-  { label: 'TLS', align: 'center' },
-  { label: 'Statut', align: 'left' },
-  { label: 'Durée', align: 'right' },
-] as const;
+// Full widths: Date, Compte, Login, Fichier, Taille, Proto, Sens, TLS, Statut, Duree
+const ALL_WIDTHS = [155, 130, 100, 240, 70, 75, 50, 50, 110, 70];
+// Split widths (no Sens column): Date, Compte, Login, Fichier, Taille, Proto, TLS, Statut, Duree
+const SPLIT_WIDTHS = [130, 110, 90, 180, 60, 65, 45, 100, 60];
 
 function StatusCell({ status }: { status: string }) {
   const cls =
@@ -67,20 +73,25 @@ function ProtocolBadge({ protocol }: { protocol: string }) {
   );
 }
 
-export function TransferLogTable() {
+export function TransferLogTable({ direction }: TransferLogTableProps) {
+  const hasSplit = direction != null;
+  const cols = hasSplit ? ALL_COLS.filter((c) => c.key !== 'direction') : ALL_COLS;
+  const defaultWidths = hasSplit ? SPLIT_WIDTHS : ALL_WIDTHS;
+
   const [filters, setFilters] = useState<TransferFilterValues>({});
   const [page, setPage] = useState(0);
 
-  // Column widths (resizable)
-  const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);
+  const { widths, startResize, resetWidths } = useColumnResize(defaultWidths);
 
-  const resetPage = useCallback(() => setPage(0), []);
+  const resetPage = useCallback(() => setPage(0), [setPage]);
+
+  const incomingValue = hasSplit ? direction === 'incoming' : filters.incoming;
 
   const { data, loading, error, refresh, isStale } = useTransferLogs({
     account: filters.account,
     filename: filters.filename,
     status: filters.status,
-    incoming: filters.incoming,
+    incoming: incomingValue,
     protocol: filters.protocol,
     startDate: filters.startDate,
     endDate: filters.endDate,
@@ -113,8 +124,18 @@ export function TransferLogTable() {
         <CardHeader className="pb-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-foreground flex items-center gap-2 text-base font-semibold">
-              <SourceLogo source="securetransport" size={18} />
-              Logs de transfert
+              {direction === 'incoming' ? (
+                <ArrowDownToLine className="h-4.5 w-4.5 text-[#10b981]" />
+              ) : direction === 'outgoing' ? (
+                <ArrowUpFromLine className="h-4.5 w-4.5 text-[#3b82f6]" />
+              ) : (
+                <SourceLogo source="securetransport" size={18} />
+              )}
+              {direction === 'incoming'
+                ? 'Fichiers re\u00e7us'
+                : direction === 'outgoing'
+                  ? 'Fichiers envoy\u00e9s'
+                  : 'Logs de transfert'}
               {loading && !data && <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />}
               {totalCount > 0 && (
                 <Badge variant="outline" className="text-muted-foreground text-xs">
@@ -134,7 +155,7 @@ export function TransferLogTable() {
             </div>
           </div>
 
-          <TransferFilters onFilterChange={setFilters} onPageReset={resetPage} />
+          <TransferFilters onFilterChange={setFilters} onPageReset={resetPage} hideDirection={hasSplit} />
         </CardHeader>
 
         <CardContent className="p-0">
@@ -148,13 +169,12 @@ export function TransferLogTable() {
               </colgroup>
               <thead>
                 <tr className="border-border/50 bg-muted/20 border-b">
-                  {COLS.map((col, i) => (
+                  {cols.map((col, i) => (
                     <th
-                      key={col.label}
+                      key={col.key}
                       className={`text-muted-foreground relative px-3 py-2 text-xs font-medium select-none text-${col.align === 'right' ? 'right' : col.align === 'center' ? 'center' : 'left'}`}
                     >
                       <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{col.label}</span>
-                      {/* Resize handle */}
                       <div
                         onPointerDown={(e) => startResize(e, i)}
                         className="group absolute top-0 right-0 h-full w-1.5 cursor-col-resize"
@@ -169,7 +189,7 @@ export function TransferLogTable() {
                 {loading && !data ? (
                   Array.from({ length: 8 }).map((_, i) => (
                     <tr key={i} className="border-border/30 border-b">
-                      {Array.from({ length: COLS.length }).map((_, j) => (
+                      {Array.from({ length: cols.length }).map((_, j) => (
                         <td key={j} className="px-3 py-1.5">
                           <Skeleton className="h-3.5 w-full" />
                         </td>
@@ -178,7 +198,7 @@ export function TransferLogTable() {
                   ))
                 ) : transfers.length === 0 ? (
                   <tr>
-                    <td colSpan={COLS.length} className="text-muted-foreground px-4 py-10 text-center text-sm">
+                    <td colSpan={cols.length} className="text-muted-foreground px-4 py-10 text-center text-sm">
                       Aucun transfert trouvé
                     </td>
                   </tr>
@@ -223,13 +243,15 @@ export function TransferLogTable() {
                       <td className="overflow-hidden px-3 py-1.5">
                         <ProtocolBadge protocol={t.protocol} />
                       </td>
-                      <td className="px-3 py-1.5 text-center" title={t.incoming ? 'Entrant' : 'Sortant'}>
-                        {t.incoming ? (
-                          <ArrowDownToLine className="mx-auto h-3.5 w-3.5 text-[#10b981]" />
-                        ) : (
-                          <ArrowUpFromLine className="mx-auto h-3.5 w-3.5 text-[#3b82f6]" />
-                        )}
-                      </td>
+                      {!hasSplit && (
+                        <td className="px-3 py-1.5 text-center" title={t.incoming ? 'Entrant' : 'Sortant'}>
+                          {t.incoming ? (
+                            <ArrowDownToLine className="mx-auto h-3.5 w-3.5 text-[#10b981]" />
+                          ) : (
+                            <ArrowUpFromLine className="mx-auto h-3.5 w-3.5 text-[#3b82f6]" />
+                          )}
+                        </td>
+                      )}
                       <td className="px-3 py-1.5 text-center" title={t.secure ? 'TLS' : 'Non sécurisé'}>
                         {t.secure ? (
                           <Shield className="mx-auto h-3.5 w-3.5 text-[#10b981]" />

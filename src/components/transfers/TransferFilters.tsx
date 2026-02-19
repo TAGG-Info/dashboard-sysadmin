@@ -16,6 +16,7 @@ export interface TransferFilterValues {
 interface TransferFiltersProps {
   onFilterChange: (filters: TransferFilterValues) => void;
   onPageReset: () => void;
+  hideDirection?: boolean;
 }
 
 const DEFAULT_DATE_RANGE = 'today';
@@ -43,7 +44,7 @@ function getDateRange(range: string): { startDate?: number } {
   return {};
 }
 
-export function TransferFilters({ onFilterChange, onPageReset }: TransferFiltersProps) {
+export function TransferFilters({ onFilterChange, onPageReset, hideDirection }: TransferFiltersProps) {
   const [accountInput, setAccountInput] = useState('');
   const [filenameInput, setFilenameInput] = useState('');
   const [status, setStatus] = useState('');
@@ -132,16 +133,17 @@ export function TransferFilters({ onFilterChange, onPageReset }: TransferFilters
         />
       </div>
 
-      {/* Direction */}
-      <select
-        value={incoming}
-        onChange={(e) => setIncoming(e.target.value)}
-        className="bg-muted/20 border-border/50 focus:ring-ring h-8 rounded border px-2 text-sm focus:ring-1 focus:outline-none"
-      >
-        <option value="">Tous sens</option>
-        <option value="true">↓ Entrant</option>
-        <option value="false">↑ Sortant</option>
-      </select>
+      {!hideDirection && (
+        <select
+          value={incoming}
+          onChange={(e) => setIncoming(e.target.value)}
+          className="bg-muted/20 border-border/50 focus:ring-ring h-8 rounded border px-2 text-sm focus:ring-1 focus:outline-none"
+        >
+          <option value="">Tous sens</option>
+          <option value="true">↓ Entrant</option>
+          <option value="false">↑ Sortant</option>
+        </select>
+      )}
 
       {/* Protocol */}
       <select
