@@ -9,14 +9,14 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { useColumnResize } from '@/hooks/useColumnResize';
 import { useRefreshSignal } from '@/hooks/useRefreshSignal';
 import { useTransferLogs } from '@/hooks/useTransfers';
-import { formatBytes, formatDateFR } from '@/lib/formatters';
+import { formatBytes, formatDateTimeFR } from '@/lib/formatters';
 import { TransferFilters, type TransferFilterValues } from './TransferFilters';
 import { SourceLogo } from '@/components/ui/SourceLogo';
 
 const PAGE_SIZE = 25;
 
 // Default column widths in pixels: Date, Compte, Login, Fichier, Taille, Proto, Sens, TLS, Statut, Duree
-const DEFAULT_WIDTHS = [120, 130, 100, 240, 70, 70, 50, 50, 110, 70];
+const DEFAULT_WIDTHS = [155, 130, 100, 240, 70, 75, 50, 50, 110, 70];
 
 const COLS = [
   { label: 'Date', align: 'left' },
@@ -47,6 +47,24 @@ function StatusCell({ status }: { status: string }) {
             : 'bg-muted/30 text-muted-foreground border-border/50';
   return (
     <span className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium ${cls}`}>{status}</span>
+  );
+}
+
+const PROTOCOL_COLORS: Record<string, string> = {
+  SSH: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  PESIT: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+  FTP: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  HTTPS: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+  AS2: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+};
+
+function ProtocolBadge({ protocol }: { protocol: string }) {
+  const p = protocol.toUpperCase();
+  const cls = PROTOCOL_COLORS[p] ?? 'bg-muted/30 text-muted-foreground border-border/50';
+  return (
+    <span className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-xs font-semibold ${cls}`}>
+      {p}
+    </span>
   );
 }
 
@@ -172,10 +190,16 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
                       key={t.id?.urlrepresentation ?? i}
                       className="border-border/30 hover:bg-muted/10 border-b transition-colors"
                     >
-                      <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-xs">
-                        <span className="block truncate" title={t.startTime}>
-                          {formatDateFR(t.startTime)}
-                        </span>
+                      <td className="overflow-hidden px-3 py-1.5" title={t.startTime}>
+                        {(() => {
+                          const { date, time } = formatDateTimeFR(t.startTime);
+                          return (
+                            <>
+                              <span className="text-foreground/80 block truncate text-xs">{date}</span>
+                              <span className="text-muted-foreground block truncate font-mono text-[11px]">{time}</span>
+                            </>
+                          );
+                        })()}
                       </td>
                       <td className="text-foreground overflow-hidden px-3 py-1.5 text-xs font-medium">
                         <span className="block truncate" title={t.account}>
@@ -196,12 +220,10 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
                         </span>
                       </td>
                       <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-right text-xs">
-                        <span className="block truncate">{formatBytes(t.filesize)}</span>
+                        <span className="block truncate">{t.filesize != null ? formatBytes(t.filesize) : '—'}</span>
                       </td>
                       <td className="overflow-hidden px-3 py-1.5">
-                        <Badge variant="outline" className="font-mono text-xs uppercase">
-                          {t.protocol}
-                        </Badge>
+                        <ProtocolBadge protocol={t.protocol} />
                       </td>
                       <td className="px-3 py-1.5 text-center" title={t.incoming ? 'Entrant' : 'Sortant'}>
                         {t.incoming ? (

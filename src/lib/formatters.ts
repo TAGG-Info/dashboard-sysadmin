@@ -26,6 +26,19 @@ export function formatDateFR(dateStr: string): string {
   }
 }
 
+/** French date + time on separate lines (e.g. "Jeu. 19 fév. 2026" / "10:33:58") */
+export function formatDateTimeFR(dateStr: string): { date: string; time: string } {
+  try {
+    const d = typeof dateStr === 'string' && dateStr.includes('T') ? parseISO(dateStr) : new Date(dateStr);
+    const raw = format(d, 'EEE d MMM yyyy', { locale: fr });
+    // Capitalize first letter: "jeu. 19 fév. 2026" → "Jeu. 19 fév. 2026"
+    const date = raw.charAt(0).toUpperCase() + raw.slice(1);
+    return { date, time: format(d, 'HH:mm:ss', { locale: fr }) };
+  } catch {
+    return { date: dateStr, time: '' };
+  }
+}
+
 export function formatTimeAgo(dateStr: string): string {
   try {
     const date = typeof dateStr === 'string' && dateStr.includes('T') ? parseISO(dateStr) : new Date(dateStr);
