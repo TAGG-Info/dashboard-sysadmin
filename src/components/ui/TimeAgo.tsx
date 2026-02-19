@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -38,7 +38,7 @@ function formatFullDate(date: Date): string {
 }
 
 export function TimeAgo({ date, className }: TimeAgoProps) {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const dateObj = useMemo(() => (typeof date === 'string' ? new Date(date) : date), [date]);
   const [display, setDisplay] = useState(formatTimeAgo(dateObj));
 
   useEffect(() => {

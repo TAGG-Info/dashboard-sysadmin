@@ -43,7 +43,7 @@ export function SourceConfigs() {
         const data = await res.json();
         setConfigs(data.config || data);
       }
-    } catch (_err) {
+    } catch {
       toast.error('Erreur de chargement de la configuration');
     } finally {
       setLoading(false);

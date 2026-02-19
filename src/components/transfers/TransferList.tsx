@@ -13,7 +13,7 @@ import { useTransferSummary } from '@/hooks/useTransfers';
 export function TransferList() {
   const { data: summary, loading, error, refresh } = useTransferSummary();
 
-  const expiringSoon = summary?.certificates.expiringSoon ?? [];
+  const expiringSoon = useMemo(() => summary?.certificates.expiringSoon ?? [], [summary]);
 
   // Detect multiple instances — must be before any early return (Rules of Hooks)
   const hasMultipleInstances = useMemo(() => {
@@ -23,12 +23,7 @@ export function TransferList() {
 
   if (error && !summary) {
     return (
-      <ErrorState
-        title="Erreur SecureTransport"
-        message={error.message}
-        source="SecureTransport"
-        onRetry={refresh}
-      />
+      <ErrorState title="Erreur SecureTransport" message={error.message} source="SecureTransport" onRetry={refresh} />
     );
   }
 
@@ -56,39 +51,35 @@ export function TransferList() {
   return (
     <Card className="bg-card border-border/50">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+        <CardTitle className="text-foreground flex items-center gap-2 text-base font-semibold">
           <AlertTriangle className="h-4 w-4 text-[#f59e0b]" />
           Certificats expirant bientot
         </CardTitle>
       </CardHeader>
       <CardContent>
         {expiringSoon.length === 0 ? (
-          <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-[#10b981]/5 p-4">
-            <CheckCircle2 className="h-5 w-5 text-[#10b981] shrink-0" />
-            <p className="text-sm text-muted-foreground">
-              Aucun certificat n&apos;expire prochainement.
-            </p>
+          <div className="border-border/50 flex items-center gap-3 rounded-lg border bg-[#10b981]/5 p-4">
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-[#10b981]" />
+            <p className="text-muted-foreground text-sm">Aucun certificat n&apos;expire prochainement.</p>
           </div>
         ) : (
           <div className="space-y-2">
             {expiringSoon.map((cert, index) => (
               <div
                 key={`${cert.alias}-${index}`}
-                className="flex items-center justify-between rounded-lg border border-border/50 bg-[#ef4444]/5 p-3"
+                className="border-border/50 flex items-center justify-between rounded-lg border bg-[#ef4444]/5 p-3"
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex min-w-0 items-center gap-3">
                   <StatusBadge status="critical" label="Expire" />
-                  <span className="text-sm font-medium text-foreground truncate">
-                    {cert.alias}
-                  </span>
+                  <span className="text-foreground truncate text-sm font-medium">{cert.alias}</span>
                   {hasMultipleInstances && cert._instanceName && (
-                    <Badge variant="outline" className="text-sm text-muted-foreground border-border/50 shrink-0">
+                    <Badge variant="outline" className="text-muted-foreground border-border/50 shrink-0 text-sm">
                       {cert._instanceName}
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-sm text-muted-foreground">Expire</span>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-muted-foreground text-sm">Expire</span>
                   <TimeAgo date={cert.notAfter} />
                 </div>
               </div>
