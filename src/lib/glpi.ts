@@ -1,6 +1,28 @@
-import type { GLPITicket, GLPITicketSummary } from '@/types/glpi';
+import type { GLPITicket, GLPITicketSummary, GLPITicketStatus, GLPIPriority, GLPITicketType } from '@/types/glpi';
 import type { GLPIInstance } from '@/lib/config';
 import { loggers } from '@/lib/logger';
+
+// GLPI Search API — search option IDs for Ticket
+const SF = {
+  ID: 2,
+  NAME: 1,
+  STATUS: 12,
+  PRIORITY: 3,
+  URGENCY: 10,
+  TYPE: 14,
+  DATE: 15,
+  DATE_MOD: 19,
+  SOLVEDATE: 17,
+  CLOSEDATE: 16,
+  CONTENT: 21,
+  CATEGORY: 7,
+} as const;
+
+interface GLPISearchResponse {
+  totalcount: number;
+  count: number;
+  data: Record<string, string | number | null>[];
+}
 
 export class GLPIClient {
   private baseUrl: string;
@@ -80,21 +102,67 @@ export class GLPIClient {
     return res.json();
   }
 
-  // Tickets ouverts (statuts 1=Nouveau, 2=En cours (attribue), 3=En cours (planifie), 4=En attente)
+  // Tickets ouverts via /search/Ticket avec criteres serveur-side
+  // Statuts: 1=Nouveau, 2=Assigne, 3=Planifie, 4=En attente
   async getTickets(): Promise<GLPITicket[]> {
-    const all = await this.request<GLPITicket[]>(`/Ticket?range=0-50`);
-    if (!Array.isArray(all)) {
+    const params = new URLSearchParams();
+
+    // Criteres: status IN (1, 2, 3, 4)
+    for (let i = 0; i < 4; i++) {
+      if (i > 0) params.append(`criteria[${i}][link]`, 'OR');
+      params.append(`criteria[${i}][field]`, String(SF.STATUS));
+      params.append(`criteria[${i}][searchtype]`, 'equals');
+      params.append(`criteria[${i}][value]`, String(i + 1));
+    }
+
+    // Champs a retourner
+    const fields = [
+      SF.ID,
+      SF.NAME,
+      SF.STATUS,
+      SF.PRIORITY,
+      SF.URGENCY,
+      SF.TYPE,
+      SF.DATE,
+      SF.DATE_MOD,
+      SF.SOLVEDATE,
+      SF.CLOSEDATE,
+      SF.CONTENT,
+      SF.CATEGORY,
+    ];
+    fields.forEach((f, i) => params.append(`forcedisplay[${i}]`, String(f)));
+
+    // Tri par date_mod desc, max 200 tickets
+    params.append('sort', String(SF.DATE_MOD));
+    params.append('order', 'DESC');
+    params.append('range', '0-199');
+
+    const result = await this.request<GLPISearchResponse>(`/search/Ticket?${params.toString()}`);
+
+    if (!result.data || !Array.isArray(result.data)) {
       loggers.glpi.warn(
-        { responseType: typeof all, response: JSON.stringify(all).slice(0, 500) },
-        'GLPI /Ticket did not return array',
+        { totalcount: result.totalcount, response: JSON.stringify(result).slice(0, 500) },
+        'GLPI search returned no data array',
       );
       return [];
     }
-    loggers.glpi.info(
-      { total: all.length, sampleStatus: all[0]?.status, sampleStatusType: typeof all[0]?.status },
-      'GLPI tickets fetched',
-    );
-    return all.filter((t) => t.status <= 4);
+
+    loggers.glpi.info({ totalcount: result.totalcount, count: result.count }, 'GLPI search tickets fetched');
+
+    return result.data.map((row) => ({
+      id: Number(row[SF.ID]),
+      name: String(row[SF.NAME] ?? ''),
+      status: Number(row[SF.STATUS]) as GLPITicketStatus,
+      priority: Number(row[SF.PRIORITY]) as GLPIPriority,
+      urgency: Number(row[SF.URGENCY]),
+      type: Number(row[SF.TYPE]) as GLPITicketType,
+      date: String(row[SF.DATE] ?? ''),
+      date_mod: String(row[SF.DATE_MOD] ?? ''),
+      solvedate: row[SF.SOLVEDATE] ? String(row[SF.SOLVEDATE]) : undefined,
+      closedate: row[SF.CLOSEDATE] ? String(row[SF.CLOSEDATE]) : undefined,
+      content: row[SF.CONTENT] ? String(row[SF.CONTENT]) : undefined,
+      itilcategories_id: row[SF.CATEGORY] ? Number(row[SF.CATEGORY]) : undefined,
+    }));
   }
 
   async getTicket(id: number): Promise<GLPITicket> {
