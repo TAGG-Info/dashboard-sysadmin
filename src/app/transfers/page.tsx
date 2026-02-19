@@ -17,7 +17,7 @@ export default function TransfersPage() {
       <TransferList />
 
       {/* Tables incoming / outgoing — full bleed */}
-      <div className="-mx-4 grid grid-cols-1 gap-4 lg:-mx-12 lg:grid-cols-2 lg:gap-16">
+      <div className="-mx-4 grid grid-cols-1 gap-4 px-1 lg:-mx-20 lg:grid-cols-2 lg:gap-6 lg:px-2">
         <TransferLogTable direction="incoming" />
         <TransferLogTable direction="outgoing" />
       </div>

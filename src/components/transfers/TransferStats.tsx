@@ -24,7 +24,7 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
   if (loading && !summary) {
     if (compact) {
       return (
-        <Card className="bg-card border-border/50">
+        <Card>
           <CardHeader className="pb-2">
             <Skeleton className="h-3.5 w-20" />
           </CardHeader>
@@ -42,7 +42,7 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i} className="bg-card border-border/50">
+          <Card key={i} className="">
             <CardContent className="space-y-2 p-4">
               <Skeleton className="h-3 w-24" />
               <Skeleton className="h-7 w-16" />
@@ -60,7 +60,7 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
   /* ── Compact (sidebar) ── */
   if (compact) {
     return (
-      <Card className="bg-card border-border/50">
+      <Card>
         <CardHeader className="px-4 pt-3 pb-2">
           <CardTitle className="text-muted-foreground text-xs font-medium tracking-wider uppercase">Résumé</CardTitle>
         </CardHeader>
@@ -102,7 +102,7 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       {/* Comptes actifs */}
-      <Card className="bg-card border-border/50">
+      <Card>
         <CardContent className="p-4">
           <p className="text-muted-foreground text-sm">Comptes actifs</p>
           <p className="text-xl font-bold text-[#FF6D00]">
@@ -116,7 +116,7 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
       </Card>
 
       {/* Certificats */}
-      <Card className="bg-card border-border/50">
+      <Card>
         <CardContent className="p-4">
           <p className="text-muted-foreground text-sm">Certificats</p>
           <p className="text-foreground text-xl font-bold">{summary.certificates.total}</p>
@@ -129,7 +129,7 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
       </Card>
 
       {/* Sites */}
-      <Card className="bg-card border-border/50">
+      <Card>
         <CardContent className="p-4">
           <p className="text-muted-foreground text-sm">Sites de transfert</p>
           <p className="text-foreground text-xl font-bold">{summary.sites.total}</p>

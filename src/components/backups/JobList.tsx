@@ -47,7 +47,7 @@ export function JobList() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-foreground flex items-center gap-2 text-sm font-semibold">
+        <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
           <SourceLogo source="veeam" size={16} />
           Jobs de backup
           {jobs && <span className="text-muted-foreground ml-2 text-sm font-normal">({jobs.length})</span>}

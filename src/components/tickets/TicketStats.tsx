@@ -18,7 +18,7 @@ export function TicketStats() {
     return (
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Card key={i} className="bg-card border-border/50">
+          <Card key={i} className="">
             <CardContent className="space-y-2 p-4">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-7 w-12" />

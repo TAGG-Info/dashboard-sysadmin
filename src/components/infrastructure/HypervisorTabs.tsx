@@ -64,7 +64,7 @@ export function HypervisorTabs() {
       <TabsContent value="vmware" className="space-y-6">
         {/* Hosts Grid */}
         <div>
-          <h3 className="text-foreground mb-3 text-sm font-semibold">
+          <h3 className="text-foreground mb-3 text-base font-semibold">
             Hosts ESXi
             {hosts && <span className="text-muted-foreground ml-2 text-sm font-normal">({hosts.length})</span>}
           </h3>
@@ -116,7 +116,7 @@ export function HypervisorTabs() {
       <TabsContent value="proxmox" className="space-y-6">
         {/* Nodes Grid */}
         <div>
-          <h3 className="text-foreground mb-3 text-sm font-semibold">
+          <h3 className="text-foreground mb-3 text-base font-semibold">
             Nodes
             {nodes && <span className="text-muted-foreground ml-2 text-sm font-normal">({nodes.length})</span>}
           </h3>

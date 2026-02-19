@@ -67,7 +67,7 @@ export function VMList() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-foreground text-sm font-semibold">
+        <h3 className="text-foreground text-base font-semibold">
           Machines virtuelles
           {vms && (
             <span className="text-muted-foreground ml-2 text-sm font-normal">
@@ -108,13 +108,13 @@ export function VMList() {
                 ))}
               </colgroup>
               <thead>
-                <tr className="border-border/50 bg-muted/20 border-b">
+                <tr className="border-border/50 bg-muted/30 border-b">
                   {COLS.map((col, i) => {
                     const isLast = i === COLS.length - 1;
                     return (
                       <th
                         key={col.label}
-                        className={`text-muted-foreground relative px-3 py-2 text-xs font-medium select-none text-${col.align}`}
+                        className={`text-muted-foreground relative px-3 py-2.5 text-sm font-medium select-none text-${col.align}`}
                       >
                         <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{col.label}</span>
                         {!isLast && (
@@ -164,31 +164,31 @@ export function VMList() {
                   groupVMs.map((vm) => (
                     <tr
                       key={`${instanceId}-${vm.vm}`}
-                      className="border-border/30 hover:bg-muted/10 border-b transition-colors"
+                      className="border-border/30 hover:bg-muted/15 border-b transition-colors"
                     >
-                      <td className="text-foreground overflow-hidden px-3 py-1.5 text-xs font-medium">
+                      <td className="text-foreground overflow-hidden px-3 py-2 text-sm font-medium">
                         <span className="block truncate">{vm.name}</span>
                       </td>
-                      <td className="overflow-hidden px-3 py-1.5">
+                      <td className="overflow-hidden px-3 py-2">
                         <StatusBadge
                           status={powerStateToStatus(vm.power_state)}
                           label={powerStateLabel(vm.power_state)}
                         />
                       </td>
-                      <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-xs">
+                      <td className="text-muted-foreground overflow-hidden px-3 py-2 text-sm">
                         <span className="block truncate">
                           {vm.host
                             ? (hostNameMap.get(`${vm._instanceId ?? 'default'}:${vm.host}`) ?? vm.host)
                             : '\u2014'}
                         </span>
                       </td>
-                      <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-right text-xs">
+                      <td className="text-muted-foreground overflow-hidden px-3 py-2 text-right text-sm">
                         <span className="block truncate">{vm.cpu_count} vCPU</span>
                       </td>
-                      <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-right text-xs">
+                      <td className="text-muted-foreground overflow-hidden px-3 py-2 text-right text-sm">
                         <span className="block truncate">{formatMemory(vm.memory_size_MiB)}</span>
                       </td>
-                      <td className="overflow-hidden px-3 py-1.5 text-right">
+                      <td className="overflow-hidden px-3 py-2 text-right">
                         {vcenterUrl && (
                           <ExternalLink
                             href={`${vcenterUrl}/ui/app/vm;nav=v/urn:vmomi:VirtualMachine:${vm.vm}`}
@@ -216,11 +216,11 @@ export function VMList() {
               ))}
             </colgroup>
             <thead>
-              <tr className="border-border/50 bg-muted/20 border-b">
+              <tr className="border-border/50 bg-muted/30 border-b">
                 {COLS.map((col) => (
                   <th
                     key={col.label}
-                    className={`text-muted-foreground px-3 py-2 text-xs font-medium select-none text-${col.align}`}
+                    className={`text-muted-foreground px-3 py-2.5 text-sm font-medium select-none text-${col.align}`}
                   >
                     {col.label}
                   </th>

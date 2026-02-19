@@ -106,7 +106,7 @@ export function SessionTimeline() {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-foreground text-sm font-semibold">
+      <h3 className="text-foreground text-base font-semibold">
         Sessions recentes
         {sessions && (
           <span className="text-muted-foreground ml-2 text-sm font-normal">

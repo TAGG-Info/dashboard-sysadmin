@@ -55,19 +55,15 @@ export function TicketCard({ ticket }: TicketCardProps) {
   const ticketUrl = `${glpiUrl}/front/ticket.form.php?id=${ticket.id}`;
 
   return (
-    <Card className="bg-card border-border/50">
-      <CardContent className="p-4 space-y-3">
+    <Card>
+      <CardContent className="space-y-3 p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-foreground truncate">
+            <p className="text-foreground truncate text-sm font-medium">
               #{ticket.id} - {ticket.name}
             </p>
           </div>
-          <ExternalLink
-            href={ticketUrl}
-            label="GLPI"
-            source="glpi"
-          />
+          <ExternalLink href={ticketUrl} label="GLPI" source="glpi" />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -84,16 +80,20 @@ export function TicketCard({ ticket }: TicketCardProps) {
         </div>
 
         {(ticket._users_id_requester || ticket._users_id_assign) && (
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-3 text-sm">
             {ticket._users_id_requester && (
-              <span>De : <span className="text-foreground">{ticket._users_id_requester}</span></span>
+              <span>
+                De : <span className="text-foreground">{ticket._users_id_requester}</span>
+              </span>
             )}
             {ticket._users_id_assign && (
-              <span>Assigné : <span className="text-foreground">{ticket._users_id_assign}</span></span>
+              <span>
+                Assigné : <span className="text-foreground">{ticket._users_id_assign}</span>
+              </span>
             )}
           </div>
         )}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <span>Cree</span>
           <TimeAgo date={ticket.date} />
           {ticket.date_mod !== ticket.date && (

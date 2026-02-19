@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
@@ -8,13 +8,13 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import { Toaster } from 'sonner';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-jetbrains-mono',
   subsets: ['latin'],
 });
 
@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className="dark" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased`}>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} bg-background text-foreground antialiased`}>
         <SessionProvider>
           <ThemeProvider>
             <RefreshIntervalsProvider>

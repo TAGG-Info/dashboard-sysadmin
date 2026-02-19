@@ -115,7 +115,7 @@ export function TicketList() {
   }
 
   return (
-    <Card className="bg-card border-border/50">
+    <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-foreground flex items-center gap-2 text-base font-semibold">

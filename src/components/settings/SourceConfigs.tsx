@@ -80,7 +80,7 @@ export function SourceConfigs() {
   }, 0);
 
   return (
-    <div className="settings-card-glow bg-background overflow-hidden rounded-xl border border-white/[0.06]">
+    <div className="settings-card-glow bg-background shadow-card overflow-hidden rounded-xl">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/[0.04] px-5 py-4">
         <div className="flex items-center gap-3">
@@ -88,7 +88,7 @@ export function SourceConfigs() {
             <Database className="text-primary h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-foreground text-sm font-semibold tracking-wide">Sources de donnees</h3>
+            <h3 className="text-foreground text-base font-semibold tracking-wide">Sources de donnees</h3>
             <p className="text-muted-foreground mt-0.5 text-sm">Connexions vers vos outils d&apos;infrastructure</p>
           </div>
         </div>

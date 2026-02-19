@@ -33,26 +33,15 @@ export function DatastoreList() {
   const hasMultipleInstances = instanceGroups.length > 1;
 
   if (error && !datastores) {
-    return (
-      <ErrorState
-        title="Erreur Datastores"
-        message={error.message}
-        source="VMware"
-        onRetry={refresh}
-      />
-    );
+    return <ErrorState title="Erreur Datastores" message={error.message} source="VMware" onRetry={refresh} />;
   }
 
   return (
-    <Card className="bg-card border-border/50">
+    <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold">
+        <CardTitle className="text-base font-semibold">
           Datastores
-          {datastores && (
-            <span className="ml-2 text-sm text-muted-foreground font-normal">
-              ({datastores.length})
-            </span>
-          )}
+          {datastores && <span className="text-muted-foreground ml-2 text-sm font-normal">({datastores.length})</span>}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -64,15 +53,11 @@ export function DatastoreList() {
             </div>
           ))
         ) : !datastores || datastores.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            Aucun datastore
-          </p>
+          <p className="text-muted-foreground py-4 text-center text-sm">Aucun datastore</p>
         ) : (
           instanceGroups.map(([instanceId, { instanceName, items }]) => (
             <div key={instanceId}>
-              {hasMultipleInstances && (
-                <InstanceSectionHeader instanceName={instanceName} className="mb-2" />
-              )}
+              {hasMultipleInstances && <InstanceSectionHeader instanceName={instanceName} className="mb-2" />}
               {items
                 .sort((a, b) => {
                   const usageA = ((a.capacity - a.free_space) / a.capacity) * 100;
@@ -82,20 +67,13 @@ export function DatastoreList() {
                 .map((ds) => {
                   const totalGB = bytesToGB(ds.capacity);
                   const usedGB = bytesToGB(ds.capacity - ds.free_space);
-                  const percentage = ds.capacity > 0
-                    ? ((ds.capacity - ds.free_space) / ds.capacity) * 100
-                    : 0;
+                  const percentage = ds.capacity > 0 ? ((ds.capacity - ds.free_space) / ds.capacity) * 100 : 0;
 
                   return (
                     <div key={`${instanceId}-${ds.datastore}`}>
-                      <DatastoreBar
-                        label={ds.name}
-                        used={usedGB}
-                        total={totalGB}
-                        unit="GB"
-                      />
+                      <DatastoreBar label={ds.name} used={usedGB} total={totalGB} unit="GB" />
                       {percentage > 85 && (
-                        <p className="text-sm text-[#ef4444] mt-1">
+                        <p className="mt-1 text-sm text-[#ef4444]">
                           Espace disque critique ({Math.round(percentage)}%)
                         </p>
                       )}

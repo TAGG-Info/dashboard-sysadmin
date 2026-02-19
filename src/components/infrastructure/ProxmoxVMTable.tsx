@@ -91,7 +91,7 @@ export function ProxmoxVMTable() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-foreground text-sm font-semibold">
+        <h3 className="text-foreground text-base font-semibold">
           VMs & Containers
           {vms && <span className="text-muted-foreground ml-2 text-sm font-normal">({vms.length})</span>}
         </h3>
@@ -115,13 +115,13 @@ export function ProxmoxVMTable() {
                 ))}
               </colgroup>
               <thead>
-                <tr className="border-border/50 bg-muted/20 border-b">
+                <tr className="border-border/50 bg-muted/30 border-b">
                   {COLS.map((col, i) => {
                     const isLast = i === COLS.length - 1;
                     return (
                       <th
                         key={col.label}
-                        className={`text-muted-foreground relative px-3 py-2 text-xs font-medium select-none text-${col.align}`}
+                        className={`text-muted-foreground relative px-3 py-2.5 text-sm font-medium select-none text-${col.align}`}
                       >
                         <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{col.label}</span>
                         {!isLast && (
@@ -179,9 +179,9 @@ export function ProxmoxVMTable() {
                     return (
                       <tr
                         key={`${instanceId}-${vm.node}-${vm.type}-${vm.vmid}`}
-                        className="border-border/30 hover:bg-muted/10 border-b transition-colors"
+                        className="border-border/30 hover:bg-muted/15 border-b transition-colors"
                       >
-                        <td className="overflow-hidden px-3 py-1.5">
+                        <td className="overflow-hidden px-3 py-2">
                           <Badge
                             variant="outline"
                             className={
@@ -193,26 +193,26 @@ export function ProxmoxVMTable() {
                             {typeLabel}
                           </Badge>
                         </td>
-                        <td className="text-foreground overflow-hidden px-3 py-1.5 text-xs font-medium">
+                        <td className="text-foreground overflow-hidden px-3 py-2 text-sm font-medium">
                           <span className="block truncate">{vm.name}</span>
                         </td>
-                        <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-xs">
+                        <td className="text-muted-foreground overflow-hidden px-3 py-2 text-sm">
                           <span className="block truncate">{vm.node}</span>
                         </td>
-                        <td className="overflow-hidden px-3 py-1.5">
+                        <td className="overflow-hidden px-3 py-2">
                           <StatusBadge status={vmStatusToLevel(vm.status)} label={vmStatusLabel(vm.status)} />
                         </td>
-                        <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-right text-xs">
+                        <td className="text-muted-foreground overflow-hidden px-3 py-2 text-right text-sm">
                           <span className="block truncate">{vm.cpus} vCPU</span>
                         </td>
-                        <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-right text-xs">
+                        <td className="text-muted-foreground overflow-hidden px-3 py-2 text-right text-sm">
                           <span className="block truncate">
                             {vm.status === 'running' && vm.mem > 0
                               ? `${formatBytes(vm.mem)} / ${formatBytes(vm.maxmem)}`
                               : formatBytes(vm.maxmem)}
                           </span>
                         </td>
-                        <td className="overflow-hidden px-3 py-1.5 text-right">
+                        <td className="overflow-hidden px-3 py-2 text-right">
                           {proxmoxUrl && (
                             <ExternalLink
                               href={`${proxmoxUrl}/#v1:0:=${linkType}/${vm.vmid}`}
@@ -241,11 +241,11 @@ export function ProxmoxVMTable() {
               ))}
             </colgroup>
             <thead>
-              <tr className="border-border/50 bg-muted/20 border-b">
+              <tr className="border-border/50 bg-muted/30 border-b">
                 {COLS.map((col) => (
                   <th
                     key={col.label}
-                    className={`text-muted-foreground px-3 py-2 text-xs font-medium select-none text-${col.align}`}
+                    className={`text-muted-foreground px-3 py-2.5 text-sm font-medium select-none text-${col.align}`}
                   >
                     {col.label}
                   </th>

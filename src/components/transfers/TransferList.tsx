@@ -29,7 +29,7 @@ export function TransferList() {
 
   if (loading && !summary) {
     return (
-      <Card className="bg-card border-border/50">
+      <Card>
         <CardHeader>
           <Skeleton className="h-5 w-56" />
         </CardHeader>
@@ -49,7 +49,7 @@ export function TransferList() {
   if (!summary) return null;
 
   return (
-    <Card className="bg-card border-border/50">
+    <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-foreground flex items-center gap-2 text-base font-semibold">
           <AlertTriangle className="h-4 w-4 text-[#f59e0b]" />

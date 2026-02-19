@@ -44,7 +44,7 @@ function BackupStats() {
     return (
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 2xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="bg-card border-border/50">
+          <Card key={i} className="">
             <CardContent className="space-y-2 p-4">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-6 w-12" />
@@ -89,12 +89,12 @@ export default function BackupsPage() {
 
       {/* Session timeline + Calendar */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-[5fr_3fr]">
-        <Card className="bg-card border-border/50">
+        <Card className="">
           <CardContent className="p-4">
             <SessionTimeline />
           </CardContent>
         </Card>
-        <Card className="bg-card border-border/50">
+        <Card className="">
           <CardContent className="p-4">
             <BackupCalendar />
           </CardContent>

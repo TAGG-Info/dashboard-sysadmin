@@ -158,7 +158,7 @@ export function RoleManager() {
   };
 
   return (
-    <div className="settings-card-glow bg-background overflow-hidden rounded-xl border border-white/[0.06]">
+    <div className="settings-card-glow bg-background shadow-card overflow-hidden rounded-xl">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/[0.04] px-5 py-4">
         <div className="flex items-center gap-3">
@@ -166,7 +166,7 @@ export function RoleManager() {
             <ShieldCheck className="h-4 w-4 text-amber-400" />
           </div>
           <div>
-            <h3 className="text-foreground text-sm font-semibold tracking-wide">Roles &amp; Acces</h3>
+            <h3 className="text-foreground text-base font-semibold tracking-wide">Roles &amp; Acces</h3>
             <p className="text-muted-foreground mt-0.5 text-sm">Mappez les groupes AD vers les pages du dashboard</p>
           </div>
         </div>
@@ -195,7 +195,7 @@ export function RoleManager() {
           <div className="text-muted-foreground py-8 text-center text-sm">Aucun role configure</div>
         ) : (
           sortedRoles.map((role) => (
-            <div key={role.id} className="space-y-3 rounded-lg border border-white/[0.06] bg-white/[0.02] p-4">
+            <div key={role.id} className="shadow-card space-y-3 rounded-lg bg-white/[0.02] p-4">
               {/* Role header row */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -354,7 +354,7 @@ export function RoleManager() {
                 {DASHBOARD_PAGES.map((page) => (
                   <label
                     key={page.path}
-                    className="flex cursor-pointer items-center gap-2 rounded-md border border-white/[0.06] bg-white/[0.02] px-3 py-2 transition-colors hover:bg-white/[0.04]"
+                    className="shadow-card flex cursor-pointer items-center gap-2 rounded-md bg-white/[0.02] px-3 py-2 transition-colors hover:bg-white/[0.04]"
                   >
                     <input
                       type="checkbox"

@@ -14,32 +14,25 @@ interface JobCardProps {
 
 export function JobCard({ job, isWorking, progress }: JobCardProps) {
   return (
-    <Card className="bg-card border-border/50">
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-foreground truncate mr-2">
-            {job.name}
-          </CardTitle>
+          <CardTitle className="text-foreground mr-2 truncate text-sm font-medium">{job.name}</CardTitle>
           {job.isDisabled ? (
             <StatusBadge status="neutral" label="Desactive" />
           ) : (
-            <StatusBadge
-              status={resultToStatus(job.lastResult)}
-              label={resultLabel(job.lastResult)}
-            />
+            <StatusBadge status={resultToStatus(job.lastResult)} label={resultLabel(job.lastResult)} />
           )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">{job.type}</p>
+        <p className="text-muted-foreground text-sm">{job.type}</p>
 
         {isWorking && (
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[#00B336] font-medium">En cours...</span>
-              {progress !== undefined && (
-                <span className="text-muted-foreground">{Math.round(progress)}%</span>
-              )}
+              <span className="font-medium text-[#00B336]">En cours...</span>
+              {progress !== undefined && <span className="text-muted-foreground">{Math.round(progress)}%</span>}
             </div>
             <Progress value={progress ?? 0} className="h-1.5" />
           </div>

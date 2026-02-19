@@ -98,7 +98,7 @@ export function AlertList() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-semibold">Alertes actives</CardTitle>
+        <CardTitle className="text-base font-semibold">Alertes actives</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {loading && !alerts ? (

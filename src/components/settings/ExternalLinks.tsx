@@ -22,16 +22,16 @@ export function ExternalLinks() {
   const configuredCount = linkConfigs.filter((c) => c.url).length;
 
   return (
-    <div className="settings-card-glow rounded-xl bg-background border border-white/[0.06] overflow-hidden">
+    <div className="settings-card-glow bg-background shadow-card overflow-hidden rounded-xl">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
+      <div className="flex items-center justify-between border-b border-white/[0.04] px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-violet-500/10 border border-violet-500/20">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-violet-500/20 bg-violet-500/10">
             <Globe className="h-4 w-4 text-violet-400" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground tracking-wide">Liens externes</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <h3 className="text-foreground text-base font-semibold tracking-wide">Liens externes</h3>
+            <p className="text-muted-foreground mt-0.5 text-sm">
               {configuredCount}/{linkConfigs.length} configures
             </p>
           </div>
@@ -39,7 +39,7 @@ export function ExternalLinks() {
       </div>
 
       {/* Link Grid */}
-      <div className="grid grid-cols-2 gap-[1px] bg-white/[0.03] stagger-in">
+      <div className="stagger-in grid grid-cols-2 gap-[1px] bg-white/[0.03]">
         {linkConfigs.map(({ key, label, color, url }) => {
           if (url) {
             return (
@@ -48,11 +48,11 @@ export function ExternalLinks() {
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="relative flex flex-col gap-1.5 px-4 py-3.5 bg-background transition-all duration-200 hover:bg-white/[0.03] group"
+                className="bg-background group relative flex flex-col gap-1.5 px-4 py-3.5 transition-all duration-200 hover:bg-white/[0.03]"
               >
                 {/* Left accent */}
                 <div
-                  className="absolute left-0 top-2 bottom-2 w-[2px] rounded-full transition-all duration-200 group-hover:top-1 group-hover:bottom-1"
+                  className="absolute top-2 bottom-2 left-0 w-[2px] rounded-full transition-all duration-200 group-hover:top-1 group-hover:bottom-1"
                   style={{
                     backgroundColor: color,
                     opacity: 0.5,
@@ -60,10 +60,10 @@ export function ExternalLinks() {
                   }}
                 />
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-foreground">{label}</span>
-                  <ExternalLinkIcon className="h-3 w-3 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
+                  <span className="text-foreground text-sm font-semibold">{label}</span>
+                  <ExternalLinkIcon className="text-muted-foreground/30 group-hover:text-muted-foreground h-3 w-3 transition-colors" />
                 </div>
-                <span className="text-sm font-mono text-muted-foreground/60 truncate group-hover:text-muted-foreground/90 transition-colors">
+                <span className="text-muted-foreground/60 group-hover:text-muted-foreground/90 truncate font-mono text-sm transition-colors">
                   {url.replace(/^https?:\/\//, '').split('/')[0]}
                 </span>
               </a>
@@ -71,16 +71,13 @@ export function ExternalLinks() {
           }
 
           return (
-            <div
-              key={key}
-              className="relative flex flex-col gap-1.5 px-4 py-3.5 bg-background"
-            >
+            <div key={key} className="bg-background relative flex flex-col gap-1.5 px-4 py-3.5">
               <div
-                className="absolute left-0 top-2 bottom-2 w-[2px] rounded-full opacity-10"
+                className="absolute top-2 bottom-2 left-0 w-[2px] rounded-full opacity-10"
                 style={{ backgroundColor: '#6b7280' }}
               />
-              <span className="text-sm font-medium text-muted-foreground/50">{label}</span>
-              <span className="text-sm text-muted-foreground/25 italic">Non configure</span>
+              <span className="text-muted-foreground/50 text-sm font-medium">{label}</span>
+              <span className="text-muted-foreground/25 text-sm italic">Non configure</span>
             </div>
           );
         })}

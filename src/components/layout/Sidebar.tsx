@@ -100,7 +100,7 @@ export function Sidebar() {
   return (
     <div
       className={cn(
-        'border-border/50 bg-sidebar relative flex h-screen flex-col border-r transition-all duration-300',
+        'border-border/30 bg-sidebar relative flex h-screen flex-col border-r transition-all duration-300',
         collapsed ? 'w-16' : 'w-56 2xl:w-64',
       )}
     >

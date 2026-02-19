@@ -139,7 +139,7 @@ export function BackupCalendar() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-foreground text-sm font-semibold">Calendrier des backups</h3>
+        <h3 className="text-foreground text-base font-semibold">Calendrier des backups</h3>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goToPreviousMonth}>
             <ChevronLeft className="h-4 w-4" />

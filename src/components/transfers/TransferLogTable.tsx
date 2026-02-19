@@ -124,7 +124,7 @@ export function TransferLogTable({ direction }: TransferLogTableProps) {
           </div>
         </div>
       )}
-      <Card className="bg-card border-border/50">
+      <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-foreground flex items-center gap-2 text-base font-semibold">

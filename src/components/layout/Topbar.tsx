@@ -28,7 +28,7 @@ export function Topbar() {
 
   return (
     <header className="relative">
-      <div className="border-border/50 bg-background/50 flex h-12 items-center justify-between border-b px-4 backdrop-blur-sm lg:px-6">
+      <div className="border-border/30 bg-background/50 flex h-12 items-center justify-between border-b px-4 backdrop-blur-sm lg:px-6">
         {/* Left: Welcome message */}
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-sm">

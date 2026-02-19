@@ -145,7 +145,7 @@ export function RecentActivity({ prtgAlerts, veeamSessions }: RecentActivityProp
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-foreground text-sm font-semibold">Activite recente</h2>
+        <h2 className="text-foreground text-base font-semibold">Activite recente</h2>
         {events.length > 0 && <span className="text-muted-foreground text-sm">{events.length} evenements</span>}
       </div>
 

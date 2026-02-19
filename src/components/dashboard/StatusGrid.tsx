@@ -2,11 +2,7 @@
 
 import { useMemo } from 'react';
 import { usePRTGDevices, type PRTGDeviceWithInstance } from '@/hooks/usePRTG';
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { InstanceSectionHeader } from '@/components/ui/InstanceGroup';
 import type { PRTGDevice } from '@/types/prtg';
@@ -28,26 +24,20 @@ function DeviceSquare({ device }: { device: PRTGDevice }) {
     <Tooltip>
       <TooltipTrigger asChild>
         <div
-          className="h-8 w-8 rounded cursor-pointer transition-transform hover:scale-110"
+          className="h-8 w-8 cursor-pointer rounded transition-transform hover:scale-110"
           style={{ backgroundColor: color }}
         />
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs">
         <div className="space-y-1">
-          <p className="font-semibold text-sm">{device.name}</p>
-          <p className="text-sm text-muted-foreground">{device.host}</p>
+          <p className="text-sm font-semibold">{device.name}</p>
+          <p className="text-muted-foreground text-sm">{device.host}</p>
           {sensors && (
             <div className="flex gap-2 text-sm">
               <span style={{ color: '#10b981' }}>{sensors.up} up</span>
-              {sensors.down > 0 && (
-                <span style={{ color: '#ef4444' }}>{sensors.down} down</span>
-              )}
-              {sensors.warning > 0 && (
-                <span style={{ color: '#f59e0b' }}>{sensors.warning} warn</span>
-              )}
-              {sensors.paused > 0 && (
-                <span style={{ color: '#6b7280' }}>{sensors.paused} paused</span>
-              )}
+              {sensors.down > 0 && <span style={{ color: '#ef4444' }}>{sensors.down} down</span>}
+              {sensors.warning > 0 && <span style={{ color: '#f59e0b' }}>{sensors.warning} warn</span>}
+              {sensors.paused > 0 && <span style={{ color: '#6b7280' }}>{sensors.paused} paused</span>}
             </div>
           )}
         </div>
@@ -79,7 +69,7 @@ export function StatusGrid() {
   if (loading && !devices) {
     return (
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">Carte des devices</h2>
+        <h2 className="text-foreground text-base font-semibold">Carte des devices</h2>
         <div className="flex flex-wrap gap-1.5">
           {Array.from({ length: 24 }).map((_, i) => (
             <Skeleton key={i} className="h-8 w-8 rounded" />
@@ -92,11 +82,9 @@ export function StatusGrid() {
   if (error || !devices || devices.length === 0) {
     return (
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">Carte des devices</h2>
-        <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border p-8">
-          <p className="text-sm text-muted-foreground">
-            {error ? 'Erreur de chargement des devices' : 'Aucun device'}
-          </p>
+        <h2 className="text-foreground text-base font-semibold">Carte des devices</h2>
+        <div className="border-border flex items-center justify-center rounded-lg border-2 border-dashed p-8">
+          <p className="text-muted-foreground text-sm">{error ? 'Erreur de chargement des devices' : 'Aucun device'}</p>
         </div>
       </div>
     );
@@ -105,14 +93,12 @@ export function StatusGrid() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-foreground">Carte des devices</h2>
-        <span className="text-sm text-muted-foreground">{devices.length} devices</span>
+        <h2 className="text-foreground text-base font-semibold">Carte des devices</h2>
+        <span className="text-muted-foreground text-sm">{devices.length} devices</span>
       </div>
       {instanceGroups.map(([instanceId, { instanceName, items }]) => (
         <div key={instanceId}>
-          {hasMultipleInstances && (
-            <InstanceSectionHeader instanceName={instanceName} className="mb-1" />
-          )}
+          {hasMultipleInstances && <InstanceSectionHeader instanceName={instanceName} className="mb-1" />}
           <div className="flex flex-wrap gap-1.5">
             {items.map((device) => (
               <DeviceSquare key={`${instanceId}-${device.id}`} device={device} />
@@ -121,7 +107,7 @@ export function StatusGrid() {
         </div>
       ))}
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+      <div className="text-muted-foreground flex flex-wrap gap-3 text-sm">
         <div className="flex items-center gap-1">
           <div className="h-2.5 w-2.5 rounded" style={{ backgroundColor: '#10b981' }} />
           Up

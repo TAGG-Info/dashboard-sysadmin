@@ -151,7 +151,7 @@ export function DeviceTree() {
   if (loading && !devices) {
     return (
       <div className="space-y-3">
-        <h2 className="text-foreground text-sm font-semibold">Devices</h2>
+        <h2 className="text-foreground text-base font-semibold">Devices</h2>
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-16 w-full rounded-xl" />
@@ -164,7 +164,7 @@ export function DeviceTree() {
   if (error) {
     return (
       <div className="space-y-3">
-        <h2 className="text-foreground text-sm font-semibold">Devices</h2>
+        <h2 className="text-foreground text-base font-semibold">Devices</h2>
         <div className="border-destructive/30 flex items-center justify-center rounded-lg border p-8">
           <p className="text-destructive text-sm">Erreur de chargement</p>
         </div>
@@ -175,7 +175,7 @@ export function DeviceTree() {
   if (!devices || devices.length === 0) {
     return (
       <div className="space-y-3">
-        <h2 className="text-foreground text-sm font-semibold">Devices</h2>
+        <h2 className="text-foreground text-base font-semibold">Devices</h2>
         <div className="border-border flex items-center justify-center rounded-lg border-2 border-dashed p-8">
           <p className="text-muted-foreground text-sm">Aucun device PRTG</p>
         </div>
@@ -186,7 +186,7 @@ export function DeviceTree() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-foreground text-sm font-semibold">Devices</h2>
+        <h2 className="text-foreground text-base font-semibold">Devices</h2>
         <span className="text-muted-foreground text-sm">{devices.length} devices</span>
       </div>
       {instanceGroups.map(({ instanceId, instanceName, items }) => (

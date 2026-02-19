@@ -30,10 +30,10 @@ export function ProxmoxNodeCard({ node }: ProxmoxNodeCardProps) {
   const proxmoxUrl = process.env.NEXT_PUBLIC_PROXMOX_URL;
 
   return (
-    <Card className="bg-card border-border/50">
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-foreground text-sm font-medium">{node.node}</CardTitle>
+          <CardTitle className="text-foreground text-base font-medium">{node.node}</CardTitle>
           <StatusBadge status={isOnline ? 'healthy' : 'critical'} label={isOnline ? 'Online' : 'Offline'} />
         </div>
       </CardHeader>

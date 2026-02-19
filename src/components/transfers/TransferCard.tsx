@@ -14,29 +14,18 @@ export function TransferCard({ name, type, status, href }: TransferCardProps) {
   const isActive = status === 'active';
 
   return (
-    <Card className="bg-card border-border/50">
+    <Card>
       <CardContent className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <StatusBadge
-            status={isActive ? 'healthy' : 'neutral'}
-            label={isActive ? 'Actif' : 'Desactive'}
-          />
+        <div className="flex min-w-0 items-center gap-3">
+          <StatusBadge status={isActive ? 'healthy' : 'neutral'} label={isActive ? 'Actif' : 'Desactive'} />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
-              {name}
-            </p>
+            <p className="text-foreground truncate text-sm font-medium">{name}</p>
             <Badge variant="outline" className="mt-1 text-sm">
               {type === 'account' ? 'Compte' : 'Certificat'}
             </Badge>
           </div>
         </div>
-        {href && (
-          <ExternalLink
-            href={href}
-            label="Voir"
-            source="securetransport"
-          />
-        )}
+        {href && <ExternalLink href={href} label="Voir" source="securetransport" />}
       </CardContent>
     </Card>
   );

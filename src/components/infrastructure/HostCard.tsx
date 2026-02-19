@@ -39,12 +39,10 @@ export function HostCard({ host }: HostCardProps) {
   const vcenterUrl = process.env.NEXT_PUBLIC_VCENTER_URL;
 
   return (
-    <Card className="bg-card border-border/50">
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-foreground">
-            {host.name}
-          </CardTitle>
+          <CardTitle className="text-foreground text-base font-medium">{host.name}</CardTitle>
           <StatusBadge
             status={connectionStateToStatus(host.connection_state)}
             label={connectionStateLabel(host.connection_state)}
@@ -52,22 +50,18 @@ export function HostCard({ host }: HostCardProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="text-muted-foreground flex items-center gap-2 text-sm">
           <span>{host.vm_count ?? 0} VMs</span>
           <span className="text-muted-foreground/50">|</span>
           <span>{host.running_vm_count ?? 0} actives</span>
         </div>
         {(host.cpu_count !== undefined || host.memory_size_MiB !== undefined) && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {host.cpu_count !== undefined && (
-              <span>{host.cpu_count} CPU</span>
-            )}
+          <div className="text-muted-foreground flex items-center gap-2 text-sm">
+            {host.cpu_count !== undefined && <span>{host.cpu_count} CPU</span>}
             {host.cpu_count !== undefined && host.memory_size_MiB !== undefined && (
               <span className="text-muted-foreground/50">|</span>
             )}
-            {host.memory_size_MiB !== undefined && (
-              <span>{(host.memory_size_MiB / 1024).toFixed(0)} Go RAM</span>
-            )}
+            {host.memory_size_MiB !== undefined && <span>{(host.memory_size_MiB / 1024).toFixed(0)} Go RAM</span>}
           </div>
         )}
 
