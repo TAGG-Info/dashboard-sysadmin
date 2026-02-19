@@ -30,10 +30,17 @@ export function formatDateFR(dateStr: string): string {
 export function formatDateTimeFR(dateStr: string): { date: string; time: string } {
   try {
     const d = typeof dateStr === 'string' && dateStr.includes('T') ? parseISO(dateStr) : new Date(dateStr);
-    const raw = format(d, 'EEE d MMM yyyy', { locale: fr });
-    // Capitalize first letter: "jeu. 19 fév. 2026" → "Jeu. 19 fév. 2026"
-    const date = raw.charAt(0).toUpperCase() + raw.slice(1);
-    return { date, time: format(d, 'HH:mm:ss', { locale: fr }) };
+    if (isNaN(d.getTime())) return { date: dateStr, time: '' };
+    const raw = d.toLocaleDateString('fr-FR', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    return {
+      date: raw.charAt(0).toUpperCase() + raw.slice(1),
+      time: d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    };
   } catch {
     return { date: dateStr, time: '' };
   }
