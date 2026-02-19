@@ -82,8 +82,18 @@ export class GLPIClient {
   // Tickets ouverts (statuts 1=Nouveau, 2=En cours (attribue), 3=En cours (planifie), 4=En attente)
   async getTickets(): Promise<GLPITicket[]> {
     const all = await this.request<GLPITicket[]>(`/Ticket?range=0-200&order=DESC&sort=15`);
-    // Filter open tickets in code — status: 1=Nouveau, 2=Assigne, 3=Planifie, 4=En attente
-    return Array.isArray(all) ? all.filter((t) => t.status <= 4) : [];
+    if (!Array.isArray(all)) {
+      loggers.glpi.warn(
+        { responseType: typeof all, response: JSON.stringify(all).slice(0, 500) },
+        'GLPI /Ticket did not return array',
+      );
+      return [];
+    }
+    loggers.glpi.info(
+      { total: all.length, sampleStatus: all[0]?.status, sampleStatusType: typeof all[0]?.status },
+      'GLPI tickets fetched',
+    );
+    return all.filter((t) => t.status <= 4);
   }
 
   async getTicket(id: number): Promise<GLPITicket> {
