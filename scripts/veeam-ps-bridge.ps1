@@ -30,7 +30,7 @@
 
 param(
     [int]$Port = 9420,
-    [int]$CacheRefreshSeconds = 30,
+    [int]$CacheRefreshSeconds = 45,
     [string]$Username = "",
     [string]$Password = ""
 )
@@ -57,20 +57,37 @@ $script:lastRefresh = [datetime]::MinValue
 
 function Refresh-Cache {
     try {
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
         Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Refreshing VBR data cache..."
 
-        # Pre-fetch all sessions once (reused for session cache + job lookups)
-        $allSessions = @(Get-VBRBackupSession | Sort-Object CreationTimeUTC -Descending)
+        # --- 1. Sessions: only last 7 days, build hashtable for O(1) lookups ---
+        $cutoff = (Get-Date).AddDays(-7)
+        $allSessions = @(Get-VBRBackupSession | Where-Object { $_.CreationTimeUTC -gt $cutoff } | Sort-Object CreationTimeUTC -Descending)
 
-        # --- JOBS ---
-        $jobs = @()
+        # Hashtable: job name → most recent session (first match since sorted desc)
+        $latestByJob = @{}
+        foreach ($s in $allSessions) {
+            if (-not $latestByJob.ContainsKey($s.JobName)) {
+                $latestByJob[$s.JobName] = $s
+            }
+        }
+
+        # Job ID → name lookup for "after job" chains
+        $jobIdToName = @{}
+
+        # --- 2. JOBS ---
+        $jobs = [System.Collections.Generic.List[hashtable]]::new()
         $now = Get-Date
 
-        # Standard VBR jobs (VMware, Hyper-V, tape, etc.) — exclude EpAgentBackup
+        # Standard VBR jobs — exclude EpAgentBackup
         $vbrJobs = @(Get-VBRJob -WarningAction SilentlyContinue | Where-Object { $_.JobType -ne 'EpAgentBackup' })
+
+        # Pre-build ID→Name map for after-job lookups
+        foreach ($j in $vbrJobs) { $jobIdToName[$j.Id.ToString()] = $j.Name }
+
         foreach ($j in $vbrJobs) {
-            $lastSession = $null
-            try { $lastSession = $j.FindLastSession() } catch {}
+            # Last session from hashtable (no VBR API call)
+            $ls = $latestByJob[$j.Name]
 
             $objectsCount = 0
             try { $objectsCount = @($j.GetObjectsInJob()).Count } catch {}
@@ -78,82 +95,47 @@ function Refresh-Cache {
             $status = "Stopped"
             try { if ($j.IsRunning) { $status = "Working" } } catch {}
 
-            # Compute next run
+            # Next run (5-level fallback)
             $nextRunStr = $null
             try {
                 $opts = $j.GetScheduleOptions()
-                # 1. Check "after job" chain
                 if ($opts.OptionsScheduleAfterJob.IsEnabled) {
-                    $afterId = $opts.OptionsScheduleAfterJob.Id
-                    $afterJob = $vbrJobs | Where-Object { $_.Id -eq $afterId } | Select-Object -First 1
-                    if ($afterJob) { $nextRunStr = "Apres [$($afterJob.Name)]" }
+                    $aName = $jobIdToName[$opts.OptionsScheduleAfterJob.Id.ToString()]
+                    if ($aName) { $nextRunStr = "Apres [$aName]" }
                 }
-                # 2. Try direct NextRun property on job (Veeam 12+)
                 if (-not $nextRunStr) {
-                    try {
-                        $nr = $j.NextRun
-                        if ($nr -and $nr -gt [datetime]::MinValue) {
-                            $nextRunStr = $nr.ToUniversalTime().ToString("o")
-                        }
-                    } catch {}
+                    try { $nr = $j.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
                 }
-                # 3. Try NextRun on schedule options
                 if (-not $nextRunStr) {
-                    try {
-                        $nr = $opts.NextRun
-                        if ($nr -and $nr -gt [datetime]::MinValue) {
-                            $nextRunStr = $nr.ToUniversalTime().ToString("o")
-                        }
-                    } catch {}
+                    try { $nr = $opts.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
                 }
-                # 4. Compute from daily schedule time
                 if (-not $nextRunStr -and $j.IsScheduleEnabled) {
-                    try {
-                        $timeOfDay = $opts.OptionsDaily.TimeLocal
-                        if ($timeOfDay -and $timeOfDay -ne [TimeSpan]::Zero) {
-                            $nextRun = [datetime]::Today.Add($timeOfDay)
-                            if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
-                            $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
-                        }
-                    } catch {}
+                    try { $td = $opts.OptionsDaily.TimeLocal; if ($td -and $td -ne [TimeSpan]::Zero) { $nr = [datetime]::Today.Add($td); if ($nr -le $now) { $nr = $nr.AddDays(1) }; $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
                 }
-                # 5. Fallback: StartDateTime
                 if (-not $nextRunStr -and $j.IsScheduleEnabled) {
-                    try {
-                        $start = $opts.StartDateTime
-                        if ($start -and $start -gt [datetime]::MinValue) {
-                            $nextRun = [datetime]::Today.Add($start.TimeOfDay)
-                            if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
-                            $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
-                        }
-                    } catch {}
+                    try { $st = $opts.StartDateTime; if ($st -and $st -gt [datetime]::MinValue) { $nr = [datetime]::Today.Add($st.TimeOfDay); if ($nr -le $now) { $nr = $nr.AddDays(1) }; $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
                 }
             } catch {}
 
             $target = ""
             try { $target = $j.GetTargetRepository().Name } catch {}
 
-            # Distinguish Hyper-V from VMware (both have JobType=Backup)
             $typeStr = $j.JobType.ToString()
-            try {
-                if ($typeStr -eq 'Backup' -and "$($j.BackupPlatform)" -eq 'EHyperV') {
-                    $typeStr = 'HyperVBackup'
-                }
-            } catch {}
+            try { if ($typeStr -eq 'Backup' -and "$($j.BackupPlatform)" -eq 'EHyperV') { $typeStr = 'HyperVBackup' } } catch {}
 
-            $jobs += @{
+            $jobs.Add(@{
                 id         = $j.Id.ToString()
                 name       = $j.Name
                 type       = $typeStr
                 isDisabled = (-not $j.IsScheduleEnabled)
                 schedule   = @{ isEnabled = $j.IsScheduleEnabled }
-                lastRun    = if ($lastSession) { $lastSession.CreationTimeUTC.ToString("o") } else { $null }
-                lastResult = if ($lastSession) { $lastSession.Result.ToString() } else { "None" }
+                lastRun    = if ($ls) { $ls.CreationTimeUTC.ToString("o") } else { $null }
+                lastResult = if ($ls) { $ls.Result.ToString() } else { "None" }
                 objects    = $objectsCount
                 status     = $status
                 nextRun    = $nextRunStr
                 target     = $target
-            }
+            })
         }
 
         # Agent/computer backup jobs (Veeam 12+)
@@ -161,14 +143,7 @@ function Refresh-Cache {
             $agentJobs = @(Get-VBRComputerBackupJob)
             foreach ($j in $agentJobs) {
                 try {
-                    # Find last session by job name from pre-fetched sessions
-                    $lastRun = $null
-                    $lastResult = "None"
-                    $lastSession = $allSessions | Where-Object { $_.JobName -eq $j.Name } | Select-Object -First 1
-                    if ($lastSession) {
-                        $lastRun = $lastSession.CreationTimeUTC.ToString("o")
-                        $lastResult = "$($lastSession.Result)"
-                    }
+                    $ls = $latestByJob["$($j.Name)"]
 
                     $objectsCount = 0
                     try { $objectsCount = @($j.BackupObject).Count } catch {
@@ -180,32 +155,14 @@ function Refresh-Cache {
 
                     $nextRunStr = $null
                     try {
-                        # Direct NextRun property
-                        try {
-                            $nr = $j.NextRun
-                            if ($nr -and $nr -gt [datetime]::MinValue) {
-                                $nextRunStr = $nr.ToUniversalTime().ToString("o")
-                            }
-                        } catch {}
+                        try { $nr = $j.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
                         if (-not $nextRunStr) {
                             $opts = $j.GetScheduleOptions()
                             if ($opts) {
-                                try {
-                                    $nr = $opts.NextRun
-                                    if ($nr -and $nr -gt [datetime]::MinValue) {
-                                        $nextRunStr = $nr.ToUniversalTime().ToString("o")
-                                    }
-                                } catch {}
+                                try { $nr = $opts.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
                             }
                             if (-not $nextRunStr -and $opts -and $j.IsScheduleEnabled) {
-                                try {
-                                    $timeOfDay = $opts.OptionsDaily.TimeLocal
-                                    if ($timeOfDay -and $timeOfDay -ne [TimeSpan]::Zero) {
-                                        $nextRun = [datetime]::Today.Add($timeOfDay)
-                                        if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
-                                        $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
-                                    }
-                                } catch {}
+                                try { $td = $opts.OptionsDaily.TimeLocal; if ($td -and $td -ne [TimeSpan]::Zero) { $nr = [datetime]::Today.Add($td); if ($nr -le $now) { $nr = $nr.AddDays(1) }; $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
                             }
                         }
                     } catch {}
@@ -215,26 +172,23 @@ function Refresh-Cache {
                         try { $target = "$($j.GetTargetRepository().Name)" } catch {}
                     }
 
-                    # Resolve agent job type (JobType may be empty on VBRComputerBackupJob)
                     $typeStr = "$($j.JobType)"
-                    if (-not $typeStr) {
-                        try { $typeStr = "$($j.Type)" } catch {}
-                    }
+                    if (-not $typeStr) { try { $typeStr = "$($j.Type)" } catch {} }
                     if (-not $typeStr) { $typeStr = "EpAgentBackup" }
 
-                    $jobs += @{
+                    $jobs.Add(@{
                         id         = "$($j.Id)"
                         name       = "$($j.Name)"
                         type       = $typeStr
                         isDisabled = (-not $j.IsScheduleEnabled)
                         schedule   = @{ isEnabled = [bool]$j.IsScheduleEnabled }
-                        lastRun    = $lastRun
-                        lastResult = $lastResult
+                        lastRun    = if ($ls) { $ls.CreationTimeUTC.ToString("o") } else { $null }
+                        lastResult = if ($ls) { "$($ls.Result)" } else { "None" }
                         objects    = $objectsCount
                         status     = $status
                         nextRun    = $nextRunStr
                         target     = $target
-                    }
+                    })
                 } catch {
                     Write-Warning "Agent job '$($j.Name)' skipped: $_"
                 }
@@ -243,18 +197,15 @@ function Refresh-Cache {
             Write-Warning "Get-VBRComputerBackupJob failed: $_"
         }
 
-        # Tape jobs (Veeam 12+: Get-VBRTapeJob)
+        # Tape jobs (Veeam 12+)
         try {
             $tapeJobs = @(Get-VBRTapeJob)
             foreach ($j in $tapeJobs) {
+                $jobIdToName["$($j.Id)"] = "$($j.Name)"
+            }
+            foreach ($j in $tapeJobs) {
                 try {
-                    $lastRun = $null
-                    $lastResult = "None"
-                    $lastSession = $allSessions | Where-Object { $_.JobName -eq $j.Name } | Select-Object -First 1
-                    if ($lastSession) {
-                        $lastRun = $lastSession.CreationTimeUTC.ToString("o")
-                        $lastResult = "$($lastSession.Result)"
-                    }
+                    $ls = $latestByJob["$($j.Name)"]
 
                     $objectsCount = 0
                     try { $objectsCount = @($j.Object).Count } catch {
@@ -267,45 +218,18 @@ function Refresh-Cache {
                     $nextRunStr = $null
                     try {
                         $opts = $j.GetScheduleOptions()
-                        if ($opts) {
-                            # 1. After-job chain
-                            if ($opts.OptionsScheduleAfterJob.IsEnabled) {
-                                $afterId = $opts.OptionsScheduleAfterJob.Id
-                                $afterJob = $vbrJobs | Where-Object { $_.Id -eq $afterId } | Select-Object -First 1
-                                if (-not $afterJob) {
-                                    $afterJob = $tapeJobs | Where-Object { $_.Id -eq $afterId } | Select-Object -First 1
-                                }
-                                if ($afterJob) { $nextRunStr = "Apres [$($afterJob.Name)]" }
-                            }
+                        if ($opts -and $opts.OptionsScheduleAfterJob.IsEnabled) {
+                            $aName = $jobIdToName[$opts.OptionsScheduleAfterJob.Id.ToString()]
+                            if ($aName) { $nextRunStr = "Apres [$aName]" }
                         }
-                        # 2. Direct NextRun property
                         if (-not $nextRunStr) {
-                            try {
-                                $nr = $j.NextRun
-                                if ($nr -and $nr -gt [datetime]::MinValue) {
-                                    $nextRunStr = $nr.ToUniversalTime().ToString("o")
-                                }
-                            } catch {}
+                            try { $nr = $j.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
                         }
-                        # 3. Schedule options NextRun
                         if (-not $nextRunStr -and $opts) {
-                            try {
-                                $nr = $opts.NextRun
-                                if ($nr -and $nr -gt [datetime]::MinValue) {
-                                    $nextRunStr = $nr.ToUniversalTime().ToString("o")
-                                }
-                            } catch {}
+                            try { $nr = $opts.NextRun; if ($nr -and $nr -gt [datetime]::MinValue) { $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
                         }
-                        # 4. Daily time fallback
                         if (-not $nextRunStr -and $j.Enabled -and $opts) {
-                            try {
-                                $timeOfDay = $opts.OptionsDaily.TimeLocal
-                                if ($timeOfDay -and $timeOfDay -ne [TimeSpan]::Zero) {
-                                    $nextRun = [datetime]::Today.Add($timeOfDay)
-                                    if ($nextRun -le $now) { $nextRun = $nextRun.AddDays(1) }
-                                    $nextRunStr = $nextRun.ToUniversalTime().ToString("o")
-                                }
-                            } catch {}
+                            try { $td = $opts.OptionsDaily.TimeLocal; if ($td -and $td -ne [TimeSpan]::Zero) { $nr = [datetime]::Today.Add($td); if ($nr -le $now) { $nr = $nr.AddDays(1) }; $nextRunStr = $nr.ToUniversalTime().ToString("o") } } catch {}
                         }
                     } catch {}
 
@@ -314,7 +238,6 @@ function Refresh-Cache {
                         try { $target = "$($j.GetTargetRepository().Name)" } catch {}
                     }
 
-                    # Tape job type resolution
                     $typeStr = "$($j.Type)"
                     if (-not $typeStr) { $typeStr = "BackupToTape" }
 
@@ -323,19 +246,19 @@ function Refresh-Cache {
                         try { $isDisabled = (-not $j.IsScheduleEnabled) } catch {}
                     }
 
-                    $jobs += @{
+                    $jobs.Add(@{
                         id         = "$($j.Id)"
                         name       = "$($j.Name)"
                         type       = $typeStr
                         isDisabled = $isDisabled
                         schedule   = @{ isEnabled = (-not $isDisabled) }
-                        lastRun    = $lastRun
-                        lastResult = $lastResult
+                        lastRun    = if ($ls) { $ls.CreationTimeUTC.ToString("o") } else { $null }
+                        lastResult = if ($ls) { "$($ls.Result)" } else { "None" }
                         objects    = $objectsCount
                         status     = $status
                         nextRun    = $nextRunStr
                         target     = $target
-                    }
+                    })
                 } catch {
                     Write-Warning "Tape job '$($j.Name)' skipped: $_"
                 }
@@ -344,10 +267,9 @@ function Refresh-Cache {
             Write-Warning "Get-VBRTapeJob failed: $_"
         }
 
-        $script:jobsCache = ($jobs | ConvertTo-Json -Depth 5 -Compress)
-        if (-not $jobs) { $script:jobsCache = "[]" }
+        $script:jobsCache = if ($jobs.Count -gt 0) { ($jobs.ToArray() | ConvertTo-Json -Depth 5 -Compress) } else { "[]" }
 
-        # --- SESSIONS (last 50 from pre-fetched) ---
+        # --- 3. SESSIONS (last 50 from pre-fetched) ---
         $sessions = $allSessions | Select-Object -First 50 | ForEach-Object {
             @{
                 id           = $_.Id.ToString()
@@ -373,7 +295,8 @@ function Refresh-Cache {
         if (-not $sessions) { $script:sessionsCache = "[]" }
 
         $script:lastRefresh = Get-Date
-        Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Cache refreshed: $($jobs.Count) jobs, $($sessions.Count) sessions"
+        $sw.Stop()
+        Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Cache refreshed: $($jobs.Count) jobs, $(@($sessions).Count) sessions in $($sw.Elapsed.TotalSeconds.ToString('F1'))s"
     } catch {
         Write-Warning "Cache refresh failed: $_"
     }
