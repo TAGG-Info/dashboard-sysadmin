@@ -29,7 +29,7 @@ export function formatDateFR(dateStr: string): string {
 /** French date + time on separate lines (e.g. "Jeu. 19 fév. 2026" / "10:33:58") */
 export function formatDateTimeFR(dateStr: string): { date: string; time: string } {
   try {
-    const d = typeof dateStr === 'string' && dateStr.includes('T') ? parseISO(dateStr) : new Date(dateStr);
+    const d = new Date(dateStr);
     if (isNaN(d.getTime())) return { date: dateStr, time: '' };
     const raw = d.toLocaleDateString('fr-FR', {
       weekday: 'short',
