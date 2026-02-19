@@ -120,9 +120,9 @@ export function VMList() {
                         {!isLast && (
                           <div
                             onPointerDown={(e) => startResize(e, i)}
-                            className="group absolute top-0 right-0 h-full w-1.5 cursor-col-resize"
+                            className="group absolute top-0 -right-1.5 h-full w-3 cursor-col-resize"
                           >
-                            <div className="bg-border/0 group-hover:bg-border/60 mx-auto h-full w-px transition-colors" />
+                            <div className="bg-border/30 group-hover:bg-primary/60 mx-auto h-full w-px transition-colors" />
                           </div>
                         )}
                       </th>
