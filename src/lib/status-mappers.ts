@@ -32,6 +32,61 @@ export function resultLabel(result?: string): string {
   }
 }
 
+// Veeam job type → human-friendly label
+export function jobTypeLabel(type?: string): string {
+  if (!type) return 'N/A';
+  switch (type) {
+    case 'Backup':
+      return 'VMware Backup';
+    case 'HyperVBackup':
+      return 'Hyper-V Backup';
+    case 'EpAgentBackup':
+      return 'Agent Backup';
+    case 'EpAgentManagement':
+      return 'Agent Management';
+    case 'BackupToTape':
+      return 'Backup to Tape';
+    case 'VmTapeBackup':
+      return 'VM Tape Backup';
+    case 'FileTapeBackup':
+      return 'File Tape Backup';
+    case 'BackupCopy':
+    case 'SimpleBackupCopyPolicy':
+      return 'Backup Copy';
+    case 'Replica':
+      return 'Replica';
+    case 'HyperVReplica':
+      return 'Hyper-V Replica';
+    default:
+      return type;
+  }
+}
+
+// Veeam job status (Stopped/Working) → StatusLevel
+export function jobStatusToLevel(status?: string): 'healthy' | 'info' | 'neutral' {
+  if (!status) return 'neutral';
+  switch (status) {
+    case 'Working':
+      return 'info';
+    case 'Stopped':
+      return 'neutral';
+    default:
+      return 'neutral';
+  }
+}
+
+export function jobStatusLabel(status?: string): string {
+  if (!status) return 'N/A';
+  switch (status) {
+    case 'Working':
+      return 'En cours';
+    case 'Stopped':
+      return 'Arrete';
+    default:
+      return status;
+  }
+}
+
 // vCenter power state (from VMList.tsx)
 export function powerStateToStatus(state: string): 'healthy' | 'warning' | 'neutral' {
   switch (state.toUpperCase()) {

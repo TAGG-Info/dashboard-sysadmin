@@ -59,65 +59,137 @@ function Refresh-Cache {
     try {
         Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Refreshing VBR data cache..."
 
-        # Get standard VM jobs (exclude agent jobs to avoid deprecation warning)
+        # Pre-fetch all sessions once (reused for session cache + job lookups)
+        $allSessions = @(Get-VBRBackupSession | Sort-Object CreationTimeUTC -Descending)
+
+        # --- JOBS ---
         $jobs = @()
-        $jobs += Get-VBRJob -WarningAction SilentlyContinue | Where-Object { $_.JobType -ne 'EpAgentBackup' } | ForEach-Object {
-            $lastSession = $_.FindLastSession()
-            @{
-                id         = $_.Id.ToString()
-                name       = $_.Name
-                type       = $_.JobType.ToString()
-                isDisabled = (-not $_.IsScheduleEnabled)
-                schedule   = @{ isEnabled = $_.IsScheduleEnabled }
+        $now = Get-Date
+
+        # Standard VBR jobs (VMware, Hyper-V, tape, etc.) — exclude EpAgentBackup
+        $vbrJobs = @(Get-VBRJob -WarningAction SilentlyContinue | Where-Object { $_.JobType -ne 'EpAgentBackup' })
+        foreach ($j in $vbrJobs) {
+            $lastSession = $null
+            try { $lastSession = $j.FindLastSession() } catch {}
+
+            $objectsCount = 0
+            try { $objectsCount = @($j.GetObjectsInJob()).Count } catch {}
+
+            $status = "Stopped"
+            try { if ($j.IsRunning) { $status = "Working" } } catch {}
+
+            $nextRunStr = $null
+            try {
+                $opts = $j.GetScheduleOptions()
+                if ($opts.OptionsScheduleAfterJob.IsEnabled) {
+                    $afterId = $opts.OptionsScheduleAfterJob.Id
+                    $afterJob = $vbrJobs | Where-Object { $_.Id -eq $afterId } | Select-Object -First 1
+                    if ($afterJob) { $nextRunStr = "Apres [$($afterJob.Name)]" }
+                } else {
+                    try {
+                        $nr = $j.NextRun
+                        if ($nr -and $nr -gt $now) {
+                            $nextRunStr = $nr.ToUniversalTime().ToString("o")
+                        }
+                    } catch {}
+                }
+            } catch {}
+
+            $target = ""
+            try { $target = $j.GetTargetRepository().Name } catch {}
+
+            $jobs += @{
+                id         = $j.Id.ToString()
+                name       = $j.Name
+                type       = $j.JobType.ToString()
+                isDisabled = (-not $j.IsScheduleEnabled)
+                schedule   = @{ isEnabled = $j.IsScheduleEnabled }
                 lastRun    = if ($lastSession) { $lastSession.CreationTime.ToUniversalTime().ToString("o") } else { $null }
                 lastResult = if ($lastSession) { $lastSession.Result.ToString() } else { "None" }
+                objects    = $objectsCount
+                status     = $status
+                nextRun    = $nextRunStr
+                target     = $target
             }
         }
-        # Get agent/computer backup jobs (Veeam 12+ recommended cmdlet)
+
+        # Agent/computer backup jobs (Veeam 12+)
         try {
-            $jobs += Get-VBRComputerBackupJob | ForEach-Object {
-                $lastSession = $_.FindLastSession()
-                @{
-                    id         = $_.Id.ToString()
-                    name       = $_.Name
-                    type       = $_.JobType.ToString()
-                    isDisabled = (-not $_.IsScheduleEnabled)
-                    schedule   = @{ isEnabled = $_.IsScheduleEnabled }
-                    lastRun    = if ($lastSession) { $lastSession.CreationTime.ToUniversalTime().ToString("o") } else { $null }
-                    lastResult = if ($lastSession) { $lastSession.Result.ToString() } else { "None" }
+            $agentJobs = @(Get-VBRComputerBackupJob)
+            foreach ($j in $agentJobs) {
+                # Find last session by job name from pre-fetched sessions
+                $lastRun = $null
+                $lastResult = "None"
+                $lastSession = $allSessions | Where-Object { $_.JobName -eq $j.Name } | Select-Object -First 1
+                if ($lastSession) {
+                    $lastRun = $lastSession.CreationTimeUTC.ToString("o")
+                    $lastResult = $lastSession.Result.ToString()
+                }
+
+                $objectsCount = 0
+                try { $objectsCount = @($j.BackupObject).Count } catch {
+                    try { $objectsCount = @($j.GetObjectsInJob()).Count } catch {}
+                }
+
+                $status = "Stopped"
+                try { if ($j.IsRunning) { $status = "Working" } } catch {}
+
+                $nextRunStr = $null
+                try {
+                    $nr = $j.NextRun
+                    if ($nr -and $nr -gt $now) {
+                        $nextRunStr = $nr.ToUniversalTime().ToString("o")
+                    }
+                } catch {}
+
+                $target = ""
+                try { $target = $j.BackupRepository.Name } catch {
+                    try { $target = $j.GetTargetRepository().Name } catch {}
+                }
+
+                $jobs += @{
+                    id         = $j.Id.ToString()
+                    name       = $j.Name
+                    type       = $j.JobType.ToString()
+                    isDisabled = (-not $j.IsScheduleEnabled)
+                    schedule   = @{ isEnabled = $j.IsScheduleEnabled }
+                    lastRun    = $lastRun
+                    lastResult = $lastResult
+                    objects    = $objectsCount
+                    status     = $status
+                    nextRun    = $nextRunStr
+                    target     = $target
                 }
             }
         } catch {
             Write-Warning "Get-VBRComputerBackupJob failed: $_"
         }
+
         $script:jobsCache = ($jobs | ConvertTo-Json -Depth 5 -Compress)
         if (-not $jobs) { $script:jobsCache = "[]" }
 
-        # Get sessions (last 50 by default)
-        $sessions = Get-VBRBackupSession |
-            Sort-Object CreationTimeUTC -Descending |
-            Select-Object -First 50 |
-            ForEach-Object {
-                @{
-                    id           = $_.Id.ToString()
-                    name         = $_.JobName
-                    sessionType  = $_.JobType.ToString()
-                    state        = $_.State.ToString()
-                    result       = @{
-                        result  = $_.Result.ToString()
-                        message = $_.Description
-                    }
-                    progress     = $_.Progress.Percents
-                    creationTime = $_.CreationTimeUTC.ToString("o")
-                    endTime      = if ($_.EndTimeUTC -gt [datetime]::MinValue) { $_.EndTimeUTC.ToString("o") } else { $null }
-                    statistics   = @{
-                        processedSize   = $_.Progress.ProcessedSize
-                        readSize        = $_.Progress.ReadSize
-                        transferredSize = $_.Progress.TransferedSize
-                        duration        = [int]($_.Progress.Duration.TotalSeconds)
-                    }
+        # --- SESSIONS (last 50 from pre-fetched) ---
+        $sessions = $allSessions | Select-Object -First 50 | ForEach-Object {
+            @{
+                id           = $_.Id.ToString()
+                name         = $_.JobName
+                sessionType  = $_.JobType.ToString()
+                state        = $_.State.ToString()
+                result       = @{
+                    result  = $_.Result.ToString()
+                    message = $_.Description
+                }
+                progress     = $_.Progress.Percents
+                creationTime = $_.CreationTimeUTC.ToString("o")
+                endTime      = if ($_.EndTimeUTC -gt [datetime]::MinValue) { $_.EndTimeUTC.ToString("o") } else { $null }
+                statistics   = @{
+                    processedSize   = $_.Progress.ProcessedSize
+                    readSize        = $_.Progress.ReadSize
+                    transferredSize = $_.Progress.TransferedSize
+                    duration        = [int]($_.Progress.Duration.TotalSeconds)
                 }
             }
+        }
         $script:sessionsCache = ($sessions | ConvertTo-Json -Depth 5 -Compress)
         if (-not $sessions) { $script:sessionsCache = "[]" }
 

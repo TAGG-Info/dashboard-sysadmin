@@ -2,33 +2,47 @@
 
 import { useMemo } from 'react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { ExternalLink } from '@/components/ui/ExternalLink';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { InstanceSectionHeader, groupByInstance, hasMultipleInstances } from '@/components/ui/InstanceGroup';
 import { TimeAgo } from '@/components/ui/TimeAgo';
 import { useColumnResize } from '@/hooks/useColumnResize';
-import { resultToStatus, resultLabel } from '@/lib/status-mappers';
+import { resultToStatus, resultLabel, jobTypeLabel, jobStatusToLevel, jobStatusLabel } from '@/lib/status-mappers';
 import { useVeeamJobs } from '@/hooks/useVeeam';
 import { SourceLogo } from '@/components/ui/SourceLogo';
+import { format, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 const COLS = [
   { label: 'Nom', align: 'left' as const },
   { label: 'Type', align: 'left' as const },
-  { label: 'Dernier resultat', align: 'left' as const },
+  { label: 'Objets', align: 'center' as const },
+  { label: 'Statut', align: 'left' as const },
   { label: 'Dernier run', align: 'left' as const },
-  { label: 'Actif', align: 'center' as const },
-  { label: 'Lien', align: 'right' as const },
+  { label: 'Dernier resultat', align: 'left' as const },
+  { label: 'Prochain run', align: 'left' as const },
+  { label: 'Cible', align: 'left' as const },
 ] as const;
 
-const DEFAULT_WIDTHS = [220, 100, 130, 140, 100, 80];
+const DEFAULT_WIDTHS = [200, 130, 65, 85, 130, 125, 160, 200];
+
+function formatNextRun(nextRun?: string): string {
+  if (!nextRun) return '\u2014';
+  // "Apres [job_name]" → display as-is
+  if (nextRun.startsWith('Apres ') || nextRun.startsWith('After ')) return nextRun;
+  // ISO date → format as "dd/MM/yyyy HH:mm"
+  try {
+    const d = parseISO(nextRun);
+    return format(d, 'dd/MM/yyyy HH:mm', { locale: fr });
+  } catch {
+    return nextRun;
+  }
+}
 
 export function JobList() {
   const { data: jobs, loading, error, refresh } = useVeeamJobs();
   const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);
-
-  const veeamUrl = process.env.NEXT_PUBLIC_VEEAM_URL;
 
   // Group by instance
   const instanceGroups = useMemo(() => {
@@ -97,7 +111,7 @@ export function JobList() {
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-muted-foreground py-8 text-center text-sm">
+                    <td colSpan={COLS.length} className="text-muted-foreground py-8 text-center text-sm">
                       Aucun job configure
                     </td>
                   </tr>
@@ -112,24 +126,28 @@ export function JobList() {
                       </td>
                       <td className="overflow-hidden px-3 py-1.5">
                         <Badge variant="outline" className="text-xs">
-                          {job.type}
+                          {jobTypeLabel(job.type)}
                         </Badge>
+                      </td>
+                      <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-center text-xs">
+                        {job.objects ?? '\u2014'}
+                      </td>
+                      <td className="overflow-hidden px-3 py-1.5">
+                        <StatusBadge status={jobStatusToLevel(job.status)} label={jobStatusLabel(job.status)} />
+                      </td>
+                      <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-xs">
+                        {job.lastRun ? <TimeAgo date={job.lastRun} /> : <span>{'\u2014'}</span>}
                       </td>
                       <td className="overflow-hidden px-3 py-1.5">
                         <StatusBadge status={resultToStatus(job.lastResult)} label={resultLabel(job.lastResult)} />
                       </td>
                       <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-xs">
-                        {job.lastRun ? <TimeAgo date={job.lastRun} /> : <span>{'\u2014'}</span>}
+                        <span className="block truncate">{formatNextRun(job.nextRun)}</span>
                       </td>
-                      <td className="overflow-hidden px-3 py-1.5 text-center">
-                        {job.isDisabled ? (
-                          <StatusBadge status="neutral" label="Desactive" />
-                        ) : (
-                          <StatusBadge status="healthy" label="Actif" />
-                        )}
-                      </td>
-                      <td className="overflow-hidden px-3 py-1.5 text-right">
-                        {veeamUrl && <ExternalLink href={`${veeamUrl}`} label="Veeam" source="veeam" />}
+                      <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-xs">
+                        <span className="block truncate" title={job.target || ''}>
+                          {job.target || '\u2014'}
+                        </span>
                       </td>
                     </tr>
                   ))
@@ -171,16 +189,22 @@ export function JobList() {
                     <Skeleton className="h-3.5 w-20" />
                   </td>
                   <td className="px-3 py-1.5">
-                    <Skeleton className="h-3.5 w-16" />
+                    <Skeleton className="mx-auto h-3.5 w-8" />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <Skeleton className="h-3.5 w-14" />
                   </td>
                   <td className="px-3 py-1.5">
                     <Skeleton className="h-3.5 w-24" />
                   </td>
                   <td className="px-3 py-1.5">
-                    <Skeleton className="mx-auto h-3.5 w-12" />
+                    <Skeleton className="h-3.5 w-16" />
                   </td>
                   <td className="px-3 py-1.5">
-                    <Skeleton className="h-3.5 w-12" />
+                    <Skeleton className="h-3.5 w-28" />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <Skeleton className="h-3.5 w-32" />
                   </td>
                 </tr>
               ))}

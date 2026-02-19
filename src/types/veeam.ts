@@ -11,6 +11,10 @@ export interface VeeamJob {
   };
   lastRun?: string;
   lastResult?: VeeamResult;
+  objects?: number;
+  status?: string;
+  nextRun?: string;
+  target?: string;
 }
 
 export interface VeeamSession {
