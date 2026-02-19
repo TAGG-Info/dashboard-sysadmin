@@ -34,7 +34,7 @@ const ALL_COLS = [
 // Full widths: Date, Compte, Login, Fichier, Taille, Proto, Sens, TLS, Statut, Duree
 const ALL_WIDTHS = [155, 130, 100, 240, 70, 75, 50, 50, 110, 70];
 // Split widths (no Sens column): Date, Compte, Login, Fichier, Taille, Proto, TLS, Statut, Duree
-const SPLIT_WIDTHS = [120, 90, 75, 160, 55, 60, 35, 115, 55];
+const SPLIT_WIDTHS = [120, 90, 75, 145, 70, 60, 35, 115, 55];
 
 function StatusCell({ status }: { status: string }) {
   const cls =
