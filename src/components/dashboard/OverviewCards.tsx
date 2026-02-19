@@ -54,7 +54,7 @@ function Sparkline({ color }: { color: string }) {
 function OverviewCard({ title, icon, href, accentColor, children }: OverviewCardProps) {
   return (
     <Link href={href}>
-      <Card className="group relative h-full cursor-pointer overflow-hidden transition-all duration-200 hover:bg-white/[0.03]">
+      <Card className="group relative h-full cursor-pointer overflow-hidden hover:bg-white/[0.03]">
         <div
           className="absolute top-0 bottom-0 left-0 w-[3px] rounded-l-xl"
           style={{ background: `linear-gradient(180deg, ${accentColor}, ${accentColor}30)` }}

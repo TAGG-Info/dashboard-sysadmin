@@ -72,7 +72,8 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
       }
 
       fetchingRef.current = true;
-      setLoading(true);
+      // Skip loading indicator for scheduled refreshes — data stays visible, avoids double repaint
+      if (!isScheduled) setLoading(true);
 
       try {
         const response = await fetch(url, {
