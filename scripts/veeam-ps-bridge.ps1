@@ -30,7 +30,7 @@
 
 param(
     [int]$Port = 9420,
-    [int]$CacheRefreshSeconds = 120,
+    [int]$CacheRefreshSeconds = 30,
     [string]$Username = "",
     [string]$Password = ""
 )

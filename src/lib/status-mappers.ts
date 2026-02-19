@@ -62,6 +62,33 @@ export function jobTypeLabel(type?: string): string {
   }
 }
 
+// Veeam job type → colored badge CSS classes
+export function jobTypeColor(type?: string): string {
+  if (!type) return 'bg-muted/30 text-muted-foreground border-border/50';
+  switch (type) {
+    case 'Backup':
+      return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
+    case 'HyperVBackup':
+      return 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30';
+    case 'EpAgentBackup':
+      return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
+    case 'EpAgentManagement':
+      return 'bg-violet-500/15 text-violet-400 border-violet-500/30';
+    case 'BackupToTape':
+    case 'VmTapeBackup':
+    case 'FileTapeBackup':
+      return 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+    case 'BackupCopy':
+    case 'SimpleBackupCopyPolicy':
+      return 'bg-teal-500/15 text-teal-400 border-teal-500/30';
+    case 'Replica':
+    case 'HyperVReplica':
+      return 'bg-orange-500/15 text-orange-400 border-orange-500/30';
+    default:
+      return 'bg-muted/30 text-muted-foreground border-border/50';
+  }
+}
+
 // Veeam job status (Stopped/Working) → StatusLevel
 export function jobStatusToLevel(status?: string): 'healthy' | 'info' | 'neutral' {
   if (!status) return 'neutral';

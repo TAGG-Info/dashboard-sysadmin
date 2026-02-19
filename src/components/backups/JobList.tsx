@@ -1,37 +1,61 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { Search, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { InstanceSectionHeader, groupByInstance, hasMultipleInstances } from '@/components/ui/InstanceGroup';
 import { TimeAgo } from '@/components/ui/TimeAgo';
 import { useColumnResize } from '@/hooks/useColumnResize';
-import { resultToStatus, resultLabel, jobTypeLabel, jobStatusToLevel, jobStatusLabel } from '@/lib/status-mappers';
+import {
+  resultToStatus,
+  resultLabel,
+  jobTypeLabel,
+  jobTypeColor,
+  jobStatusToLevel,
+  jobStatusLabel,
+} from '@/lib/status-mappers';
 import { useVeeamJobs } from '@/hooks/useVeeam';
+import type { VeeamJobWithInstance } from '@/hooks/useVeeam';
 import { SourceLogo } from '@/components/ui/SourceLogo';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
+// --- Column definitions ---
 const COLS = [
-  { label: 'Nom', align: 'left' as const },
-  { label: 'Type', align: 'left' as const },
-  { label: 'Objets', align: 'center' as const },
-  { label: 'Statut', align: 'left' as const },
-  { label: 'Dernier run', align: 'left' as const },
-  { label: 'Dernier resultat', align: 'left' as const },
-  { label: 'Prochain run', align: 'left' as const },
-  { label: 'Cible', align: 'left' as const },
+  { key: 'name', label: 'Nom', align: 'left' as const },
+  { key: 'type', label: 'Type', align: 'left' as const },
+  { key: 'objects', label: 'Objets', align: 'center' as const },
+  { key: 'status', label: 'Statut', align: 'left' as const },
+  { key: 'lastRun', label: 'Dernier run', align: 'left' as const },
+  { key: 'lastResult', label: 'Dernier resultat', align: 'left' as const },
+  { key: 'nextRun', label: 'Prochain run', align: 'left' as const },
+  { key: 'target', label: 'Cible', align: 'left' as const },
 ] as const;
+
+type ColKey = (typeof COLS)[number]['key'];
 
 const DEFAULT_WIDTHS = [200, 130, 65, 85, 130, 125, 160, 200];
 
+// --- Type filter options (raw type → label) ---
+const TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'Backup', label: 'VMware Backup' },
+  { value: 'HyperVBackup', label: 'Hyper-V Backup' },
+  { value: 'EpAgentBackup', label: 'Agent Backup' },
+  { value: 'BackupToTape', label: 'Backup to Tape' },
+  { value: 'BackupCopy', label: 'Backup Copy' },
+  { value: 'SimpleBackupCopyPolicy', label: 'Backup Copy' },
+  { value: 'Replica', label: 'Replica' },
+];
+
+const RESULT_OPTIONS = ['Success', 'Warning', 'Failed', 'None'];
+const STATUS_OPTIONS = ['Working', 'Stopped'];
+
+// --- Helpers ---
 function formatNextRun(nextRun?: string): string {
   if (!nextRun) return '\u2014';
-  // "Apres [job_name]" → display as-is
   if (nextRun.startsWith('Apres ') || nextRun.startsWith('After ')) return nextRun;
-  // ISO date → format as "dd/MM/yyyy HH:mm"
   try {
     const d = parseISO(nextRun);
     return format(d, 'dd/MM/yyyy HH:mm', { locale: fr });
@@ -40,16 +64,117 @@ function formatNextRun(nextRun?: string): string {
   }
 }
 
+function TypeBadge({ type }: { type?: string }) {
+  const cls = jobTypeColor(type);
+  return (
+    <span
+      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium whitespace-nowrap ${cls}`}
+    >
+      {jobTypeLabel(type)}
+    </span>
+  );
+}
+
+// --- Sorting ---
+type SortDir = 'asc' | 'desc';
+
+function getSortValue(job: VeeamJobWithInstance, key: ColKey): string | number {
+  switch (key) {
+    case 'name':
+      return job.name.toLowerCase();
+    case 'type':
+      return jobTypeLabel(job.type).toLowerCase();
+    case 'objects':
+      return job.objects ?? -1;
+    case 'status':
+      return job.status ?? '';
+    case 'lastRun':
+      return job.lastRun ?? '';
+    case 'lastResult':
+      return job.lastResult ?? '';
+    case 'nextRun':
+      return job.nextRun ?? '';
+    case 'target':
+      return (job.target ?? '').toLowerCase();
+    default:
+      return '';
+  }
+}
+
+function sortJobs(jobs: VeeamJobWithInstance[], key: ColKey, dir: SortDir): VeeamJobWithInstance[] {
+  return [...jobs].sort((a, b) => {
+    const va = getSortValue(a, key);
+    const vb = getSortValue(b, key);
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
+// --- Component ---
 export function JobList() {
   const { data: jobs, loading, error, refresh } = useVeeamJobs();
   const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);
 
-  // Group by instance
-  const instanceGroups = useMemo(() => {
-    if (!jobs) return [];
-    return groupByInstance(jobs);
-  }, [jobs]);
+  // Filters
+  const [searchName, setSearchName] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [filterResult, setFilterResult] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
+  // Sort
+  const [sortKey, setSortKey] = useState<ColKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  const handleSort = useCallback(
+    (key: ColKey) => {
+      if (sortKey === key) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortKey(key);
+        setSortDir('asc');
+      }
+    },
+    [sortKey],
+  );
+
+  const hasFilters = searchName || filterType || filterResult || filterStatus;
+
+  const clearFilters = useCallback(() => {
+    setSearchName('');
+    setFilterType('');
+    setFilterResult('');
+    setFilterStatus('');
+  }, []);
+
+  // Filter + sort
+  const processedJobs = useMemo(() => {
+    if (!jobs) return [];
+    let filtered = jobs;
+
+    if (searchName) {
+      const q = searchName.toLowerCase();
+      filtered = filtered.filter((j) => j.name.toLowerCase().includes(q));
+    }
+    if (filterType) {
+      filtered = filtered.filter((j) => j.type === filterType);
+    }
+    if (filterResult) {
+      filtered = filtered.filter((j) => (j.lastResult ?? 'None') === filterResult);
+    }
+    if (filterStatus) {
+      filtered = filtered.filter((j) => (j.status ?? 'Stopped') === filterStatus);
+    }
+
+    if (sortKey) {
+      filtered = sortJobs(filtered, sortKey, sortDir);
+    }
+
+    return filtered;
+  }, [jobs, searchName, filterType, filterResult, filterStatus, sortKey, sortDir]);
+
+  // Group by instance (after filter+sort)
+  const instanceGroups = useMemo(() => groupByInstance(processedJobs), [processedJobs]);
   const multipleInstances = jobs ? hasMultipleInstances(jobs) : false;
 
   const tableWidth = widths.reduce((a, b) => a + b, 0);
@@ -60,11 +185,17 @@ export function JobList() {
 
   return (
     <div className="space-y-3">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
           <SourceLogo source="veeam" size={16} />
           Jobs de backup
-          {jobs && <span className="text-muted-foreground ml-2 text-sm font-normal">({jobs.length})</span>}
+          {jobs && (
+            <span className="text-muted-foreground ml-2 text-sm font-normal">
+              ({processedJobs.length}
+              {processedJobs.length !== jobs.length ? ` / ${jobs.length}` : ''})
+            </span>
+          )}
         </h3>
         <button
           onClick={resetWidths}
@@ -75,6 +206,70 @@ export function JobList() {
         </button>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2">
+        <div className="relative">
+          <Search className="text-muted-foreground absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Nom du job..."
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+            className="bg-muted/20 border-border/50 focus:ring-ring h-8 w-44 rounded border pr-3 pl-7 text-sm focus:ring-1 focus:outline-none"
+          />
+        </div>
+
+        <select
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          className="bg-muted/20 border-border/50 focus:ring-ring h-8 rounded border px-2 text-sm focus:ring-1 focus:outline-none"
+        >
+          <option value="">Tous types</option>
+          {TYPE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={filterResult}
+          onChange={(e) => setFilterResult(e.target.value)}
+          className="bg-muted/20 border-border/50 focus:ring-ring h-8 rounded border px-2 text-sm focus:ring-1 focus:outline-none"
+        >
+          <option value="">Tous resultats</option>
+          {RESULT_OPTIONS.map((r) => (
+            <option key={r} value={r}>
+              {resultLabel(r)}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="bg-muted/20 border-border/50 focus:ring-ring h-8 rounded border px-2 text-sm focus:ring-1 focus:outline-none"
+        >
+          <option value="">Tous statuts</option>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {jobStatusLabel(s)}
+            </option>
+          ))}
+        </select>
+
+        {hasFilters && (
+          <button
+            onClick={clearFilters}
+            className="text-muted-foreground hover:text-foreground flex h-8 items-center gap-1 text-xs transition-colors"
+          >
+            <X className="h-3 w-3" />
+            Reinitialiser
+          </button>
+        )}
+      </div>
+
+      {/* Tables by instance */}
       {instanceGroups.map(({ instanceId, instanceName, items }) => (
         <div key={instanceId}>
           {multipleInstances && <InstanceSectionHeader instanceName={instanceName} className="mb-2" />}
@@ -89,12 +284,27 @@ export function JobList() {
                 <tr className="border-border/50 bg-muted/20 border-b">
                   {COLS.map((col, i) => {
                     const isLast = i === COLS.length - 1;
+                    const isSorted = sortKey === col.key;
                     return (
                       <th
-                        key={col.label}
+                        key={col.key}
                         className={`bg-muted/20 text-muted-foreground relative sticky top-0 z-10 px-3 py-2 text-xs font-medium select-none text-${col.align}`}
                       >
-                        <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{col.label}</span>
+                        <button
+                          onClick={() => handleSort(col.key)}
+                          className="hover:text-foreground inline-flex items-center gap-1 transition-colors"
+                        >
+                          <span className="overflow-hidden text-ellipsis whitespace-nowrap">{col.label}</span>
+                          {isSorted ? (
+                            sortDir === 'asc' ? (
+                              <ArrowUp className="h-3 w-3 shrink-0" />
+                            ) : (
+                              <ArrowDown className="h-3 w-3 shrink-0" />
+                            )
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-40" />
+                          )}
+                        </button>
                         {!isLast && (
                           <div
                             onPointerDown={(e) => startResize(e, i)}
@@ -112,7 +322,7 @@ export function JobList() {
                 {items.length === 0 ? (
                   <tr>
                     <td colSpan={COLS.length} className="text-muted-foreground py-8 text-center text-sm">
-                      Aucun job configure
+                      {hasFilters ? 'Aucun job correspondant aux filtres' : 'Aucun job configure'}
                     </td>
                   </tr>
                 ) : (
@@ -125,9 +335,7 @@ export function JobList() {
                         <span className="block truncate">{job.name}</span>
                       </td>
                       <td className="overflow-hidden px-3 py-1.5">
-                        <Badge variant="outline" className="text-xs">
-                          {jobTypeLabel(job.type)}
-                        </Badge>
+                        <TypeBadge type={job.type} />
                       </td>
                       <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-center text-xs">
                         {job.objects ?? '\u2014'}
@@ -158,7 +366,7 @@ export function JobList() {
         </div>
       ))}
 
-      {/* Show loading skeletons when no data */}
+      {/* Loading skeletons */}
       {loading && !jobs && instanceGroups.length === 0 && (
         <div className="border-border/50 overflow-x-auto rounded-lg border">
           <table className="table-fixed text-sm" style={{ width: tableWidth }}>
@@ -171,7 +379,7 @@ export function JobList() {
               <tr className="border-border/50 bg-muted/20 border-b">
                 {COLS.map((col) => (
                   <th
-                    key={col.label}
+                    key={col.key}
                     className={`text-muted-foreground px-3 py-2 text-xs font-medium select-none text-${col.align}`}
                   >
                     {col.label}
@@ -182,30 +390,11 @@ export function JobList() {
             <tbody>
               {Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="border-border/30 border-b">
-                  <td className="px-3 py-1.5">
-                    <Skeleton className="h-3.5 w-40" />
-                  </td>
-                  <td className="px-3 py-1.5">
-                    <Skeleton className="h-3.5 w-20" />
-                  </td>
-                  <td className="px-3 py-1.5">
-                    <Skeleton className="mx-auto h-3.5 w-8" />
-                  </td>
-                  <td className="px-3 py-1.5">
-                    <Skeleton className="h-3.5 w-14" />
-                  </td>
-                  <td className="px-3 py-1.5">
-                    <Skeleton className="h-3.5 w-24" />
-                  </td>
-                  <td className="px-3 py-1.5">
-                    <Skeleton className="h-3.5 w-16" />
-                  </td>
-                  <td className="px-3 py-1.5">
-                    <Skeleton className="h-3.5 w-28" />
-                  </td>
-                  <td className="px-3 py-1.5">
-                    <Skeleton className="h-3.5 w-32" />
-                  </td>
+                  {Array.from({ length: COLS.length }).map((_, j) => (
+                    <td key={j} className="px-3 py-1.5">
+                      <Skeleton className="h-3.5 w-full" />
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
