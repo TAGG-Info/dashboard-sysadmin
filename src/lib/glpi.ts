@@ -137,19 +137,38 @@ export class GLPIClient {
     params.append('order', 'DESC');
     params.append('range', '0-199');
 
-    const result = await this.request<GLPISearchResponse>(`/search/Ticket?${params.toString()}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await this.request<any>(`/search/Ticket?${params.toString()}`);
 
-    if (!result.data || !Array.isArray(result.data)) {
+    loggers.glpi.info(
+      {
+        keys: Object.keys(result),
+        totalcount: result.totalcount,
+        count: result.count,
+        dataType: typeof result.data,
+        dataIsArray: Array.isArray(result.data),
+        sample: JSON.stringify(Array.isArray(result.data) ? result.data[0] : result.data).slice(0, 500),
+      },
+      'GLPI search raw response',
+    );
+
+    // GLPI search peut retourner data comme array ou object (as_map)
+    let rows: Record<string, string | number | null>[];
+    if (Array.isArray(result.data)) {
+      rows = result.data;
+    } else if (result.data && typeof result.data === 'object') {
+      rows = Object.values(result.data);
+    } else {
       loggers.glpi.warn(
         { totalcount: result.totalcount, response: JSON.stringify(result).slice(0, 500) },
-        'GLPI search returned no data array',
+        'GLPI search returned no data',
       );
       return [];
     }
 
-    loggers.glpi.info({ totalcount: result.totalcount, count: result.count }, 'GLPI search tickets fetched');
+    loggers.glpi.info({ totalcount: result.totalcount, count: rows.length }, 'GLPI search tickets parsed');
 
-    return result.data.map((row) => ({
+    return rows.map((row) => ({
       id: Number(row[SF.ID]),
       name: String(row[SF.NAME] ?? ''),
       status: Number(row[SF.STATUS]) as GLPITicketStatus,
