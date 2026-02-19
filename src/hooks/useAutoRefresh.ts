@@ -44,69 +44,72 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
   const mountedRef = useRef(true);
   const fetchingRef = useRef(false);
 
-  const fetchData = useCallback(async (isScheduled = false) => {
-    if (fetchingRef.current) return;
+  const fetchData = useCallback(
+    async (isScheduled = false) => {
+      if (fetchingRef.current) return;
 
-    // After repeated failures, slow down: skip scheduled fetches
-    // and only retry at longer intervals (2x, 4x, max 8x the normal interval)
-    if (isScheduled && consecutiveFailsRef.current >= 1) {
-      const skipFactor = Math.min(consecutiveFailsRef.current, 3);
-      scheduledCountRef.current += 1;
-      if (scheduledCountRef.current % Math.pow(2, skipFactor) !== 0) {
-        return;
-      }
-    }
-
-    fetchingRef.current = true;
-    setLoading(true);
-
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // After repeated failures, slow down: skip scheduled fetches
+      // and only retry at longer intervals (2x, 4x, max 8x the normal interval)
+      if (isScheduled && consecutiveFailsRef.current >= 1) {
+        const skipFactor = Math.min(consecutiveFailsRef.current, 3);
+        scheduledCountRef.current += 1;
+        if (scheduledCountRef.current % Math.pow(2, skipFactor) !== 0) {
+          return;
+        }
       }
 
-      const json = await response.json();
+      fetchingRef.current = true;
+      setLoading(true);
 
-      if (!mountedRef.current) return;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error('Service injoignable');
+        }
 
-      // Handle ApiResponse wrapper format
-      const actualData = json.data !== undefined ? json.data : json;
-      const stale = json._stale === true;
+        const json = await response.json();
 
-      setData(actualData as T);
-      setIsStale(stale);
-      setError(null);
-      setLastUpdated(new Date());
-      retryCountRef.current = 0;
-      consecutiveFailsRef.current = 0;
-    } catch (err) {
-      if (!mountedRef.current) return;
+        if (!mountedRef.current) return;
 
-      const error = err instanceof Error ? err : new Error(String(err));
-      setError(error);
+        // Handle ApiResponse wrapper format
+        const actualData = json.data !== undefined ? json.data : json;
+        const stale = json._stale === true;
 
-      // Retry with exponential backoff (only on initial/manual fetch, not scheduled)
-      if (!isScheduled && retryCountRef.current < MAX_RETRIES) {
-        const backoff = BACKOFF_BASE * Math.pow(2, retryCountRef.current);
-        retryCountRef.current += 1;
-        setTimeout(() => {
-          if (mountedRef.current) {
-            fetchingRef.current = false;
-            fetchData(false);
-          }
-        }, backoff);
-        return;
+        setData(actualData as T);
+        setIsStale(stale);
+        setError(null);
+        setLastUpdated(new Date());
+        retryCountRef.current = 0;
+        consecutiveFailsRef.current = 0;
+      } catch (err) {
+        if (!mountedRef.current) return;
+
+        const error = err instanceof Error ? err : new Error(String(err));
+        setError(error);
+
+        // Retry with exponential backoff (only on initial/manual fetch, not scheduled)
+        if (!isScheduled && retryCountRef.current < MAX_RETRIES) {
+          const backoff = BACKOFF_BASE * Math.pow(2, retryCountRef.current);
+          retryCountRef.current += 1;
+          setTimeout(() => {
+            if (mountedRef.current) {
+              fetchingRef.current = false;
+              fetchData(false);
+            }
+          }, backoff);
+          return;
+        }
+
+        consecutiveFailsRef.current += 1;
+      } finally {
+        if (mountedRef.current) {
+          setLoading(false);
+          fetchingRef.current = false;
+        }
       }
-
-      consecutiveFailsRef.current += 1;
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-        fetchingRef.current = false;
-      }
-    }
-  }, [url]);
+    },
+    [url],
+  );
 
   const refresh = useCallback(async () => {
     retryCountRef.current = 0;

@@ -28,7 +28,7 @@ function DeviceSensors({ deviceId }: { deviceId: number }) {
 
   if (loading && !sensors) {
     return (
-      <div className="space-y-2 pl-4 pt-2">
+      <div className="space-y-2 pt-2 pl-4">
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-16 w-full rounded-lg" />
         ))}
@@ -38,14 +38,14 @@ function DeviceSensors({ deviceId }: { deviceId: number }) {
 
   if (!sensors || sensors.length === 0) {
     return (
-      <div className="pl-4 pt-2">
-        <p className="text-sm text-muted-foreground">Aucun sensor</p>
+      <div className="pt-2 pl-4">
+        <p className="text-muted-foreground text-sm">Aucun sensor</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-2 pl-4 pt-2 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-2 pt-2 pl-4 sm:grid-cols-2 lg:grid-cols-3">
       {sensors.map((sensor) => (
         <SensorCard key={sensor.id} sensor={sensor} />
       ))}
@@ -59,44 +59,35 @@ function DeviceCard({ device }: { device: PRTGDevice }) {
   const prtgUrl = process.env.NEXT_PUBLIC_PRTG_URL || '';
 
   return (
-    <Card className={cn(
-      'transition-colors',
-      expanded && 'ring-1 ring-border'
-    )}>
+    <Card className={cn('transition-colors', expanded && 'ring-border ring-1')}>
       <CardContent className="p-0">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-accent/30"
+          className="hover:bg-accent/30 flex w-full items-center gap-3 p-4 text-left transition-colors"
         >
           {/* Expand/collapse icon */}
-          <div className="shrink-0 text-muted-foreground">
-            {expanded ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
+          <div className="text-muted-foreground shrink-0">
+            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </div>
 
           {/* Status dot */}
           <div
-            className="h-3 w-3 rounded-full shrink-0"
+            className="h-3 w-3 shrink-0 rounded-full"
             style={{ backgroundColor: statusColors[device.status] || '#6b7280' }}
           />
 
           {/* Device info */}
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <Monitor className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <p className="text-sm font-medium text-foreground truncate">
-                {device.name}
-              </p>
+              <Monitor className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+              <p className="text-foreground truncate text-sm font-medium">{device.name}</p>
             </div>
-            <p className="text-sm text-muted-foreground">{device.host}</p>
+            <p className="text-muted-foreground text-sm">{device.host}</p>
           </div>
 
           {/* Sensor counts */}
           {sensors && (
-            <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+            <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
               {sensors.up > 0 && (
                 <span className="text-sm font-medium" style={{ color: '#10b981' }}>
                   {sensors.up}
@@ -126,29 +117,19 @@ function DeviceCard({ device }: { device: PRTGDevice }) {
           )}
 
           {/* Status badge */}
-          <StatusBadge
-            status={prtgStatusToLevel(device.status)}
-            label={device.status}
-          />
+          <StatusBadge status={prtgStatusToLevel(device.status)} label={device.status} />
 
           {/* External link */}
           {prtgUrl && (
-            <div
-              className="shrink-0"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ExternalLink
-                href={`${prtgUrl}/device.htm?id=${device.id}`}
-                label="PRTG"
-                source="prtg"
-              />
+            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+              <ExternalLink href={`${prtgUrl}/device.htm?id=${device.id}`} label="PRTG" source="prtg" />
             </div>
           )}
         </button>
 
         {/* Expanded sensors */}
         {expanded && (
-          <div className="border-t border-border p-4">
+          <div className="border-border border-t p-4">
             <DeviceSensors deviceId={device.id} />
           </div>
         )}
@@ -173,7 +154,7 @@ export function DeviceTree({ refreshSignal }: { refreshSignal?: number }) {
   if (loading && !devices) {
     return (
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">Devices</h2>
+        <h2 className="text-foreground text-sm font-semibold">Devices</h2>
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-16 w-full rounded-xl" />
@@ -186,11 +167,9 @@ export function DeviceTree({ refreshSignal }: { refreshSignal?: number }) {
   if (error) {
     return (
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">Devices</h2>
-        <div className="flex items-center justify-center rounded-lg border border-destructive/30 p-8">
-          <p className="text-sm text-destructive">
-            Erreur de chargement: {error.message}
-          </p>
+        <h2 className="text-foreground text-sm font-semibold">Devices</h2>
+        <div className="border-destructive/30 flex items-center justify-center rounded-lg border p-8">
+          <p className="text-destructive text-sm">Erreur de chargement</p>
         </div>
       </div>
     );
@@ -199,9 +178,9 @@ export function DeviceTree({ refreshSignal }: { refreshSignal?: number }) {
   if (!devices || devices.length === 0) {
     return (
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">Devices</h2>
-        <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border p-8">
-          <p className="text-sm text-muted-foreground">Aucun device PRTG</p>
+        <h2 className="text-foreground text-sm font-semibold">Devices</h2>
+        <div className="border-border flex items-center justify-center rounded-lg border-2 border-dashed p-8">
+          <p className="text-muted-foreground text-sm">Aucun device PRTG</p>
         </div>
       </div>
     );
@@ -210,16 +189,12 @@ export function DeviceTree({ refreshSignal }: { refreshSignal?: number }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-foreground">Devices</h2>
-        <span className="text-sm text-muted-foreground">
-          {devices.length} devices
-        </span>
+        <h2 className="text-foreground text-sm font-semibold">Devices</h2>
+        <span className="text-muted-foreground text-sm">{devices.length} devices</span>
       </div>
       {instanceGroups.map(({ instanceId, instanceName, items }) => (
         <div key={instanceId} className="space-y-2">
-          {multipleInstances && (
-            <InstanceSectionHeader instanceName={instanceName} />
-          )}
+          {multipleInstances && <InstanceSectionHeader instanceName={instanceName} />}
           {items.map((device) => (
             <DeviceCard key={`${instanceId}-${device.id}`} device={device} />
           ))}

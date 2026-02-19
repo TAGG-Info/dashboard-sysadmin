@@ -31,7 +31,7 @@ function statusToLevel(status: string): 'healthy' | 'warning' | 'critical' | 'in
 
 function PriorityStars({ priority }: { priority: number }) {
   return (
-    <span className="text-sm text-muted-foreground" title={`Priorite: ${priority}/5`}>
+    <span className="text-muted-foreground text-sm" title={`Priorite: ${priority}/5`}>
       {'*'.repeat(Math.min(priority, 5))}
     </span>
   );
@@ -41,37 +41,23 @@ function AlertItem({ sensor }: { sensor: PRTGSensor }) {
   const prtgUrl = process.env.NEXT_PUBLIC_PRTG_URL || '';
 
   return (
-    <div className="flex items-start justify-between gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent/30">
+    <div className="border-border hover:bg-accent/30 flex items-start justify-between gap-3 rounded-lg border p-3 transition-colors">
       <div className="flex-1 space-y-1">
         <div className="flex items-center gap-2">
           <StatusBadge status={statusToLevel(sensor.status)} label={sensor.status} />
           <PriorityStars priority={sensor.priority} />
         </div>
-        <p className="text-sm font-medium text-foreground">{sensor.name}</p>
-        {sensor.parentDeviceName && (
-          <p className="text-sm text-muted-foreground">{sensor.parentDeviceName}</p>
-        )}
+        <p className="text-foreground text-sm font-medium">{sensor.name}</p>
+        {sensor.parentDeviceName && <p className="text-muted-foreground text-sm">{sensor.parentDeviceName}</p>}
         {sensor.metrics?.lastValue && (
-          <p className="text-sm text-muted-foreground">
-            Valeur: {sensor.metrics.lastValue}
-          </p>
+          <p className="text-muted-foreground text-sm">Valeur: {sensor.metrics.lastValue}</p>
         )}
-        {sensor.metrics?.message && (
-          <p className="text-sm text-muted-foreground/70 italic">
-            {sensor.metrics.message}
-          </p>
-        )}
+        {sensor.metrics?.message && <p className="text-muted-foreground/70 text-sm italic">{sensor.metrics.message}</p>}
       </div>
-      <div className="flex flex-col items-end gap-1 shrink-0">
-        {sensor.metrics?.lastCheck && (
-          <TimeAgo date={sensor.metrics.lastCheck} />
-        )}
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        {sensor.metrics?.lastCheck && <TimeAgo date={sensor.metrics.lastCheck} />}
         {prtgUrl && (
-          <ExternalLink
-            href={`${prtgUrl}/sensor.htm?id=${sensor.id}`}
-            label="Ouvrir dans PRTG"
-            source="prtg"
-          />
+          <ExternalLink href={`${prtgUrl}/sensor.htm?id=${sensor.id}`} label="Ouvrir dans PRTG" source="prtg" />
         )}
       </div>
     </div>
@@ -112,9 +98,7 @@ export function AlertList() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-semibold">
-          Alertes actives
-        </CardTitle>
+        <CardTitle className="text-sm font-semibold">Alertes actives</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         {loading && !alerts ? (
@@ -124,28 +108,20 @@ export function AlertList() {
             ))}
           </div>
         ) : error ? (
-          <div className="flex items-center justify-center rounded-lg border border-destructive/30 p-6">
-            <p className="text-sm text-destructive">
-              Erreur de chargement des alertes: {error.message}
-            </p>
+          <div className="border-destructive/30 flex items-center justify-center rounded-lg border p-6">
+            <p className="text-destructive text-sm">Erreur de chargement des alertes</p>
           </div>
         ) : !alerts || alerts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-8 text-center">
+          <div className="border-border flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
             <CheckCircle className="mb-2 h-8 w-8 text-[#10b981]" />
-            <p className="text-sm font-medium text-foreground">
-              Aucune alerte active
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Tous les sensors fonctionnent normalement
-            </p>
+            <p className="text-foreground text-sm font-medium">Aucune alerte active</p>
+            <p className="text-muted-foreground text-sm">Tous les sensors fonctionnent normalement</p>
           </div>
         ) : (
           <div className="space-y-2">
             {instanceGroups.map(([instanceId, { instanceName, items }]) => (
               <div key={instanceId}>
-                {hasMultipleInstances && (
-                  <InstanceSectionHeader instanceName={instanceName} className="mb-2" />
-                )}
+                {hasMultipleInstances && <InstanceSectionHeader instanceName={instanceName} className="mb-2" />}
                 {items.map((sensor) => (
                   <AlertItem key={`${instanceId}-${sensor.id}`} sensor={sensor} />
                 ))}
