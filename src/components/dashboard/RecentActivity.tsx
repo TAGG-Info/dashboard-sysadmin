@@ -173,7 +173,7 @@ export function RecentActivity({ prtgAlerts, veeamSessions }: RecentActivityProp
           {/* Vertical timeline line */}
           <div className="bg-border/50 absolute top-3 bottom-3 left-[15px] w-px" />
 
-          {events.map((event, index) => (
+          {events.map((event) => (
             <div key={event.id} className="group relative flex gap-3 py-2.5 pl-1">
               {/* Timeline dot */}
               <div className="relative z-10 mt-0.5 shrink-0">

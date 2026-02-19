@@ -32,7 +32,8 @@ async function getRedis(): Promise<import('ioredis').default | null> {
   }
 }
 
-// In-memory fallback
+// In-memory fallback with LRU eviction
+const MAX_MEMORY_ENTRIES = 500;
 const memoryCache = new Map<string, string>();
 const memoryTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -40,7 +41,25 @@ const memoryTimers = new Map<string, ReturnType<typeof setTimeout>>();
 // arrive for the same key with an empty/expired cache.
 const inFlight = new Map<string, Promise<unknown>>();
 
+function memoryEvict(): void {
+  // FIFO eviction: delete the oldest entry (first key in Map insertion order)
+  const oldest = memoryCache.keys().next().value;
+  if (oldest !== undefined) {
+    const timer = memoryTimers.get(oldest);
+    if (timer) clearTimeout(timer);
+    memoryTimers.delete(oldest);
+    memoryCache.delete(oldest);
+  }
+}
+
 function memorySet(key: string, value: string, maxTtlMs: number): void {
+  // LRU: evict if at capacity (skip if updating existing key)
+  if (!memoryCache.has(key)) {
+    while (memoryCache.size >= MAX_MEMORY_ENTRIES) {
+      memoryEvict();
+    }
+  }
+
   memoryCache.set(key, value);
 
   // Clear existing timer
@@ -123,13 +142,35 @@ export async function cacheSet<T>(key: string, data: T, ttlMs: number): Promise<
 }
 
 /**
- * Fetch-with-deduplication: checks cache first, then deduplicates concurrent fetches
- * for the same key to prevent cache stampede on cold start or simultaneous expiry.
+ * Stale-while-revalidate fetch with deduplication.
+ * 1. Fresh cache hit → return immediately
+ * 2. Stale cache hit → return stale data + fire-and-forget background revalidation
+ * 3. Cold miss → block on fetch (deduplicated via inFlight map)
  */
 export async function cacheFetch<T>(key: string, ttlMs: number, fetcher: () => Promise<T>): Promise<T> {
+  // 1. Fresh cache → instant return
   const cached = await cacheGet<T>(key);
   if (cached !== null) return cached;
 
+  // 2. Stale cache → return immediately, revalidate in background
+  const stale = await cacheGetStale<T>(key);
+  if (stale !== null) {
+    if (!inFlight.has(key)) {
+      const revalidate = fetcher()
+        .then(async (data) => {
+          await cacheSet(key, data, ttlMs);
+          inFlight.delete(key);
+          return data;
+        })
+        .catch(() => {
+          inFlight.delete(key);
+        });
+      inFlight.set(key, revalidate);
+    }
+    return stale;
+  }
+
+  // 3. Cold miss → block on fetch (deduplicated)
   const existing = inFlight.get(key) as Promise<T> | undefined;
   if (existing) return existing;
 

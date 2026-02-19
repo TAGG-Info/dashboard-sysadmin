@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { MetricGauge } from '@/components/ui/MetricGauge';
 import { ExternalLink } from '@/components/ui/ExternalLink';
-import { TimeAgo } from '@/components/ui/TimeAgo';
 import type { ProxmoxNode } from '@/types/proxmox';
 
 interface ProxmoxNodeCardProps {
@@ -34,13 +33,8 @@ export function ProxmoxNodeCard({ node }: ProxmoxNodeCardProps) {
     <Card className="bg-card border-border/50">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-foreground">
-            {node.node}
-          </CardTitle>
-          <StatusBadge
-            status={isOnline ? 'healthy' : 'critical'}
-            label={isOnline ? 'Online' : 'Offline'}
-          />
+          <CardTitle className="text-foreground text-sm font-medium">{node.node}</CardTitle>
+          <StatusBadge status={isOnline ? 'healthy' : 'critical'} label={isOnline ? 'Online' : 'Offline'} />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -51,18 +45,12 @@ export function ProxmoxNodeCard({ node }: ProxmoxNodeCardProps) {
               <MetricGauge value={ramPercent} label="RAM" size="sm" />
               <MetricGauge value={diskPercent} label="Disk" size="sm" />
             </div>
-            <div className="text-sm text-muted-foreground text-center">
-              Uptime : {formatUptime(node.uptime)}
-            </div>
+            <div className="text-muted-foreground text-center text-sm">Uptime : {formatUptime(node.uptime)}</div>
           </>
         )}
 
         {proxmoxUrl && (
-          <ExternalLink
-            href={`${proxmoxUrl}/#v1:0:=node/${node.node}`}
-            label="Proxmox"
-            source="proxmox"
-          />
+          <ExternalLink href={`${proxmoxUrl}/#v1:0:=node/${node.node}`} label="Proxmox" source="proxmox" />
         )}
       </CardContent>
     </Card>

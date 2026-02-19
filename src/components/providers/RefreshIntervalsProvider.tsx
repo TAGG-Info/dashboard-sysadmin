@@ -8,6 +8,7 @@ export interface RefreshIntervals {
   veeam: number;
   tickets: number;
   transfers: number;
+  transferLogs: number;
 }
 
 interface RefreshIntervalsContextValue {
@@ -23,6 +24,7 @@ const DEFAULTS: RefreshIntervals = {
   veeam: Math.max(10000, Number(process.env.NEXT_PUBLIC_REFRESH_VEEAM) || 120000),
   tickets: Math.max(10000, Number(process.env.NEXT_PUBLIC_REFRESH_TICKETS) || 60000),
   transfers: Math.max(10000, Number(process.env.NEXT_PUBLIC_REFRESH_TRANSFERS) || 120000),
+  transferLogs: Math.max(10000, Number(process.env.NEXT_PUBLIC_REFRESH_ST_LOGS) || 30000),
 };
 
 const RefreshIntervalsContext = createContext<RefreshIntervalsContextValue>({
@@ -44,11 +46,11 @@ export function RefreshIntervalsProvider({ children }: { children: React.ReactNo
     mountedRef.current = true;
 
     fetch('/api/settings/refresh')
-      .then(res => {
+      .then((res) => {
         if (!res.ok) throw new Error();
         return res.json();
       })
-      .then(data => {
+      .then((data) => {
         if (mountedRef.current && data?.intervals) {
           setIntervals(data.intervals);
         }
@@ -60,7 +62,9 @@ export function RefreshIntervalsProvider({ children }: { children: React.ReactNo
         if (mountedRef.current) setLoading(false);
       });
 
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   const updateIntervals = useCallback(async (partial: Partial<RefreshIntervals>): Promise<boolean> => {

@@ -7,7 +7,6 @@ import { TimeAgo } from '@/components/ui/TimeAgo';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useVeeamSessions } from '@/hooks/useVeeam';
-import { cn } from '@/lib/utils';
 
 function sessionResultToStatus(result: string): 'healthy' | 'warning' | 'critical' | 'neutral' | 'info' {
   switch (result.toLowerCase()) {
@@ -102,22 +101,15 @@ export function SessionTimeline() {
   }, [sessions]);
 
   if (error && !sessions) {
-    return (
-      <ErrorState
-        title="Erreur Sessions Veeam"
-        message={error.message}
-        source="Veeam"
-        onRetry={refresh}
-      />
-    );
+    return <ErrorState title="Erreur Sessions Veeam" message={error.message} source="Veeam" onRetry={refresh} />;
   }
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-foreground">
+      <h3 className="text-foreground text-sm font-semibold">
         Sessions recentes
         {sessions && (
-          <span className="ml-2 text-sm text-muted-foreground font-normal">
+          <span className="text-muted-foreground ml-2 text-sm font-normal">
             ({Math.min(sessions.length, 20)} dernieres)
           </span>
         )}
@@ -127,17 +119,15 @@ export function SessionTimeline() {
         {loading && !sessions ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-start gap-3 py-3">
-              <Skeleton className="h-3 w-3 rounded-full mt-0.5 shrink-0" />
-              <div className="space-y-1 flex-1">
+              <Skeleton className="mt-0.5 h-3 w-3 shrink-0 rounded-full" />
+              <div className="flex-1 space-y-1">
                 <Skeleton className="h-3 w-40" />
                 <Skeleton className="h-3 w-24" />
               </div>
             </div>
           ))
         ) : recentSessions.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">
-            Aucune session
-          </p>
+          <p className="text-muted-foreground py-4 text-center text-sm">Aucune session</p>
         ) : (
           recentSessions.map((session, index) => {
             const result = session.result.result;
@@ -145,58 +135,45 @@ export function SessionTimeline() {
             const isLast = index === recentSessions.length - 1;
 
             return (
-              <div key={session.id} className="flex items-start gap-3 relative">
+              <div key={session.id} className="relative flex items-start gap-3">
                 {/* Timeline line */}
-                {!isLast && (
-                  <div
-                    className="absolute left-[5px] top-[18px] bottom-0 w-[1px] bg-border/50"
-                  />
-                )}
+                {!isLast && <div className="bg-border/50 absolute top-[18px] bottom-0 left-[5px] w-[1px]" />}
 
                 {/* Timeline dot */}
                 <div
-                  className="h-[11px] w-[11px] rounded-full shrink-0 mt-1.5 relative z-10 ring-2 ring-background"
+                  className="ring-background relative z-10 mt-1.5 h-[11px] w-[11px] shrink-0 rounded-full ring-2"
                   style={{ backgroundColor: dotColor }}
                 />
 
                 {/* Content */}
-                <div className="flex-1 pb-4 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-foreground truncate">
-                      {session.name}
-                    </span>
+                <div className="min-w-0 flex-1 pb-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-foreground truncate text-sm font-medium">{session.name}</span>
                     {hasMultipleInstances && session._instanceName && (
-                      <Badge variant="outline" className="text-sm text-muted-foreground border-border/50">
+                      <Badge variant="outline" className="text-muted-foreground border-border/50 text-sm">
                         {session._instanceName}
                       </Badge>
                     )}
-                    <StatusBadge
-                      status={sessionResultToStatus(result)}
-                      label={sessionResultLabel(result)}
-                    />
+                    <StatusBadge status={sessionResultToStatus(result)} label={sessionResultLabel(result)} />
                   </div>
-                  <div className="flex items-center gap-3 mt-1">
+                  <div className="mt-1 flex items-center gap-3">
                     <TimeAgo date={session.creationTime} />
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       Duree : {formatDuration(session.creationTime, session.endTime)}
                     </span>
                   </div>
                   {session.result.message && (
-                    <p className="text-sm text-muted-foreground/70 mt-0.5 truncate">
-                      {session.result.message}
-                    </p>
+                    <p className="text-muted-foreground/70 mt-0.5 truncate text-sm">{session.result.message}</p>
                   )}
                   {session.progress !== undefined && session.state === 'Working' && (
                     <div className="mt-1.5 flex items-center gap-2">
-                      <div className="h-1 flex-1 rounded-full bg-muted overflow-hidden">
+                      <div className="bg-muted h-1 flex-1 overflow-hidden rounded-full">
                         <div
                           className="h-full rounded-full bg-[#00B336] transition-all duration-500"
                           style={{ width: `${session.progress}%` }}
                         />
                       </div>
-                      <span className="text-sm text-muted-foreground">
-                        {Math.round(session.progress)}%
-                      </span>
+                      <span className="text-muted-foreground text-sm">{Math.round(session.progress)}%</span>
                     </div>
                   )}
                 </div>

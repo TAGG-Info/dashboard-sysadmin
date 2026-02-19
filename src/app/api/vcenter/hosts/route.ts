@@ -1,5 +1,6 @@
 import { createApiRoute } from '@/lib/api-handler';
-import { getVCenterClient } from '@/lib/vcenter';
+import { cacheFetch } from '@/lib/cache';
+import { getVCenterClient, getHostVMData, type HostVMData } from '@/lib/vcenter';
 import { CACHE_TTL } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
@@ -12,23 +13,15 @@ export const GET = createApiRoute({
     const client = getVCenterClient(instance);
     const hosts = await client.getHosts();
 
-    // The /api/vcenter/vm endpoint does NOT include the "host" field,
-    // so we query each host's VMs individually to get accurate counts.
-    const hostVMCounts = await Promise.all(
-      hosts.map(async (host) => {
-        const hostVMs = await client.getVMsByHost(host.host).catch(() => []);
-        return {
-          hostId: host.host,
-          total: hostVMs.length,
-          running: hostVMs.filter(vm => vm.power_state === 'POWERED_ON').length,
-        };
-      })
+    // Shared cached mapping — avoids N+1 duplication between /vms and /hosts routes
+    const { hostCounts } = await cacheFetch<HostVMData>(
+      `dashboard:vcenter:${instance.id}:vm-host-map`,
+      CACHE_TTL.VCENTER,
+      () => getHostVMData(client, hosts),
     );
 
-    const countMap = new Map(hostVMCounts.map(h => [h.hostId, h]));
-
     return hosts.map((host) => {
-      const counts = countMap.get(host.host);
+      const counts = hostCounts[host.host];
       return {
         ...host,
         vm_count: counts?.total ?? 0,

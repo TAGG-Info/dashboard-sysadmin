@@ -6,11 +6,12 @@ import path from 'path';
 // ---------------------------------------------------------------------------
 
 export interface RefreshIntervals {
-  prtg: number;        // ms
-  infra: number;       // ms (vcenter + proxmox)
-  veeam: number;       // ms
-  tickets: number;     // ms (glpi)
-  transfers: number;   // ms (securetransport summary)
+  prtg: number; // ms
+  infra: number; // ms (vcenter + proxmox)
+  veeam: number; // ms
+  tickets: number; // ms (glpi)
+  transfers: number; // ms (securetransport summary)
+  transferLogs: number; // ms (securetransport logs table)
 }
 
 export type RefreshKey = keyof RefreshIntervals;
@@ -23,9 +24,10 @@ export const DEFAULT_INTERVALS: RefreshIntervals = {
   veeam: 120_000,
   tickets: 60_000,
   transfers: 120_000,
+  transferLogs: 30_000,
 };
 
-const VALID_KEYS: RefreshKey[] = ['prtg', 'infra', 'veeam', 'tickets', 'transfers'];
+const VALID_KEYS: RefreshKey[] = ['prtg', 'infra', 'veeam', 'tickets', 'transfers', 'transferLogs'];
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -45,6 +47,7 @@ function envDefaults(): RefreshIntervals {
     veeam: Number(process.env.NEXT_PUBLIC_REFRESH_VEEAM) || DEFAULT_INTERVALS.veeam,
     tickets: Number(process.env.NEXT_PUBLIC_REFRESH_TICKETS) || DEFAULT_INTERVALS.tickets,
     transfers: Number(process.env.NEXT_PUBLIC_REFRESH_TRANSFERS) || DEFAULT_INTERVALS.transfers,
+    transferLogs: Number(process.env.NEXT_PUBLIC_REFRESH_ST_LOGS) || DEFAULT_INTERVALS.transferLogs,
   };
 }
 

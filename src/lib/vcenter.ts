@@ -26,6 +26,7 @@ export class VCenterClient {
         Authorization: 'Basic ' + Buffer.from(`${this.username}:${this.password}`).toString('base64'),
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
       loggers.vcenter.error({ status: res.status }, 'vCenter auth failed');
@@ -43,6 +44,7 @@ export class VCenterClient {
     const sessionId = await this.getSession();
     const res = await fetch(`${this.baseUrl}${path}`, {
       headers: { 'vmware-api-session-id': sessionId },
+      signal: AbortSignal.timeout(10_000),
     });
 
     // Si 401, re-authenticate et retenter
@@ -51,6 +53,7 @@ export class VCenterClient {
       const newSessionId = await this.getSession();
       const retry = await fetch(`${this.baseUrl}${path}`, {
         headers: { 'vmware-api-session-id': newSessionId },
+        signal: AbortSignal.timeout(10_000),
       });
       if (!retry.ok) {
         loggers.vcenter.error({ status: retry.status, path }, 'vCenter API error after re-auth');
@@ -90,6 +93,37 @@ export class VCenterClient {
   async getClusters() {
     return this.request<VCenterCluster[]>('/api/vcenter/cluster');
   }
+}
+
+/**
+ * Returns per-host VM data: vmId→hostId mapping + per-host VM counts.
+ * Shared by both /api/vcenter/vms and /api/vcenter/hosts routes.
+ */
+export interface HostVMData {
+  vmHostMap: Record<string, string>;
+  hostCounts: Record<string, { total: number; running: number }>;
+}
+
+export async function getHostVMData(client: VCenterClient, hosts: VCenterHost[]): Promise<HostVMData> {
+  const hostMappings = await Promise.all(
+    hosts.map(async (host) => {
+      const hostVMs = await client.getVMsByHost(host.host).catch(() => []);
+      return { hostId: host.host, hostVMs };
+    }),
+  );
+
+  const vmHostMap: Record<string, string> = {};
+  const hostCounts: Record<string, { total: number; running: number }> = {};
+
+  for (const { hostId, hostVMs } of hostMappings) {
+    for (const vm of hostVMs) vmHostMap[vm.vm] = hostId;
+    hostCounts[hostId] = {
+      total: hostVMs.length,
+      running: hostVMs.filter((vm) => vm.power_state === 'POWERED_ON').length,
+    };
+  }
+
+  return { vmHostMap, hostCounts };
 }
 
 // Factory that caches clients by instanceId (session-based, cache is critical)

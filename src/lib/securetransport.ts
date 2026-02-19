@@ -14,6 +14,7 @@ export class SecureTransportClient {
   private username: string;
   private password: string;
   private apiVersion: string;
+  private useSitesEndpoint = false;
 
   constructor(config: STInstance) {
     this.baseUrl = config.baseUrl;
@@ -32,6 +33,7 @@ export class SecureTransportClient {
         Authorization: 'Basic ' + Buffer.from(`${this.username}:${this.password}`).toString('base64'),
         Accept: 'application/json',
       },
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
       loggers.st.error({ status: res.status, path }, 'SecureTransport API error');
@@ -53,13 +55,18 @@ export class SecureTransportClient {
   }
 
   async getTransferSites(): Promise<STTransferSite[]> {
+    const extract = (r: { result?: STTransferSite[] } | STTransferSite[]) =>
+      (r as { result?: STTransferSite[] }).result ?? (r as STTransferSite[]);
+
+    if (this.useSitesEndpoint) {
+      return extract(await this.request<{ result?: STTransferSite[] } | STTransferSite[]>('/sites'));
+    }
     try {
-      const result = await this.request<{ result?: STTransferSite[] } | STTransferSite[]>('/transferSites');
-      return (result as { result?: STTransferSite[] }).result ?? (result as STTransferSite[]);
+      return extract(await this.request<{ result?: STTransferSite[] } | STTransferSite[]>('/transferSites'));
     } catch {
       loggers.st.warn('transferSites endpoint unavailable, falling back to /sites');
-      const result = await this.request<{ result?: STTransferSite[] } | STTransferSite[]>('/sites');
-      return (result as { result?: STTransferSite[] }).result ?? (result as STTransferSite[]);
+      this.useSitesEndpoint = true;
+      return extract(await this.request<{ result?: STTransferSite[] } | STTransferSite[]>('/sites'));
     }
   }
 

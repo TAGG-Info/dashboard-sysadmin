@@ -18,6 +18,7 @@ export class ProxmoxClient {
       headers: {
         Authorization: `PVEAPIToken=${this.tokenId}=${this.tokenSecret}`,
       },
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
       loggers.proxmox.error({ status: res.status, path }, 'Proxmox API error');

@@ -81,17 +81,17 @@ export function HealthChecks() {
   const hasResults = Object.keys(results).length > 0;
 
   return (
-    <div className="settings-card-glow rounded-xl bg-background border border-white/[0.06] overflow-hidden">
+    <div className="settings-card-glow bg-background overflow-hidden rounded-xl border border-white/[0.06]">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
+      <div className="flex items-center justify-between border-b border-white/[0.04] px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10">
             <Activity className="h-4 w-4 text-emerald-400" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground tracking-wide">Health Checks</h3>
+            <h3 className="text-foreground text-sm font-semibold tracking-wide">Health Checks</h3>
             {hasResults && (
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <p className="text-muted-foreground mt-0.5 text-sm">
                 {Object.values(results).filter((r) => r.status === 'connected').length}/{sources.length} connectes
               </p>
             )}
@@ -102,24 +102,19 @@ export function HealthChecks() {
           size="sm"
           onClick={runAllChecks}
           disabled={testing}
-          className="gap-2 h-8 text-sm border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
+          className="h-8 gap-2 border-white/10 bg-white/[0.03] text-sm hover:bg-white/[0.06]"
         >
-          {testing ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <RotateCw className="h-3.5 w-3.5" />
-          )}
+          {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
           Tout tester
         </Button>
       </div>
 
       {/* Status Tile Grid */}
-      <div className="grid grid-cols-3 gap-[1px] bg-white/[0.03] stagger-in">
+      <div className="stagger-in grid grid-cols-3 gap-[1px] bg-white/[0.03]">
         {sources.map(({ key, label, color }) => {
           const result = results[key];
           const isTestingThis = testingSource === key || (testing && !result);
           const isConnected = result?.status === 'connected';
-          const isError = result?.status === 'error';
 
           return (
             <button
@@ -128,14 +123,14 @@ export function HealthChecks() {
               onClick={() => testSingle(key)}
               disabled={testing || testingSource !== null}
               className={cn(
-                'relative flex flex-col items-center justify-center py-5 px-3 bg-background transition-all duration-300',
+                'bg-background relative flex flex-col items-center justify-center px-3 py-5 transition-all duration-300',
                 'hover:bg-white/[0.02] disabled:pointer-events-none',
                 'group cursor-pointer',
               )}
             >
               {/* Colored top accent line */}
               <div
-                className="absolute top-0 left-0 right-0 h-[2px] transition-opacity duration-300"
+                className="absolute top-0 right-0 left-0 h-[2px] transition-opacity duration-300"
                 style={{
                   background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
                   opacity: result ? (isConnected ? 0.8 : 0.3) : 0.15,
@@ -143,23 +138,19 @@ export function HealthChecks() {
               />
 
               {/* Source label */}
-              <div className="flex items-center gap-1.5 mb-3">
+              <div className="mb-3 flex items-center gap-1.5">
                 <SourceLogo source={key} size={16} />
-                <span className="text-sm font-medium tracking-wider uppercase text-muted-foreground">
-                  {label}
-                </span>
+                <span className="text-muted-foreground text-sm font-medium tracking-wider uppercase">{label}</span>
               </div>
 
               {/* Status indicator */}
               {isTestingThis ? (
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mb-2" />
+                <Loader2 className="text-muted-foreground mb-2 h-5 w-5 animate-spin" />
               ) : (
                 <div
-                  className="h-3.5 w-3.5 rounded-full mb-2 transition-all duration-500"
+                  className="mb-2 h-3.5 w-3.5 rounded-full transition-all duration-500"
                   style={{
-                    backgroundColor: result
-                      ? isConnected ? color : '#ef4444'
-                      : `${color}40`,
+                    backgroundColor: result ? (isConnected ? color : '#ef4444') : `${color}40`,
                   }}
                 />
               )}
@@ -167,16 +158,14 @@ export function HealthChecks() {
               {/* Result info */}
               {result && !isTestingThis ? (
                 isConnected ? (
-                  <span className="text-sm font-mono font-semibold text-emerald-400">
-                    {result.latency}ms
-                  </span>
+                  <span className="font-mono text-sm font-semibold text-emerald-400">{result.latency}ms</span>
                 ) : (
-                  <span className="text-sm font-medium text-red-400 truncate max-w-full">
+                  <span className="max-w-full truncate text-sm font-medium text-red-400">
                     {result.error || 'Erreur'}
                   </span>
                 )
               ) : !isTestingThis ? (
-                <span className="text-sm text-muted-foreground/40 group-hover:text-muted-foreground/70 transition-colors">
+                <span className="text-muted-foreground/40 group-hover:text-muted-foreground/70 text-sm transition-colors">
                   tester
                 </span>
               ) : null}

@@ -41,6 +41,7 @@ export class PRTGClient {
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${this.apiKey}`, Accept: 'application/json' },
       cache: 'no-store',
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
       loggers.prtg.error({ status: res.status, path }, 'PRTG API error');
@@ -64,6 +65,7 @@ export class PRTGClient {
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${this.apiKey}`, Accept: 'application/json' },
       cache: 'no-store',
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
       loggers.prtg.error({ status: res.status, path }, 'PRTG API error');

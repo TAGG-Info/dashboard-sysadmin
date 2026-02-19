@@ -25,6 +25,7 @@ export class VeeamClient {
         'x-api-version': '1.2-rev1',
       },
       body: `grant_type=password&username=${encodeURIComponent(this.username)}&password=${encodeURIComponent(this.password)}`,
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
       loggers.veeam.error({ status: res.status }, 'Veeam auth failed');
@@ -47,6 +48,7 @@ export class VeeamClient {
         Authorization: `Bearer ${token}`,
         'x-api-version': '1.2-rev1',
       },
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (res.status === 401) {
@@ -57,6 +59,7 @@ export class VeeamClient {
           Authorization: `Bearer ${newToken}`,
           'x-api-version': '1.2-rev1',
         },
+        signal: AbortSignal.timeout(10_000),
       });
       if (!retry.ok) {
         loggers.veeam.error({ status: retry.status, path }, 'Veeam API error after re-auth');

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getSourceConfig, type SourceKey } from '@/lib/config';
+import { getSourceConfig } from '@/lib/config';
 import { cacheGet, cacheSet, cacheGetStale } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
@@ -26,8 +26,11 @@ async function checkInstance(
     return { source, instanceId, instanceName, status: 'connected', latency: Date.now() - start };
   } catch (error) {
     return {
-      source, instanceId, instanceName,
-      status: 'error', latency: Date.now() - start,
+      source,
+      instanceId,
+      instanceName,
+      status: 'error',
+      latency: Date.now() - start,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
@@ -64,11 +67,11 @@ export async function GET() {
     healthChecks.push(
       checkInstance('prtg', inst.id, inst.name, async () => {
         const res = await fetch(`${inst.baseUrl}/api/v2/experimental/probes`, {
-          headers: { 'Authorization': `Bearer ${inst.apiKey}` },
+          headers: { Authorization: `Bearer ${inst.apiKey}` },
           signal: AbortSignal.timeout(5000),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      })
+      }),
     );
   }
 
@@ -79,7 +82,7 @@ export async function GET() {
         const res = await fetch(`${inst.baseUrl}/api/session`, {
           method: 'POST',
           headers: {
-            'Authorization': 'Basic ' + Buffer.from(`${inst.username}:${inst.password}`).toString('base64'),
+            Authorization: 'Basic ' + Buffer.from(`${inst.username}:${inst.password}`).toString('base64'),
           },
           signal: AbortSignal.timeout(5000),
         });
@@ -89,7 +92,7 @@ export async function GET() {
           method: 'DELETE',
           headers: { 'vmware-api-session-id': sessionId },
         }).catch(() => {});
-      })
+      }),
     );
   }
 
@@ -98,11 +101,11 @@ export async function GET() {
     healthChecks.push(
       checkInstance('proxmox', inst.id, inst.name, async () => {
         const res = await fetch(`${inst.baseUrl}/api2/json/version`, {
-          headers: { 'Authorization': `PVEAPIToken=${inst.tokenId}=${inst.tokenSecret}` },
+          headers: { Authorization: `PVEAPIToken=${inst.tokenId}=${inst.tokenSecret}` },
           signal: AbortSignal.timeout(5000),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      })
+      }),
     );
   }
 
@@ -117,7 +120,7 @@ export async function GET() {
           signal: AbortSignal.timeout(5000),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      })
+      }),
     );
   }
 
@@ -128,7 +131,7 @@ export async function GET() {
         const res = await fetch(`${inst.baseUrl}/initSession`, {
           headers: {
             'App-Token': inst.appToken,
-            'Authorization': `user_token ${inst.userToken}`,
+            Authorization: `user_token ${inst.userToken}`,
           },
           signal: AbortSignal.timeout(5000),
         });
@@ -139,7 +142,7 @@ export async function GET() {
             headers: { 'App-Token': inst.appToken, 'Session-Token': data.session_token },
           }).catch(() => {});
         }
-      })
+      }),
     );
   }
 
@@ -150,21 +153,28 @@ export async function GET() {
       checkInstance('securetransport', inst.id, inst.name, async () => {
         const res = await fetch(`${inst.baseUrl}/api/${version}/myself`, {
           headers: {
-            'Authorization': 'Basic ' + Buffer.from(`${inst.username}:${inst.password}`).toString('base64'),
+            Authorization: 'Basic ' + Buffer.from(`${inst.username}:${inst.password}`).toString('base64'),
           },
           signal: AbortSignal.timeout(5000),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      })
+      }),
     );
   }
 
   try {
     const checks = await Promise.allSettled(healthChecks);
-    const results = checks.map(c =>
+    const results = checks.map((c) =>
       c.status === 'fulfilled'
         ? c.value
-        : { source: 'unknown', instanceId: 'unknown', instanceName: 'Unknown', status: 'error' as const, latency: 0, error: 'Check failed' }
+        : {
+            source: 'unknown',
+            instanceId: 'unknown',
+            instanceName: 'Unknown',
+            status: 'error' as const,
+            latency: 0,
+            error: 'Check failed',
+          },
     );
 
     const responseData = { sources: results, timestamp: Date.now() };

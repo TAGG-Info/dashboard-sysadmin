@@ -26,6 +26,7 @@ export class GLPIClient {
         Authorization: `user_token ${this.userToken}`,
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!res.ok) {
@@ -50,6 +51,7 @@ export class GLPIClient {
         'App-Token': this.appToken,
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (res.status === 401) {
@@ -61,6 +63,7 @@ export class GLPIClient {
           'App-Token': this.appToken,
           'Content-Type': 'application/json',
         },
+        signal: AbortSignal.timeout(10_000),
       });
       if (!retry.ok) {
         loggers.glpi.error({ status: retry.status, path }, 'GLPI API error after re-auth');

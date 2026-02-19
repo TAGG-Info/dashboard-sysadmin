@@ -12,18 +12,15 @@ export const GET = createSummaryApiRoute<'prtg', PRTGSummary, PRTGSummary>({
   fetcher: async (instance) => {
     const client = getPRTGClient(instance);
 
-    // 2 parallel queries:
+    // 3 parallel queries:
     // - devices (for device count)
     // - not(status = up) to get ALL non-up sensors in one call
-    // Up count = total sensors (from X-Total-Count of non-filtered query) minus non-up
-    const [devicesResult, nonUpResult] = await Promise.all([
+    // - all sensors with limit=1 (just for X-Total-Count header)
+    const [devicesResult, nonUpResult, allResult] = await Promise.all([
       client.getDevices(),
       client.getNonUpSensors(),
+      client.requestWithMeta<unknown[]>('/experimental/sensors', { limit: '1' }),
     ]);
-
-    // getSensors() without filter returns ALL sensors (totalCount header = total across all statuses)
-    // We only need the totalCount header, so use limit=1 for speed
-    const allResult = await client.requestWithMeta<unknown[]>('/experimental/sensors', { limit: '1' });
     const totalSensors = allResult.totalCount || 0;
     const nonUpCount = nonUpResult.totalCount || nonUpResult.data.length;
     const upCount = totalSensors - nonUpCount;

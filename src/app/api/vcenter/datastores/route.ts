@@ -1,4 +1,3 @@
-import { type NextRequest } from 'next/server';
 import { createApiRoute } from '@/lib/api-handler';
 import { getVCenterClient } from '@/lib/vcenter';
 import { CACHE_TTL } from '@/lib/constants';

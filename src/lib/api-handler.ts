@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getSourceConfig, type SourceKey, type SourceInstanceMap } from '@/lib/config';
 import { cacheFetch, cacheGetStale, cacheSet } from '@/lib/cache';
+import { isCircuitOpen, recordFailure, recordSuccess } from '@/lib/circuit-breaker';
 
 type EnrichedItem = Record<string, unknown>;
 
@@ -48,6 +49,19 @@ export function createApiRoute<K extends SourceKey>(options: ApiRouteOptions<K>)
       instances.map(async (instance) => {
         const cacheKey = options.getCacheKey(instance.id, req);
 
+        // Circuit breaker: skip upstream if circuit is open, use stale directly
+        if (isCircuitOpen(cacheKey)) {
+          const stale = await cacheGetStale<unknown[]>(cacheKey);
+          if (stale) {
+            return stale.map((item) => ({
+              ...(item as EnrichedItem),
+              _instanceId: instance.id,
+              _instanceName: instance.name,
+              _stale: true,
+            }));
+          }
+        }
+
         try {
           let data: unknown[];
           if (noCache) {
@@ -56,12 +70,14 @@ export function createApiRoute<K extends SourceKey>(options: ApiRouteOptions<K>)
           } else {
             data = await cacheFetch<unknown[]>(cacheKey, options.ttlMs, () => options.fetcher(instance, req));
           }
+          recordSuccess(cacheKey);
           return data.map((item) => ({
             ...(item as EnrichedItem),
             _instanceId: instance.id,
             _instanceName: instance.name,
           }));
         } catch (error) {
+          recordFailure(cacheKey);
           const stale = await cacheGetStale<unknown[]>(cacheKey);
           if (stale) {
             return stale.map((item) => ({
@@ -118,6 +134,19 @@ export function createSummaryApiRoute<K extends SourceKey, TRaw, TAggregated>(
       instances.map(async (instance) => {
         const cacheKey = options.getCacheKey(instance.id, req);
 
+        // Circuit breaker: skip upstream if circuit is open, use stale directly
+        if (isCircuitOpen(cacheKey)) {
+          const stale = await cacheGetStale<TRaw>(cacheKey);
+          if (stale) {
+            return {
+              ...stale,
+              _instanceId: instance.id,
+              _instanceName: instance.name,
+              _stale: true,
+            } as InstanceResult<TRaw>;
+          }
+        }
+
         try {
           let data: TRaw;
           if (noCache) {
@@ -126,12 +155,14 @@ export function createSummaryApiRoute<K extends SourceKey, TRaw, TAggregated>(
           } else {
             data = await cacheFetch<TRaw>(cacheKey, options.ttlMs, () => options.fetcher(instance, req));
           }
+          recordSuccess(cacheKey);
           return {
             ...data,
             _instanceId: instance.id,
             _instanceName: instance.name,
           } as InstanceResult<TRaw>;
         } catch {
+          recordFailure(cacheKey);
           const stale = await cacheGetStale<TRaw>(cacheKey);
           if (stale) {
             return {

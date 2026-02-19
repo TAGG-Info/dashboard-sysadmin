@@ -19,12 +19,12 @@ export function usePRTGDevices() {
 
 export function usePRTGSensors(deviceId?: number) {
   const { intervals } = useRefreshIntervals();
-  const url = deviceId
-    ? `/api/prtg/sensors?deviceId=${deviceId}`
-    : '/api/prtg/sensors';
+  const url = deviceId ? `/api/prtg/sensors?deviceId=${deviceId}` : '/api/prtg/sensors';
   return useAutoRefresh<PRTGSensorWithInstance[]>({
     url,
     interval: intervals.prtg,
+    // Per-device sensors: fetch once on expand, don't poll independently (#16)
+    autoRefresh: !deviceId,
   });
 }
 

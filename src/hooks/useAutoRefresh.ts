@@ -11,9 +11,14 @@ interface UseAutoRefreshOptions {
    * When false (default), the countdown interval is skipped — eliminates ~1 re-render/5s per hook instance.
    */
   trackCountdown?: boolean;
+  /**
+   * Set to false to do the initial fetch but skip the periodic auto-refresh interval.
+   * Useful for on-demand data (e.g. per-device sensors) that shouldn't poll independently.
+   */
+  autoRefresh?: boolean;
 }
 
-interface UseAutoRefreshReturn<T> {
+export interface UseAutoRefreshReturn<T> {
   data: T | null;
   loading: boolean;
   error: Error | null;
@@ -27,7 +32,7 @@ const MAX_RETRIES = 2;
 const BACKOFF_BASE = 2000; // 2s, 4s
 
 export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefreshReturn<T> {
-  const { url, interval, enabled = true, trackCountdown = false } = options;
+  const { url, interval, enabled = true, trackCountdown = false, autoRefresh = true } = options;
 
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,6 +40,8 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [nextRefreshIn, setNextRefreshIn] = useState(Math.floor(interval / 1000));
   const [isStale, setIsStale] = useState(false);
+  // Incremented on manual refresh to restart the interval timer (#22)
+  const [refreshEpoch, setRefreshEpoch] = useState(0);
 
   const retryCountRef = useRef(0);
   const consecutiveFailsRef = useRef(0);
@@ -125,6 +132,8 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
     consecutiveFailsRef.current = 0;
     lastManualRefreshRef.current = Date.now();
     if (trackCountdown) setNextRefreshIn(Math.floor(interval / 1000));
+    // Restart the interval timer so next auto-refresh is a full interval from now
+    setRefreshEpoch((e) => e + 1);
     await fetchData(false, true);
   }, [fetchData, interval, trackCountdown]);
 
@@ -141,9 +150,10 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
     };
   }, [fetchData, enabled]);
 
-  // Auto-refresh interval
+  // Auto-refresh interval — skipped when autoRefresh is false (#16)
+  // Restarted when refreshEpoch changes (manual refresh resets the timer, #22)
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !autoRefresh) return;
 
     if (trackCountdown) setNextRefreshIn(Math.floor(interval / 1000));
 
@@ -158,11 +168,12 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
         clearInterval(intervalIdRef.current);
       }
     };
-  }, [interval, fetchData, enabled, trackCountdown]);
+  }, [interval, fetchData, enabled, trackCountdown, autoRefresh, refreshEpoch]);
 
   // Countdown timer — only active when trackCountdown: true, ticks every 5s to reduce re-renders
+  // Also restarts on refreshEpoch change to stay in sync with interval timer (#22)
   useEffect(() => {
-    if (!enabled || !trackCountdown) return;
+    if (!enabled || !trackCountdown || !autoRefresh) return;
 
     countdownIdRef.current = setInterval(() => {
       setNextRefreshIn((prev) => Math.max(0, prev - 5));
@@ -173,7 +184,7 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
         clearInterval(countdownIdRef.current);
       }
     };
-  }, [enabled, trackCountdown]);
+  }, [enabled, trackCountdown, autoRefresh, refreshEpoch]);
 
   return {
     data,

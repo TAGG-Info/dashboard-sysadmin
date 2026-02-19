@@ -1,4 +1,3 @@
-import { type NextRequest } from 'next/server';
 import { createApiRoute } from '@/lib/api-handler';
 import { getProxmoxClient } from '@/lib/proxmox';
 import { CACHE_TTL } from '@/lib/constants';
