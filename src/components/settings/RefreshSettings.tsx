@@ -13,11 +13,12 @@ interface RefreshConfig {
 }
 
 const refreshConfigs: RefreshConfig[] = [
-  { key: 'prtg',      label: 'PRTG',            color: '#2196F3' },
-  { key: 'infra',     label: 'Infrastructure',   color: '#4CAF50' },
-  { key: 'veeam',     label: 'Veeam',            color: '#00B336' },
-  { key: 'tickets',   label: 'GLPI',             color: '#FEC72D' },
-  { key: 'transfers', label: 'SecureTransport',  color: '#FF6D00' },
+  { key: 'prtg', label: 'PRTG', color: '#2196F3' },
+  { key: 'infra', label: 'Infrastructure', color: '#4CAF50' },
+  { key: 'veeam', label: 'Veeam', color: '#00B336' },
+  { key: 'tickets', label: 'GLPI', color: '#FEC72D' },
+  { key: 'transfers', label: 'ST Transferts', color: '#FF6D00' },
+  { key: 'transferLogs', label: 'ST Logs', color: '#FF9100' },
 ];
 
 const MIN_SECONDS = 10;
@@ -31,21 +32,22 @@ function formatInterval(seconds: number): string {
   return `${seconds}s`;
 }
 
+function toDraftSeconds(ms: RefreshIntervals): Record<RefreshKey, number> {
+  return {
+    prtg: Math.round(ms.prtg / 1000),
+    infra: Math.round(ms.infra / 1000),
+    veeam: Math.round(ms.veeam / 1000),
+    tickets: Math.round(ms.tickets / 1000),
+    transfers: Math.round(ms.transfers / 1000),
+    transferLogs: Math.round(ms.transferLogs / 1000),
+  };
+}
+
 export function RefreshSettings() {
   const { intervals, updateIntervals } = useRefreshIntervals();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<Record<RefreshKey, number>>(() => toDraftSeconds(intervals));
-
-  function toDraftSeconds(ms: RefreshIntervals): Record<RefreshKey, number> {
-    return {
-      prtg: Math.round(ms.prtg / 1000),
-      infra: Math.round(ms.infra / 1000),
-      veeam: Math.round(ms.veeam / 1000),
-      tickets: Math.round(ms.tickets / 1000),
-      transfers: Math.round(ms.transfers / 1000),
-    };
-  }
 
   function startEdit() {
     setDraft(toDraftSeconds(intervals));
@@ -68,34 +70,32 @@ export function RefreshSettings() {
   }
 
   function setDraftValue(key: RefreshKey, value: number) {
-    setDraft(prev => ({ ...prev, [key]: value }));
+    setDraft((prev) => ({ ...prev, [key]: value }));
   }
 
-  const seconds = refreshConfigs.map(c => Math.round(intervals[c.key] / 1000));
+  const seconds = refreshConfigs.map((c) => Math.round(intervals[c.key] / 1000));
   const maxInterval = Math.max(...seconds);
 
   const isValid = refreshConfigs.every(({ key }) => draft[key] >= MIN_SECONDS);
 
   return (
-    <div className="settings-card-glow rounded-xl bg-background border border-white/[0.06] overflow-hidden">
+    <div className="settings-card-glow bg-background overflow-hidden rounded-xl border border-white/[0.06]">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
+      <div className="flex items-center justify-between border-b border-white/[0.04] px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20">
-            <Timer className="h-4 w-4 text-primary" />
+          <div className="bg-primary/10 border-primary/20 flex h-8 w-8 items-center justify-center rounded-lg border">
+            <Timer className="text-primary h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground tracking-wide">Intervalles de refresh</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Frequence de mise a jour des donnees
-            </p>
+            <h3 className="text-foreground text-sm font-semibold tracking-wide">Intervalles de refresh</h3>
+            <p className="text-muted-foreground mt-0.5 text-sm">Frequence de mise a jour des donnees</p>
           </div>
         </div>
 
         {!editing ? (
           <button
             onClick={startEdit}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs transition-colors"
           >
             <Pencil className="h-3 w-3" />
             Modifier
@@ -105,7 +105,7 @@ export function RefreshSettings() {
             <button
               onClick={cancelEdit}
               disabled={saving}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors disabled:opacity-40"
             >
               <X className="h-3 w-3" />
               Annuler
@@ -113,7 +113,7 @@ export function RefreshSettings() {
             <button
               onClick={saveEdit}
               disabled={saving || !isValid}
-              className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors disabled:opacity-40"
+              className="text-primary hover:text-primary/80 flex items-center gap-1 text-xs font-medium transition-colors disabled:opacity-40"
             >
               {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
               Enregistrer
@@ -123,20 +123,17 @@ export function RefreshSettings() {
       </div>
 
       {/* Bars */}
-      <div className="px-5 py-4 space-y-3 stagger-in">
+      <div className="stagger-in space-y-3 px-5 py-4">
         {refreshConfigs.map((config, i) => {
           const sec = seconds[i];
           const barWidth = maxInterval > 0 ? (sec / maxInterval) * 100 : 0;
 
           return (
             <div key={config.key} className="group">
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="mb-1.5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: config.color }}
-                  />
-                  <span className="text-sm font-medium text-foreground">{config.label}</span>
+                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: config.color }} />
+                  <span className="text-foreground text-sm font-medium">{config.label}</span>
                 </div>
 
                 {editing ? (
@@ -145,18 +142,18 @@ export function RefreshSettings() {
                       type="number"
                       min={MIN_SECONDS}
                       value={draft[config.key]}
-                      onChange={e => setDraftValue(config.key, parseInt(e.target.value) || MIN_SECONDS)}
-                      className="w-16 h-6 px-1.5 text-xs font-mono text-right bg-muted/20 border border-border/50 rounded focus:outline-none focus:ring-1 focus:ring-ring tabular-nums"
+                      onChange={(e) => setDraftValue(config.key, parseInt(e.target.value) || MIN_SECONDS)}
+                      className="bg-muted/20 border-border/50 focus:ring-ring h-6 w-16 rounded border px-1.5 text-right font-mono text-xs tabular-nums focus:ring-1 focus:outline-none"
                     />
-                    <span className="text-xs text-muted-foreground">s</span>
+                    <span className="text-muted-foreground text-xs">s</span>
                   </div>
                 ) : (
-                  <span className="text-sm font-mono font-semibold text-muted-foreground tabular-nums">
+                  <span className="text-muted-foreground font-mono text-sm font-semibold tabular-nums">
                     {formatInterval(sec)}
                   </span>
                 )}
               </div>
-              <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+              <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.04]">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{

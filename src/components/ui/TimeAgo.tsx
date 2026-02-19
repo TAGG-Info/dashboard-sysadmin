@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 interface TimeAgoProps {
@@ -21,7 +17,7 @@ function formatTimeAgo(date: Date): string {
   const diffH = Math.floor(diffMin / 60);
   const diffD = Math.floor(diffH / 24);
 
-  if (diffSec < 10) return 'a l\'instant';
+  if (diffSec < 10) return "a l'instant";
   if (diffSec < 60) return `il y a ${diffSec}s`;
   if (diffMin < 60) return `il y a ${diffMin} min`;
   if (diffH < 24) return `il y a ${diffH}h`;
@@ -46,8 +42,6 @@ export function TimeAgo({ date, className }: TimeAgoProps) {
   const [display, setDisplay] = useState(formatTimeAgo(dateObj));
 
   useEffect(() => {
-    setDisplay(formatTimeAgo(dateObj));
-
     const interval = setInterval(() => {
       setDisplay(formatTimeAgo(dateObj));
     }, 15000); // Update every 15 seconds
@@ -60,7 +54,7 @@ export function TimeAgo({ date, className }: TimeAgoProps) {
       <TooltipTrigger asChild>
         <time
           dateTime={dateObj.toISOString()}
-          className={cn('text-sm text-muted-foreground cursor-default', className)}
+          className={cn('text-muted-foreground cursor-default text-sm', className)}
         >
           {display}
         </time>

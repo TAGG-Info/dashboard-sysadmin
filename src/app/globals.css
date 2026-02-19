@@ -9,6 +9,10 @@ html {
 }
 
 @theme inline {
+  /* Ultrawide breakpoints */
+  --breakpoint-2xl: 1536px;
+  --breakpoint-3xl: 2000px;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -48,6 +52,15 @@ html {
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
+  /* Status color tokens */
+  --color-status-healthy: oklch(0.72 0.19 155);
+  --color-status-warning: oklch(0.80 0.17 75);
+  --color-status-critical: oklch(0.62 0.22 25);
+  --color-status-info: oklch(0.65 0.18 245);
+  --color-status-neutral: oklch(0.55 0.04 250);
+  --color-status-new: oklch(0.65 0.19 290);
+  --color-status-paused: oklch(0.70 0.16 315);
 }
 
 /* ---- CloudGuard-inspired deep dark palette ---- */
@@ -174,3 +187,11 @@ body {
 .stagger-in > *:nth-child(4) { animation-delay: 90ms; }
 .stagger-in > *:nth-child(5) { animation-delay: 120ms; }
 .stagger-in > *:nth-child(6) { animation-delay: 150ms; }
+
+/* ---- Layout utilities ---- */
+
+@layer utilities {
+  .page-content {
+    @apply space-y-6;
+  }
+}

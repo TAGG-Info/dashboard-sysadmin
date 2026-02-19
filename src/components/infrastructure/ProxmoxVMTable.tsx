@@ -61,8 +61,11 @@ export function ProxmoxVMTable({ refreshSignal }: { refreshSignal?: number }) {
   const { data: vms, loading, error, refresh } = useProxmoxVMs();
 
   const refreshRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  // eslint-disable-next-line react-hooks/refs
   refreshRef.current = refresh;
-  useEffect(() => { if (refreshSignal) refreshRef.current?.(); }, [refreshSignal]);
+  useEffect(() => {
+    if (refreshSignal) refreshRef.current?.();
+  }, [refreshSignal]);
   const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);
 
   const proxmoxUrl = process.env.NEXT_PUBLIC_PROXMOX_URL;
@@ -89,31 +92,19 @@ export function ProxmoxVMTable({ refreshSignal }: { refreshSignal?: number }) {
   const hasMultipleInstances = instanceGroups.length > 1;
 
   if (error && !vms) {
-    return (
-      <ErrorState
-        title="Erreur Proxmox VMs"
-        message={error.message}
-        source="Proxmox"
-        onRetry={refresh}
-      />
-    );
+    return <ErrorState title="Erreur Proxmox VMs" message={error.message} source="Proxmox" onRetry={refresh} />;
   }
-
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">
+        <h3 className="text-foreground text-sm font-semibold">
           VMs & Containers
-          {vms && (
-            <span className="ml-2 text-sm text-muted-foreground font-normal">
-              ({vms.length})
-            </span>
-          )}
+          {vms && <span className="text-muted-foreground ml-2 text-sm font-normal">({vms.length})</span>}
         </h3>
         <button
           onClick={resetWidths}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="text-muted-foreground hover:text-foreground text-xs transition-colors"
           title="Reinitialiser la largeur des colonnes"
         >
           Reset colonnes
@@ -122,30 +113,30 @@ export function ProxmoxVMTable({ refreshSignal }: { refreshSignal?: number }) {
 
       {instanceGroups.map(([instanceId, { instanceName, items }]) => (
         <div key={instanceId}>
-          {hasMultipleInstances && (
-            <InstanceSectionHeader instanceName={instanceName} className="mb-2" />
-          )}
-          <div className="rounded-lg border border-border/50 overflow-x-auto">
+          {hasMultipleInstances && <InstanceSectionHeader instanceName={instanceName} className="mb-2" />}
+          <div className="border-border/50 overflow-x-auto rounded-lg border">
             <table className="w-full text-sm">
               <colgroup>
-                {widths.map((w, i) => <col key={i} style={{ minWidth: w, width: w }} />)}
+                {widths.map((w, i) => (
+                  <col key={i} style={{ minWidth: w, width: w }} />
+                ))}
               </colgroup>
               <thead>
-                <tr className="border-b border-border/50 bg-muted/20">
+                <tr className="border-border/50 bg-muted/20 border-b">
                   {COLS.map((col, i) => {
                     const isLast = i === COLS.length - 1;
                     return (
                       <th
                         key={col.label}
-                        className={`relative px-3 py-2 text-xs font-medium text-muted-foreground select-none text-${col.align}`}
+                        className={`text-muted-foreground relative px-3 py-2 text-xs font-medium select-none text-${col.align}`}
                       >
                         <span className="block overflow-hidden text-ellipsis whitespace-nowrap">{col.label}</span>
                         {!isLast && (
                           <div
                             onPointerDown={(e) => startResize(e, i)}
-                            className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize group"
+                            className="group absolute top-0 right-0 h-full w-1.5 cursor-col-resize"
                           >
-                            <div className="mx-auto h-full w-px bg-border/0 group-hover:bg-border/60 transition-colors" />
+                            <div className="bg-border/0 group-hover:bg-border/60 mx-auto h-full w-px transition-colors" />
                           </div>
                         )}
                       </th>
@@ -156,19 +147,33 @@ export function ProxmoxVMTable({ refreshSignal }: { refreshSignal?: number }) {
               <tbody>
                 {loading && !vms ? (
                   Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="border-b border-border/30">
-                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-10" /></td>
-                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-32" /></td>
-                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-20" /></td>
-                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-16" /></td>
-                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-8" /></td>
-                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-16" /></td>
-                      <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-12" /></td>
+                    <tr key={i} className="border-border/30 border-b">
+                      <td className="px-3 py-1.5">
+                        <Skeleton className="h-3.5 w-10" />
+                      </td>
+                      <td className="px-3 py-1.5">
+                        <Skeleton className="h-3.5 w-32" />
+                      </td>
+                      <td className="px-3 py-1.5">
+                        <Skeleton className="h-3.5 w-20" />
+                      </td>
+                      <td className="px-3 py-1.5">
+                        <Skeleton className="h-3.5 w-16" />
+                      </td>
+                      <td className="px-3 py-1.5">
+                        <Skeleton className="h-3.5 w-8" />
+                      </td>
+                      <td className="px-3 py-1.5">
+                        <Skeleton className="h-3.5 w-16" />
+                      </td>
+                      <td className="px-3 py-1.5">
+                        <Skeleton className="h-3.5 w-12" />
+                      </td>
                     </tr>
                   ))
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                    <td colSpan={7} className="text-muted-foreground py-8 text-center text-sm">
                       Aucune VM ou container
                     </td>
                   </tr>
@@ -179,42 +184,42 @@ export function ProxmoxVMTable({ refreshSignal }: { refreshSignal?: number }) {
                     const linkType = isQemu ? 'qemu' : 'lxc';
 
                     return (
-                      <tr key={`${instanceId}-${vm.node}-${vm.type}-${vm.vmid}`} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
-                        <td className="px-3 py-1.5 overflow-hidden">
+                      <tr
+                        key={`${instanceId}-${vm.node}-${vm.type}-${vm.vmid}`}
+                        className="border-border/30 hover:bg-muted/10 border-b transition-colors"
+                      >
+                        <td className="overflow-hidden px-3 py-1.5">
                           <Badge
                             variant="outline"
                             className={
                               isQemu
-                                ? 'text-[#E87D0D] border-[#E87D0D]/30 text-xs'
-                                : 'text-[#3b82f6] border-[#3b82f6]/30 text-xs'
+                                ? 'border-[#E87D0D]/30 text-xs text-[#E87D0D]'
+                                : 'border-[#3b82f6]/30 text-xs text-[#3b82f6]'
                             }
                           >
                             {typeLabel}
                           </Badge>
                         </td>
-                        <td className="px-3 py-1.5 overflow-hidden text-xs font-medium text-foreground">
+                        <td className="text-foreground overflow-hidden px-3 py-1.5 text-xs font-medium">
                           <span className="block truncate">{vm.name}</span>
                         </td>
-                        <td className="px-3 py-1.5 overflow-hidden text-xs text-muted-foreground">
+                        <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-xs">
                           <span className="block truncate">{vm.node}</span>
                         </td>
-                        <td className="px-3 py-1.5 overflow-hidden">
-                          <StatusBadge
-                            status={vmStatusToLevel(vm.status)}
-                            label={vmStatusLabel(vm.status)}
-                          />
+                        <td className="overflow-hidden px-3 py-1.5">
+                          <StatusBadge status={vmStatusToLevel(vm.status)} label={vmStatusLabel(vm.status)} />
                         </td>
-                        <td className="px-3 py-1.5 overflow-hidden text-right text-xs text-muted-foreground">
+                        <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-right text-xs">
                           <span className="block truncate">{vm.cpus} vCPU</span>
                         </td>
-                        <td className="px-3 py-1.5 overflow-hidden text-right text-xs text-muted-foreground">
+                        <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-right text-xs">
                           <span className="block truncate">
                             {vm.status === 'running' && vm.mem > 0
                               ? `${formatBytes(vm.mem)} / ${formatBytes(vm.maxmem)}`
                               : formatBytes(vm.maxmem)}
                           </span>
                         </td>
-                        <td className="px-3 py-1.5 overflow-hidden text-right">
+                        <td className="overflow-hidden px-3 py-1.5 text-right">
                           {proxmoxUrl && (
                             <ExternalLink
                               href={`${proxmoxUrl}/#v1:0:=${linkType}/${vm.vmid}`}
@@ -235,17 +240,19 @@ export function ProxmoxVMTable({ refreshSignal }: { refreshSignal?: number }) {
 
       {/* Show loading skeletons when no data */}
       {loading && !vms && instanceGroups.length === 0 && (
-        <div className="rounded-lg border border-border/50 overflow-x-auto">
+        <div className="border-border/50 overflow-x-auto rounded-lg border">
           <table className="w-full text-sm">
             <colgroup>
-              {widths.map((w, i) => <col key={i} style={{ minWidth: w, width: w }} />)}
+              {widths.map((w, i) => (
+                <col key={i} style={{ minWidth: w, width: w }} />
+              ))}
             </colgroup>
             <thead>
-              <tr className="border-b border-border/50 bg-muted/20">
+              <tr className="border-border/50 bg-muted/20 border-b">
                 {COLS.map((col) => (
                   <th
                     key={col.label}
-                    className={`px-3 py-2 text-xs font-medium text-muted-foreground select-none text-${col.align}`}
+                    className={`text-muted-foreground px-3 py-2 text-xs font-medium select-none text-${col.align}`}
                   >
                     {col.label}
                   </th>
@@ -254,14 +261,28 @@ export function ProxmoxVMTable({ refreshSignal }: { refreshSignal?: number }) {
             </thead>
             <tbody>
               {Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-b border-border/30">
-                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-10" /></td>
-                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-32" /></td>
-                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-20" /></td>
-                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-16" /></td>
-                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-8" /></td>
-                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-16" /></td>
-                  <td className="px-3 py-1.5"><Skeleton className="h-3.5 w-12" /></td>
+                <tr key={i} className="border-border/30 border-b">
+                  <td className="px-3 py-1.5">
+                    <Skeleton className="h-3.5 w-10" />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <Skeleton className="h-3.5 w-32" />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <Skeleton className="h-3.5 w-20" />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <Skeleton className="h-3.5 w-16" />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <Skeleton className="h-3.5 w-8" />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <Skeleton className="h-3.5 w-16" />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <Skeleton className="h-3.5 w-12" />
+                  </td>
                 </tr>
               ))}
             </tbody>

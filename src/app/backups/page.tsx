@@ -23,19 +23,13 @@ function BackupStats() {
     const now = new Date();
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    const recentSessions = sessions.filter(
-      (s) => new Date(s.creationTime) >= last24h
-    );
+    const recentSessions = sessions.filter((s) => new Date(s.creationTime) >= last24h);
 
-    const successes = recentSessions.filter(
-      (s) => s.result.result.toLowerCase() === 'success'
-    ).length;
+    const successes = recentSessions.filter((s) => s.result.result.toLowerCase() === 'success').length;
     const failures = recentSessions.filter(
-      (s) => s.result.result.toLowerCase() === 'failed' || s.result.result.toLowerCase() === 'error'
+      (s) => s.result.result.toLowerCase() === 'failed' || s.result.result.toLowerCase() === 'error',
     ).length;
-    const warnings = recentSessions.filter(
-      (s) => s.result.result.toLowerCase() === 'warning'
-    ).length;
+    const warnings = recentSessions.filter((s) => s.result.result.toLowerCase() === 'warning').length;
 
     return {
       totalJobs: jobs?.length ?? 0,
@@ -50,10 +44,10 @@ function BackupStats() {
 
   if (loading && !stats) {
     return (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 2xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i} className="bg-card border-border/50">
-            <CardContent className="p-4 space-y-2">
+            <CardContent className="space-y-2 p-4">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-6 w-12" />
             </CardContent>
@@ -66,7 +60,7 @@ function BackupStats() {
   if (!stats) return null;
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 2xl:grid-cols-4">
       <StatCard label="Total jobs" value={stats.totalJobs} />
       <StatCard label="Success 24h" value={stats.successes} color="#10b981" />
       <StatCard label="Warnings 24h" value={stats.warnings} color="#f59e0b" />
@@ -74,7 +68,11 @@ function BackupStats() {
         label="Echecs 24h"
         value={stats.failures}
         color="#ef4444"
-        badge={stats.failures > 0 ? <StatusBadge status="critical" label={`${stats.failures} failed`} className="mt-1" /> : undefined}
+        badge={
+          stats.failures > 0 ? (
+            <StatusBadge status="critical" label={`${stats.failures} failed`} className="mt-1" />
+          ) : undefined
+        }
       />
     </div>
   );
@@ -98,7 +96,7 @@ export default function BackupsPage() {
       <JobList refreshSignal={refreshKey} />
 
       {/* Session timeline + Calendar */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-[5fr_3fr]">
         <Card key={`timeline-${refreshKey}`} className="bg-card border-border/50">
           <CardContent className="p-4">
             <SessionTimeline />

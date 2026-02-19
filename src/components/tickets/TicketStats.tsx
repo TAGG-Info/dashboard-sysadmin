@@ -11,22 +11,15 @@ export function TicketStats() {
   const { data: summary, loading, error, refresh } = useTicketSummary();
 
   if (error && !summary) {
-    return (
-      <ErrorState
-        title="Erreur GLPI"
-        message={error.message}
-        source="GLPI"
-        onRetry={refresh}
-      />
-    );
+    return <ErrorState title="Erreur GLPI" message={error.message} source="GLPI" onRetry={refresh} />;
   }
 
   if (loading && !summary) {
     return (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Card key={i} className="bg-card border-border/50">
-            <CardContent className="p-4 space-y-2">
+            <CardContent className="space-y-2 p-4">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-7 w-12" />
             </CardContent>
@@ -68,9 +61,7 @@ export function TicketStats() {
     },
     {
       label: 'Temps moyen resolution',
-      value: summary.avgResolutionHours
-        ? `${summary.avgResolutionHours.toFixed(1)}h`
-        : 'N/A',
+      value: summary.avgResolutionHours ? `${summary.avgResolutionHours.toFixed(1)}h` : 'N/A',
       color: '#6b7280',
       badge: null,
     },
@@ -84,13 +75,11 @@ export function TicketStats() {
           label={stat.label}
           value={stat.value}
           color={stat.color}
-          badge={stat.badge ? (
-            <StatusBadge
-              status={stat.badge}
-              label={`${stat.value} ${stat.label.toLowerCase()}`}
-              className="mt-1"
-            />
-          ) : undefined}
+          badge={
+            stat.badge ? (
+              <StatusBadge status={stat.badge} label={`${stat.value} ${stat.label.toLowerCase()}`} className="mt-1" />
+            ) : undefined
+          }
         />
       ))}
     </div>

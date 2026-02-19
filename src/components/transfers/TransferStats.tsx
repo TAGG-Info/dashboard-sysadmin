@@ -16,12 +16,7 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
 
   if (error && !summary) {
     return (
-      <ErrorState
-        title="Erreur SecureTransport"
-        message={error.message}
-        source="SecureTransport"
-        onRetry={refresh}
-      />
+      <ErrorState title="Erreur SecureTransport" message={error.message} source="SecureTransport" onRetry={refresh} />
     );
   }
 
@@ -35,7 +30,7 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
           </CardHeader>
           <CardContent className="p-0">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between px-4 py-3 border-t border-border/30">
+              <div key={i} className="border-border/30 flex items-center justify-between border-t px-4 py-3">
                 <Skeleton className="h-3 w-24" />
                 <Skeleton className="h-4 w-12" />
               </div>
@@ -45,10 +40,10 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
       );
     }
     return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <Card key={i} className="bg-card border-border/50">
-            <CardContent className="p-4 space-y-2">
+            <CardContent className="space-y-2 p-4">
               <Skeleton className="h-3 w-24" />
               <Skeleton className="h-7 w-16" />
             </CardContent>
@@ -66,32 +61,24 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
   if (compact) {
     return (
       <Card className="bg-card border-border/50">
-        <CardHeader className="pb-2 pt-3 px-4">
-          <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Résumé
-          </CardTitle>
+        <CardHeader className="px-4 pt-3 pb-2">
+          <CardTitle className="text-muted-foreground text-xs font-medium tracking-wider uppercase">Résumé</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {/* Comptes */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/30">
-            <span className="text-xs text-muted-foreground">Comptes actifs</span>
+          <div className="border-border/30 flex items-center justify-between border-t px-4 py-2.5">
+            <span className="text-muted-foreground text-xs">Comptes actifs</span>
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-semibold text-[#FF6D00]">
-                {summary.accounts.active}
-              </span>
-              <span className="text-xs text-muted-foreground/60">
-                / {summary.accounts.total}
-              </span>
+              <span className="text-sm font-semibold text-[#FF6D00]">{summary.accounts.active}</span>
+              <span className="text-muted-foreground/60 text-xs">/ {summary.accounts.total}</span>
               {summary.accounts.disabled > 0 && (
-                <span className="text-xs text-muted-foreground/50">
-                  · {summary.accounts.disabled} désact.
-                </span>
+                <span className="text-muted-foreground/50 text-xs">· {summary.accounts.disabled} désact.</span>
               )}
             </div>
           </div>
           {/* Certificats */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/30">
-            <span className="text-xs text-muted-foreground">Certificats</span>
+          <div className="border-border/30 flex items-center justify-between border-t px-4 py-2.5">
+            <span className="text-muted-foreground text-xs">Certificats</span>
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-semibold">{summary.certificates.total}</span>
               {expiringSoonCount > 0 ? (
@@ -102,8 +89,8 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
             </div>
           </div>
           {/* Sites */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/30">
-            <span className="text-xs text-muted-foreground">Sites de transfert</span>
+          <div className="border-border/30 flex items-center justify-between border-t px-4 py-2.5">
+            <span className="text-muted-foreground text-xs">Sites de transfert</span>
             <span className="text-sm font-semibold">{summary.sites.total}</span>
           </div>
         </CardContent>
@@ -117,19 +104,13 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
       {/* Comptes actifs */}
       <Card className="bg-card border-border/50">
         <CardContent className="p-4">
-          <p className="text-sm text-muted-foreground">Comptes actifs</p>
+          <p className="text-muted-foreground text-sm">Comptes actifs</p>
           <p className="text-xl font-bold text-[#FF6D00]">
             {summary.accounts.active}
-            <span className="text-sm font-normal text-muted-foreground">
-              {' '}/ {summary.accounts.total}
-            </span>
+            <span className="text-muted-foreground text-sm font-normal"> / {summary.accounts.total}</span>
           </p>
           {summary.accounts.disabled > 0 && (
-            <StatusBadge
-              status="neutral"
-              label={`${summary.accounts.disabled} desactive(s)`}
-              className="mt-1"
-            />
+            <StatusBadge status="neutral" label={`${summary.accounts.disabled} desactive(s)`} className="mt-1" />
           )}
         </CardContent>
       </Card>
@@ -137,22 +118,12 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
       {/* Certificats */}
       <Card className="bg-card border-border/50">
         <CardContent className="p-4">
-          <p className="text-sm text-muted-foreground">Certificats</p>
-          <p className="text-xl font-bold text-foreground">
-            {summary.certificates.total}
-          </p>
+          <p className="text-muted-foreground text-sm">Certificats</p>
+          <p className="text-foreground text-xl font-bold">{summary.certificates.total}</p>
           {expiringSoonCount > 0 ? (
-            <StatusBadge
-              status="warning"
-              label={`${expiringSoonCount} expire(nt) bientot`}
-              className="mt-1"
-            />
+            <StatusBadge status="warning" label={`${expiringSoonCount} expire(nt) bientot`} className="mt-1" />
           ) : (
-            <StatusBadge
-              status="healthy"
-              label="Tous valides"
-              className="mt-1"
-            />
+            <StatusBadge status="healthy" label="Tous valides" className="mt-1" />
           )}
         </CardContent>
       </Card>
@@ -160,10 +131,8 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
       {/* Sites */}
       <Card className="bg-card border-border/50">
         <CardContent className="p-4">
-          <p className="text-sm text-muted-foreground">Sites de transfert</p>
-          <p className="text-xl font-bold text-foreground">
-            {summary.sites.total}
-          </p>
+          <p className="text-muted-foreground text-sm">Sites de transfert</p>
+          <p className="text-foreground text-xl font-bold">{summary.sites.total}</p>
         </CardContent>
       </Card>
     </div>

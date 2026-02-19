@@ -21,11 +21,11 @@ export default function MonitoringPage() {
       {/* Sensor counters */}
       <SensorGrid key={`sensors-${refreshKey}`} />
 
-      {/* Alerts */}
-      <AlertList key={`alerts-${refreshKey}`} />
-
-      {/* Device tree (has expand state → refreshSignal) */}
-      <DeviceTree refreshSignal={refreshKey} />
+      {/* Alerts + Device tree — side by side on ultrawide */}
+      <div className="space-y-6 2xl:grid 2xl:grid-cols-[3fr_2fr] 2xl:gap-6 2xl:space-y-0">
+        <AlertList key={`alerts-${refreshKey}`} />
+        <DeviceTree refreshSignal={refreshKey} />
+      </div>
     </div>
   );
 }

@@ -7,11 +7,12 @@ import { SourceLogo } from '@/components/ui/SourceLogo';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/skeleton';
-import { usePRTGAlerts } from '@/hooks/usePRTG';
 import { useVCenterVMs, useProxmoxVMs } from '@/hooks/useInfrastructure';
-import { useVeeamSessions } from '@/hooks/useVeeam';
 import { useTicketSummary } from '@/hooks/useTickets';
 import { useTransferSummary } from '@/hooks/useTransfers';
+import type { UseAutoRefreshReturn } from '@/hooks/useAutoRefresh';
+import type { PRTGSensorWithInstance } from '@/hooks/usePRTG';
+import type { VeeamSessionWithInstance } from '@/hooks/useVeeam';
 
 interface OverviewCardProps {
   title: string;
@@ -24,12 +25,16 @@ interface OverviewCardProps {
 function OverviewCard({ title, icon, href, accentColor, children }: OverviewCardProps) {
   return (
     <Link href={href}>
-      <Card className="transition-all duration-200 hover:bg-white/[0.03] cursor-pointer h-full group">
+      <Card
+        className="group h-full cursor-pointer border-t-2 transition-all duration-200 hover:bg-white/[0.03]"
+        style={{ borderTopColor: accentColor }}
+      >
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {title}
-          </CardTitle>
-          <div style={{ color: accentColor }} className="opacity-60 group-hover:opacity-100 transition-opacity">
+          <CardTitle className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{title}</CardTitle>
+          <div
+            className="flex h-8 w-8 items-center justify-center rounded-md opacity-80 transition-opacity group-hover:opacity-100"
+            style={{ color: accentColor, backgroundColor: `${accentColor}15` }}
+          >
             {icon}
           </div>
         </CardHeader>
@@ -42,25 +47,15 @@ function OverviewCard({ title, icon, href, accentColor, children }: OverviewCard
 function PlaceholderContent() {
   return (
     <div className="space-y-1">
-      <p className="text-lg font-bold text-muted-foreground/50">Non configure</p>
+      <p className="text-muted-foreground/50 text-lg font-bold">Non configure</p>
       <StatusBadge status="neutral" label="Inactif" />
     </div>
   );
 }
 
 function InfrastructureContent() {
-  const {
-    data: vcenterVMs,
-    loading: vcenterLoading,
-    error: vcenterError,
-    refresh: refreshVCenter,
-  } = useVCenterVMs();
-  const {
-    data: proxmoxVMs,
-    loading: proxmoxLoading,
-    error: proxmoxError,
-    refresh: refreshProxmox,
-  } = useProxmoxVMs();
+  const { data: vcenterVMs, loading: vcenterLoading, error: vcenterError, refresh: refreshVCenter } = useVCenterVMs();
+  const { data: proxmoxVMs, loading: proxmoxLoading, error: proxmoxError, refresh: refreshProxmox } = useProxmoxVMs();
 
   const loading = (vcenterLoading && !vcenterVMs) || (proxmoxLoading && !proxmoxVMs);
   const hasError = vcenterError && proxmoxError && !vcenterVMs && !proxmoxVMs;
@@ -102,32 +97,20 @@ function InfrastructureContent() {
 
   return (
     <div className="space-y-1">
-      <p className="text-lg font-bold text-foreground">
-        {runningVMs} <span className="text-sm font-normal text-muted-foreground">running</span>
+      <p className="text-foreground text-lg font-bold">
+        {runningVMs} <span className="text-muted-foreground text-sm font-normal">running</span>
       </p>
       <div className="flex items-center gap-2">
-        <StatusBadge
-          status={runningVMs > 0 ? 'healthy' : 'neutral'}
-          label={`${runningVMs}/${totalVMs} VMs`}
-        />
-        {vcenterError && !vcenterVMs && (
-          <StatusBadge status="warning" label="VMware err" />
-        )}
-        {proxmoxError && !proxmoxVMs && (
-          <StatusBadge status="warning" label="Proxmox err" />
-        )}
+        <StatusBadge status={runningVMs > 0 ? 'healthy' : 'neutral'} label={`${runningVMs}/${totalVMs} VMs`} />
+        {vcenterError && !vcenterVMs && <StatusBadge status="warning" label="VMware err" />}
+        {proxmoxError && !proxmoxVMs && <StatusBadge status="warning" label="Proxmox err" />}
       </div>
     </div>
   );
 }
 
-function BackupsContent() {
-  const {
-    data: sessions,
-    loading,
-    error,
-    refresh,
-  } = useVeeamSessions();
+function BackupsContent({ veeamSessions }: { veeamSessions: UseAutoRefreshReturn<VeeamSessionWithInstance[]> }) {
+  const { data: sessions, loading, error, refresh } = veeamSessions;
 
   const stats = useMemo(() => {
     if (!sessions) return null;
@@ -135,14 +118,10 @@ function BackupsContent() {
     const now = new Date();
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    const recentSessions = sessions.filter(
-      (s) => new Date(s.creationTime) >= last24h
-    );
+    const recentSessions = sessions.filter((s) => new Date(s.creationTime) >= last24h);
 
     const failures = recentSessions.filter(
-      (s) =>
-        s.result.result.toLowerCase() === 'failed' ||
-        s.result.result.toLowerCase() === 'error'
+      (s) => s.result.result.toLowerCase() === 'failed' || s.result.result.toLowerCase() === 'error',
     ).length;
 
     // Find last completed session
@@ -166,14 +145,7 @@ function BackupsContent() {
   }
 
   if (error && !sessions) {
-    return (
-      <ErrorState
-        title="Erreur Veeam"
-        message={error.message}
-        source="Veeam"
-        onRetry={refresh}
-      />
-    );
+    return <ErrorState title="Erreur Veeam" message={error.message} source="Veeam" onRetry={refresh} />;
   }
 
   if (!stats) return <PlaceholderContent />;
@@ -209,32 +181,21 @@ function BackupsContent() {
     <div className="space-y-1">
       <div className="flex items-center gap-2">
         {stats.failures > 0 ? (
-          <p className="text-lg font-bold text-[#ef4444]">
-            {stats.failures} echec(s)
-          </p>
+          <p className="text-lg font-bold text-[#ef4444]">{stats.failures} echec(s)</p>
         ) : (
-          <p className="text-lg font-bold text-[#22c55e]">
-            Tout OK
-          </p>
+          <p className="text-lg font-bold text-[#22c55e]">Tout OK</p>
         )}
       </div>
       <div className="flex items-center gap-2">
         <StatusBadge status={lastResultStatus} label={`Dernier: ${lastResultLabel}`} />
-        {stats.failures > 0 && (
-          <StatusBadge status="critical" label={`${stats.failures} fail 24h`} />
-        )}
+        {stats.failures > 0 && <StatusBadge status="critical" label={`${stats.failures} fail 24h`} />}
       </div>
     </div>
   );
 }
 
 function TicketsContent() {
-  const {
-    data: summary,
-    loading,
-    error,
-    refresh,
-  } = useTicketSummary();
+  const { data: summary, loading, error, refresh } = useTicketSummary();
 
   if (loading && !summary) {
     return (
@@ -246,14 +207,7 @@ function TicketsContent() {
   }
 
   if (error && !summary) {
-    return (
-      <ErrorState
-        title="Erreur GLPI"
-        message={error.message}
-        source="GLPI"
-        onRetry={refresh}
-      />
-    );
+    return <ErrorState title="Erreur GLPI" message={error.message} source="GLPI" onRetry={refresh} />;
   }
 
   if (!summary) return <PlaceholderContent />;
@@ -266,13 +220,10 @@ function TicketsContent() {
 
   return (
     <div className="space-y-1">
-      <p className="text-lg font-bold text-foreground">
-        {summary.openCount}{' '}
-        <span className="text-sm font-normal text-muted-foreground">ouverts</span>
+      <p className="text-foreground text-lg font-bold">
+        {summary.openCount} <span className="text-muted-foreground text-sm font-normal">ouverts</span>
         {summary.criticalCount > 0 && (
-          <span className="text-sm font-normal text-[#ef4444]">
-            {' '}({summary.criticalCount} critiques)
-          </span>
+          <span className="text-sm font-normal text-[#ef4444]"> ({summary.criticalCount} critiques)</span>
         )}
       </p>
       <div className="flex items-center gap-2">
@@ -292,12 +243,7 @@ function TicketsContent() {
 }
 
 function TransfersContent() {
-  const {
-    data: summary,
-    loading,
-    error,
-    refresh,
-  } = useTransferSummary();
+  const { data: summary, loading, error, refresh } = useTransferSummary();
 
   if (loading && !summary) {
     return (
@@ -310,12 +256,7 @@ function TransfersContent() {
 
   if (error && !summary) {
     return (
-      <ErrorState
-        title="Erreur SecureTransport"
-        message={error.message}
-        source="SecureTransport"
-        onRetry={refresh}
-      />
+      <ErrorState title="Erreur SecureTransport" message={error.message} source="SecureTransport" onRetry={refresh} />
     );
   }
 
@@ -325,32 +266,32 @@ function TransfersContent() {
 
   return (
     <div className="space-y-1">
-      <p className="text-lg font-bold text-foreground">
-        {summary.accounts.active}{' '}
-        <span className="text-sm font-normal text-muted-foreground">comptes actifs</span>
+      <p className="text-foreground text-lg font-bold">
+        {summary.accounts.active} <span className="text-muted-foreground text-sm font-normal">comptes actifs</span>
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <StatusBadge
           status={expiringSoonCount > 0 ? 'warning' : 'healthy'}
-          label={
-            expiringSoonCount > 0
-              ? `${expiringSoonCount} cert(s) expirent bientot`
-              : 'Tout OK'
-          }
+          label={expiringSoonCount > 0 ? `${expiringSoonCount} cert(s) expirent bientot` : 'Tout OK'}
         />
       </div>
     </div>
   );
 }
 
-export function OverviewCards() {
-  const { data: alerts, loading, error, refresh } = usePRTGAlerts();
+interface OverviewCardsProps {
+  prtgAlerts: UseAutoRefreshReturn<PRTGSensorWithInstance[]>;
+  veeamSessions: UseAutoRefreshReturn<VeeamSessionWithInstance[]>;
+}
+
+export function OverviewCards({ prtgAlerts, veeamSessions }: OverviewCardsProps) {
+  const { data: alerts, loading, error, refresh } = prtgAlerts;
 
   const downCount = alerts?.filter((s) => s.status === 'Down').length ?? 0;
   const warningCount = alerts?.filter((s) => s.status === 'Warning').length ?? 0;
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:gap-5">
       {/* PRTG Monitoring */}
       <OverviewCard
         title="Monitoring"
@@ -364,31 +305,20 @@ export function OverviewCards() {
             <Skeleton className="h-4 w-32" />
           </div>
         ) : error && !alerts ? (
-          <ErrorState
-            title="Erreur PRTG"
-            message={error.message}
-            source="PRTG"
-            onRetry={refresh}
-          />
+          <ErrorState title="Erreur PRTG" message={error.message} source="PRTG" onRetry={refresh} />
         ) : (
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               {downCount > 0 ? (
-                <p className="text-lg font-bold text-[#ef4444]">
-                  {downCount} down
-                </p>
+                <p className="text-lg font-bold text-[#ef4444]">{downCount} down</p>
               ) : (
-                <p className="text-lg font-bold text-[#22c55e]">
-                  Tout OK
-                </p>
+                <p className="text-lg font-bold text-[#22c55e]">Tout OK</p>
               )}
             </div>
             <div className="flex items-center gap-2">
               {downCount > 0 && <StatusBadge status="critical" label={`${downCount} down`} />}
               {warningCount > 0 && <StatusBadge status="warning" label={`${warningCount} warn`} />}
-              {downCount === 0 && warningCount === 0 && (
-                <StatusBadge status="healthy" label="Aucune alerte" />
-              )}
+              {downCount === 0 && warningCount === 0 && <StatusBadge status="healthy" label="Aucune alerte" />}
             </div>
           </div>
         )}
@@ -411,16 +341,11 @@ export function OverviewCards() {
         href="/backups"
         accentColor="#22c55e"
       >
-        <BackupsContent />
+        <BackupsContent veeamSessions={veeamSessions} />
       </OverviewCard>
 
       {/* Tickets */}
-      <OverviewCard
-        title="Tickets"
-        icon={<SourceLogo source="glpi" size={20} />}
-        href="/tickets"
-        accentColor="#f59e0b"
-      >
+      <OverviewCard title="Tickets" icon={<SourceLogo source="glpi" size={20} />} href="/tickets" accentColor="#f59e0b">
         <TicketsContent />
       </OverviewCard>
 

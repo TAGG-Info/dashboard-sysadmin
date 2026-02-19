@@ -11,7 +11,7 @@ export function SensorGrid() {
 
   if (loading && !summary) {
     return (
-      <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
+      <div className="grid grid-cols-3 gap-3 lg:grid-cols-6 2xl:gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <Card key={i} className="border-none">
             <CardContent className="flex items-center gap-3 p-4">
@@ -28,7 +28,7 @@ export function SensorGrid() {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
+    <div className="grid grid-cols-3 gap-3 lg:grid-cols-6 2xl:gap-4">
       <StatCard
         label="Up"
         value={summary?.sensors.up ?? 0}

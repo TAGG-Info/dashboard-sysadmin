@@ -101,7 +101,7 @@ export function Sidebar() {
     <div
       className={cn(
         'border-border/50 bg-sidebar relative flex h-screen flex-col border-r transition-all duration-300',
-        collapsed ? 'w-16' : 'w-56',
+        collapsed ? 'w-16' : 'w-56 2xl:w-64',
       )}
     >
       {/* Logo / Brand */}
@@ -112,7 +112,9 @@ export function Sidebar() {
               <div className="bg-primary/15 flex h-8 w-8 items-center justify-center rounded-lg">
                 <Zap className="text-primary h-4 w-4" />
               </div>
-              <span className="text-foreground text-sm font-bold tracking-tight">SysAdmin</span>
+              <span className="from-primary to-primary/60 bg-gradient-to-r bg-clip-text text-sm font-bold tracking-tight text-transparent">
+                SysAdmin
+              </span>
             </Link>
             <Button
               variant="ghost"
@@ -142,13 +144,17 @@ export function Sidebar() {
         )}
       </div>
 
+      {/* Decorative accent line */}
+      <div className="from-primary/40 via-primary/10 mx-3 h-px bg-gradient-to-r to-transparent" />
+
       {/* Navigation sections */}
       <ScrollArea className="flex-1 py-2">
         <nav className="flex flex-col gap-4 px-3">
           {filteredSections.map((section) => (
             <div key={section.label}>
               {!collapsed && (
-                <p className="text-muted-foreground/60 mb-2 px-3 text-[11px] font-semibold tracking-wider uppercase">
+                <p className="text-muted-foreground/60 mb-2 flex items-center gap-1.5 px-3 text-[11px] font-semibold tracking-wider uppercase">
+                  <span className="bg-primary/50 inline-block h-1 w-1 rounded-full" />
                   {section.label}
                 </p>
               )}

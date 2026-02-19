@@ -11,13 +11,10 @@ import { VMList } from './VMList';
 import { DatastoreList } from './DatastoreList';
 import { ProxmoxNodeCard } from './ProxmoxNodeCard';
 import { ProxmoxVMTable } from './ProxmoxVMTable';
-import {
-  useVCenterHosts,
-  useProxmoxNodes,
-} from '@/hooks/useInfrastructure';
+import { useVCenterHosts, useProxmoxNodes } from '@/hooks/useInfrastructure';
 
 function groupByInstanceId<T extends { _instanceId?: string; _instanceName?: string }>(
-  items: T[]
+  items: T[],
 ): { instanceId: string; instanceName: string; items: T[] }[] {
   const map = new Map<string, { instanceName: string; items: T[] }>();
   for (const item of items) {
@@ -41,7 +38,9 @@ export function HypervisorTabs({ refreshSignal }: { refreshSignal?: number }) {
 
   const refreshHostsRef = useRef<(() => Promise<void>) | undefined>(undefined);
   const refreshNodesRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  // eslint-disable-next-line react-hooks/refs
   refreshHostsRef.current = refreshHosts;
+  // eslint-disable-next-line react-hooks/refs
   refreshNodesRef.current = refreshNodes;
   useEffect(() => {
     if (refreshSignal) {
@@ -78,13 +77,9 @@ export function HypervisorTabs({ refreshSignal }: { refreshSignal?: number }) {
       <TabsContent value="vmware" className="space-y-6">
         {/* Hosts Grid */}
         <div>
-          <h3 className="text-sm font-semibold text-foreground mb-3">
+          <h3 className="text-foreground mb-3 text-sm font-semibold">
             Hosts ESXi
-            {hosts && (
-              <span className="ml-2 text-sm text-muted-foreground font-normal">
-                ({hosts.length})
-              </span>
-            )}
+            {hosts && <span className="text-muted-foreground ml-2 text-sm font-normal">({hosts.length})</span>}
           </h3>
           {hostsError && !hosts ? (
             <ErrorState
@@ -94,9 +89,9 @@ export function HypervisorTabs({ refreshSignal }: { refreshSignal?: number }) {
               onRetry={refreshHosts}
             />
           ) : hostsLoading && !hosts ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="rounded-lg border border-border/50 p-4 space-y-3">
+                <div key={i} className="border-border/50 space-y-3 rounded-lg border p-4">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-3 w-20" />
                   <Skeleton className="h-3 w-24" />
@@ -110,24 +105,21 @@ export function HypervisorTabs({ refreshSignal }: { refreshSignal?: number }) {
                   {multipleVCenterInstances && (
                     <InstanceSectionHeader instanceName={group.instanceName} className="mb-2" />
                   )}
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
                     {group.items.map((host) => (
-                      <HostCard
-                        key={`${group.instanceId}-${host.host}`}
-                        host={host}
-                      />
+                      <HostCard key={`${group.instanceId}-${host.host}`} host={host} />
                     ))}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Aucun host ESXi</p>
+            <p className="text-muted-foreground text-sm">Aucun host ESXi</p>
           )}
         </div>
 
         {/* VM List + Datastores side by side */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-[3fr_2fr]">
           <VMList refreshSignal={refreshSignal} />
           <DatastoreList key={refreshSignal} />
         </div>
@@ -137,13 +129,9 @@ export function HypervisorTabs({ refreshSignal }: { refreshSignal?: number }) {
       <TabsContent value="proxmox" className="space-y-6">
         {/* Nodes Grid */}
         <div>
-          <h3 className="text-sm font-semibold text-foreground mb-3">
+          <h3 className="text-foreground mb-3 text-sm font-semibold">
             Nodes
-            {nodes && (
-              <span className="ml-2 text-sm text-muted-foreground font-normal">
-                ({nodes.length})
-              </span>
-            )}
+            {nodes && <span className="text-muted-foreground ml-2 text-sm font-normal">({nodes.length})</span>}
           </h3>
           {nodesError && !nodes ? (
             <ErrorState
@@ -153,9 +141,9 @@ export function HypervisorTabs({ refreshSignal }: { refreshSignal?: number }) {
               onRetry={refreshNodes}
             />
           ) : nodesLoading && !nodes ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
               {Array.from({ length: 2 }).map((_, i) => (
-                <div key={i} className="rounded-lg border border-border/50 p-4 space-y-3">
+                <div key={i} className="border-border/50 space-y-3 rounded-lg border p-4">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-16 w-full" />
                 </div>
@@ -168,7 +156,7 @@ export function HypervisorTabs({ refreshSignal }: { refreshSignal?: number }) {
                   {multipleProxmoxInstances && (
                     <InstanceSectionHeader instanceName={group.instanceName} className="mb-2" />
                   )}
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
                     {group.items.map((node) => (
                       <ProxmoxNodeCard key={`${group.instanceId}-${node.node}`} node={node} />
                     ))}
@@ -177,7 +165,7 @@ export function HypervisorTabs({ refreshSignal }: { refreshSignal?: number }) {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Aucun node Proxmox</p>
+            <p className="text-muted-foreground text-sm">Aucun node Proxmox</p>
           )}
         </div>
 

@@ -12,18 +12,19 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle, source, badge, actions }: PageHeaderProps) {
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        {source && <SourceLogo source={source} size={28} />}
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">{title}</h1>
-          {subtitle && (
-            <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
-          )}
+    <div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {source && <SourceLogo source={source} size={32} />}
+          <div>
+            <h1 className="text-foreground text-xl font-bold tracking-tight">{title}</h1>
+            {subtitle && <p className="text-muted-foreground mt-0.5 text-sm">{subtitle}</p>}
+          </div>
+          {badge}
         </div>
-        {badge}
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      <div className="from-primary/30 via-primary/10 mt-3 h-px bg-gradient-to-r to-transparent" />
     </div>
   );
 }
