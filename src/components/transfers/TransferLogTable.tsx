@@ -15,12 +15,13 @@ import { SourceLogo } from '@/components/ui/SourceLogo';
 
 const PAGE_SIZE = 25;
 
-// Default column widths in pixels: Date, Compte, Fichier, Taille, Proto, Sens, TLS, Statut, Duree
-const DEFAULT_WIDTHS = [120, 130, 240, 70, 70, 50, 50, 110, 70];
+// Default column widths in pixels: Date, Compte, Login, Fichier, Taille, Proto, Sens, TLS, Statut, Duree
+const DEFAULT_WIDTHS = [120, 130, 100, 240, 70, 70, 50, 50, 110, 70];
 
 const COLS = [
   { label: 'Date', align: 'left' },
   { label: 'Compte', align: 'left' },
+  { label: 'Login', align: 'left' },
   { label: 'Fichier', align: 'left' },
   { label: 'Taille', align: 'right' },
   { label: 'Proto', align: 'left' },
@@ -179,6 +180,11 @@ export function TransferLogTable({ refreshSignal }: { refreshSignal?: number }) 
                       <td className="text-foreground overflow-hidden px-3 py-1.5 text-xs font-medium">
                         <span className="block truncate" title={t.account}>
                           {t.account}
+                        </span>
+                      </td>
+                      <td className="text-muted-foreground overflow-hidden px-3 py-1.5 text-xs">
+                        <span className="block truncate" title={t.login}>
+                          {t.login}
                         </span>
                       </td>
                       <td className="overflow-hidden px-3 py-1.5">
