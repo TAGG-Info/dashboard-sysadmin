@@ -35,13 +35,18 @@ param(
     [string]$Password = ""
 )
 
-# Require Veeam snap-in
-if (-not (Get-PSSnapin -Name VeeamPSSnapin -ErrorAction SilentlyContinue)) {
+# Require Veeam PowerShell module (Veeam 12+)
+if (-not (Get-Module -Name Veeam.Backup.PowerShell -ErrorAction SilentlyContinue)) {
     try {
-        Add-PSSnapin VeeamPSSnapin
+        Import-Module Veeam.Backup.PowerShell -ErrorAction Stop
     } catch {
-        Write-Error "Veeam PowerShell snap-in not found. Run this on the VBR server."
-        exit 1
+        # Fallback: try legacy snap-in (Veeam 9.x/10.x)
+        try {
+            Add-PSSnapin VeeamPSSnapin -ErrorAction Stop
+        } catch {
+            Write-Error "Veeam PowerShell module not found. Run this on the VBR server with Veeam B&R installed."
+            exit 1
+        }
     }
 }
 
@@ -113,7 +118,10 @@ function Test-BasicAuth {
     try {
         $decoded = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($AuthHeader.Substring(6)))
         $parts = $decoded -split ":", 2
-        return ($parts[0] -eq $Username -and $parts[1] -eq $Password)
+        # Strip domain prefix (DOMAIN\user, .\user) for comparison
+        $incomingUser = ($parts[0] -split '\\')[-1]
+        $expectedUser = ($Username -split '\\')[-1]
+        return ($incomingUser -eq $expectedUser -and $parts[1] -eq $Password)
     } catch { return $false }
 }
 

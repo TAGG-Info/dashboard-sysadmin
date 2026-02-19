@@ -61,10 +61,11 @@ const sourceFields: Record<SourceName, FieldDef[]> = {
     { key: 'externalUrl', label: 'URL externe', placeholder: 'https://proxmox.example.com:8006' },
   ],
   veeam: [
-    { key: 'baseUrl', label: 'URL de base', placeholder: 'https://veeam.example.com:9419' },
+    { key: 'baseUrl', label: 'URL VBEM', placeholder: 'https://vbem.example.com:9398' },
     { key: 'username', label: "Nom d'utilisateur" },
     { key: 'password', label: 'Mot de passe', secret: true },
-    { key: 'externalUrl', label: 'URL externe', placeholder: 'https://veeam.example.com' },
+    { key: 'psBaseUrl', label: 'URL PS Bridge (optionnel)', placeholder: 'http://vbr.example.com:9420' },
+    { key: 'externalUrl', label: 'URL externe', placeholder: 'https://vbem.example.com' },
   ],
   glpi: [
     { key: 'baseUrl', label: 'URL API', placeholder: 'https://glpi/apirest.php' },

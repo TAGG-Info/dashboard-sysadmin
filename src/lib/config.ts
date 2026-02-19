@@ -5,7 +5,19 @@ import type { SourceConfig, SourceKey, SourceInstanceMap } from './config-types'
 import { SENSITIVE_FIELDS } from './config-types';
 
 // Re-export types for backward compatibility
-export type { BaseInstance, PRTGInstance, VCenterInstance, ProxmoxInstance, VeeamInstance, GLPIInstance, STInstance, SourceConfig, LegacySourceConfig, SourceKey, SourceInstanceMap } from './config-types';
+export type {
+  BaseInstance,
+  PRTGInstance,
+  VCenterInstance,
+  ProxmoxInstance,
+  VeeamInstance,
+  GLPIInstance,
+  STInstance,
+  SourceConfig,
+  LegacySourceConfig,
+  SourceKey,
+  SourceInstanceMap,
+} from './config-types';
 export { SENSITIVE_FIELDS } from './config-types';
 
 // ---------------------------------------------------------------------------
@@ -30,7 +42,9 @@ function getDerivedKey(): Buffer {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('CRYPTO_SALT is required in production for secure config encryption');
     }
-    console.warn('[config] CRYPTO_SALT not set — using insecure fallback salt. Set CRYPTO_SALT in .env.local for production.');
+    console.warn(
+      '[config] CRYPTO_SALT not set — using insecure fallback salt. Set CRYPTO_SALT in .env.local for production.',
+    );
   }
   const effectiveSalt = salt || 'dashboard-tagg-config-salt';
   _derivedKey = scryptSync(secret, effectiveSalt, 32);
@@ -185,63 +199,87 @@ function envFallback<K extends SourceKey>(source: K): SourceInstanceMap[K][] | n
       const baseUrl = process.env.PRTG_BASE_URL;
       const apiKey = process.env.PRTG_API_KEY;
       if (!baseUrl) return null;
-      return [{ id: 'default', name: 'Default', baseUrl, apiKey: apiKey || '', externalUrl: process.env.PRTG_EXTERNAL_URL || baseUrl }] as SourceInstanceMap[K][];
+      return [
+        {
+          id: 'default',
+          name: 'Default',
+          baseUrl,
+          apiKey: apiKey || '',
+          externalUrl: process.env.PRTG_EXTERNAL_URL || baseUrl,
+        },
+      ] as SourceInstanceMap[K][];
     }
     case 'vcenter': {
       const baseUrl = process.env.VCENTER_BASE_URL;
       if (!baseUrl) return null;
-      return [{
-        id: 'default', name: 'Default',
-        baseUrl,
-        username: process.env.VCENTER_USERNAME || '',
-        password: process.env.VCENTER_PASSWORD || '',
-        externalUrl: process.env.VCENTER_EXTERNAL_URL || baseUrl,
-      }] as SourceInstanceMap[K][];
+      return [
+        {
+          id: 'default',
+          name: 'Default',
+          baseUrl,
+          username: process.env.VCENTER_USERNAME || '',
+          password: process.env.VCENTER_PASSWORD || '',
+          externalUrl: process.env.VCENTER_EXTERNAL_URL || baseUrl,
+        },
+      ] as SourceInstanceMap[K][];
     }
     case 'proxmox': {
       const baseUrl = process.env.PROXMOX_BASE_URL;
       if (!baseUrl) return null;
-      return [{
-        id: 'default', name: 'Default',
-        baseUrl,
-        tokenId: process.env.PROXMOX_TOKEN_ID || '',
-        tokenSecret: process.env.PROXMOX_TOKEN_SECRET || '',
-        externalUrl: process.env.PROXMOX_EXTERNAL_URL || baseUrl,
-      }] as SourceInstanceMap[K][];
+      return [
+        {
+          id: 'default',
+          name: 'Default',
+          baseUrl,
+          tokenId: process.env.PROXMOX_TOKEN_ID || '',
+          tokenSecret: process.env.PROXMOX_TOKEN_SECRET || '',
+          externalUrl: process.env.PROXMOX_EXTERNAL_URL || baseUrl,
+        },
+      ] as SourceInstanceMap[K][];
     }
     case 'veeam': {
       const baseUrl = process.env.VEEAM_BASE_URL;
       if (!baseUrl) return null;
-      return [{
-        id: 'default', name: 'Default',
-        baseUrl,
-        username: process.env.VEEAM_USERNAME || '',
-        password: process.env.VEEAM_PASSWORD || '',
-        externalUrl: process.env.VEEAM_EXTERNAL_URL || baseUrl,
-      }] as SourceInstanceMap[K][];
+      return [
+        {
+          id: 'default',
+          name: 'Default',
+          baseUrl,
+          username: process.env.VEEAM_USERNAME || '',
+          password: process.env.VEEAM_PASSWORD || '',
+          psBaseUrl: process.env.VEEAM_PS_BASE_URL || undefined,
+          externalUrl: process.env.VEEAM_EXTERNAL_URL || baseUrl,
+        },
+      ] as SourceInstanceMap[K][];
     }
     case 'glpi': {
       const baseUrl = process.env.GLPI_BASE_URL;
       if (!baseUrl) return null;
-      return [{
-        id: 'default', name: 'Default',
-        baseUrl,
-        appToken: process.env.GLPI_APP_TOKEN || '',
-        userToken: process.env.GLPI_USER_TOKEN || '',
-        externalUrl: process.env.GLPI_EXTERNAL_URL || baseUrl,
-      }] as SourceInstanceMap[K][];
+      return [
+        {
+          id: 'default',
+          name: 'Default',
+          baseUrl,
+          appToken: process.env.GLPI_APP_TOKEN || '',
+          userToken: process.env.GLPI_USER_TOKEN || '',
+          externalUrl: process.env.GLPI_EXTERNAL_URL || baseUrl,
+        },
+      ] as SourceInstanceMap[K][];
     }
     case 'securetransport': {
       const baseUrl = process.env.ST_BASE_URL;
       if (!baseUrl) return null;
-      return [{
-        id: 'default', name: 'Default',
-        baseUrl,
-        username: process.env.ST_USERNAME || '',
-        password: process.env.ST_PASSWORD || '',
-        apiVersion: process.env.ST_API_VERSION || 'v2.0',
-        externalUrl: process.env.ST_EXTERNAL_URL || baseUrl,
-      }] as SourceInstanceMap[K][];
+      return [
+        {
+          id: 'default',
+          name: 'Default',
+          baseUrl,
+          username: process.env.ST_USERNAME || '',
+          password: process.env.ST_PASSWORD || '',
+          apiVersion: process.env.ST_API_VERSION || 'v2.0',
+          externalUrl: process.env.ST_EXTERNAL_URL || baseUrl,
+        },
+      ] as SourceInstanceMap[K][];
     }
     default:
       return null;
@@ -251,9 +289,7 @@ function envFallback<K extends SourceKey>(source: K): SourceInstanceMap[K][] | n
 /**
  * Returns the full array of instances for a source (or empty array).
  */
-export async function getSourceConfig<K extends SourceKey>(
-  source: K,
-): Promise<SourceInstanceMap[K][]> {
+export async function getSourceConfig<K extends SourceKey>(source: K): Promise<SourceInstanceMap[K][]> {
   const config = await getCachedConfig();
   const instances = config[source] as SourceInstanceMap[K][] | undefined;
   if (instances && instances.length > 0) return instances;
@@ -269,6 +305,5 @@ export async function getSourceInstance<K extends SourceKey>(
   instanceId: string,
 ): Promise<SourceInstanceMap[K] | null> {
   const instances = await getSourceConfig(source);
-  return instances.find(i => i.id === instanceId) ?? null;
+  return instances.find((i) => i.id === instanceId) ?? null;
 }
-
