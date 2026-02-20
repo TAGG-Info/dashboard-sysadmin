@@ -101,7 +101,7 @@ export function BackupCalendar() {
     sessions.forEach((session) => {
       const date = new Date(session.creationTime);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      const result = session.result.result.toLowerCase() as string;
+      const result = (session.result?.result?.toLowerCase() ?? 'none') as string;
       const jobName = session.name;
 
       let status: DayStatus = 'none';
@@ -259,14 +259,14 @@ export function BackupCalendar() {
                   <TooltipTrigger asChild>
                     <div
                       className={cn(
-                        'flex min-h-[48px] cursor-default flex-col rounded-sm p-0.5 text-[9px] transition-colors',
+                        'flex min-h-[80px] cursor-default flex-col rounded-sm p-1 text-[9px] transition-colors',
                         !inMonth && 'opacity-20',
                       )}
                       style={{ backgroundColor: color }}
                     >
                       <span
                         className={cn(
-                          'text-center text-[10px] leading-tight font-medium',
+                          'text-center text-xs leading-tight font-medium',
                           status === 'none' ? 'text-muted-foreground/50' : 'text-white/90',
                         )}
                       >
@@ -276,12 +276,12 @@ export function BackupCalendar() {
                         <div className="mt-0.5 flex flex-1 flex-col gap-px overflow-hidden">
                           {visibleJobs.map((job) => (
                             <div key={job.name} className="flex min-w-0 items-center gap-0.5">
-                              <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', getDotColor(job.status))} />
-                              <span className="truncate text-[7px] leading-tight text-white/80">{job.name}</span>
+                              <span className={cn('h-2 w-2 shrink-0 rounded-full', getDotColor(job.status))} />
+                              <span className="truncate text-[10px] leading-tight text-white/80">{job.name}</span>
                             </div>
                           ))}
                           {hiddenCount > 0 && (
-                            <span className="text-[7px] leading-tight text-white/60">+{hiddenCount}</span>
+                            <span className="text-[9px] leading-tight text-white/60">+{hiddenCount}</span>
                           )}
                         </div>
                       )}
@@ -305,7 +305,7 @@ export function BackupCalendar() {
                             >
                               {getStatusIcon(job.status)}
                             </span>
-                            <span className="truncate">{job.name}</span>
+                            <span className="break-words">{job.name}</span>
                           </div>
                         ))}
                       </div>
