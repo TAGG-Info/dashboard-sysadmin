@@ -91,7 +91,7 @@ export function RepositoryBars() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid gap-5">
           {repos.map((repo) => (
             <RepoBar key={repo.Name} repo={repo} />
           ))}

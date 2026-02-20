@@ -60,8 +60,13 @@ export default function BackupsPage() {
       {/* Stats cards (VBEM summary) */}
       <BackupStats />
 
-      {/* Job list (PS bridge) */}
-      <JobList />
+      {/* Job list (left) + Repository capacity (right) */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
+        <JobList />
+        <div className="self-start xl:sticky xl:top-4">
+          <RepositoryBars />
+        </div>
+      </div>
 
       {/* Session timeline + Calendar (PS bridge) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-[5fr_3fr]">
@@ -76,9 +81,6 @@ export default function BackupsPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Repository capacity bars (VBEM summary) */}
-      <RepositoryBars />
     </div>
   );
 }
