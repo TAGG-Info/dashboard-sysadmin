@@ -30,6 +30,7 @@ export class GLPIClient {
   private userToken: string;
   private sessionToken: string | null = null;
   private sessionExpiry: number = 0;
+  private sessionPromise: Promise<string> | null = null;
 
   constructor(config: GLPIInstance) {
     this.baseUrl = config.baseUrl;
@@ -42,6 +43,18 @@ export class GLPIClient {
       return this.sessionToken;
     }
 
+    // Deduplicate concurrent session init requests
+    if (this.sessionPromise) return this.sessionPromise;
+
+    this.sessionPromise = this.initSession();
+    try {
+      return await this.sessionPromise;
+    } finally {
+      this.sessionPromise = null;
+    }
+  }
+
+  private async initSession(): Promise<string> {
     const res = await fetch(`${this.baseUrl}/initSession`, {
       headers: {
         'App-Token': this.appToken,
@@ -140,18 +153,6 @@ export class GLPIClient {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await this.request<any>(`/search/Ticket?${params.toString()}`);
 
-    loggers.glpi.info(
-      {
-        keys: Object.keys(result),
-        totalcount: result.totalcount,
-        count: result.count,
-        dataType: typeof result.data,
-        dataIsArray: Array.isArray(result.data),
-        sample: JSON.stringify(Array.isArray(result.data) ? result.data[0] : result.data).slice(0, 500),
-      },
-      'GLPI search raw response',
-    );
-
     // GLPI search peut retourner data comme array ou object (as_map)
     let rows: Record<string, string | number | null>[];
     if (Array.isArray(result.data)) {
@@ -159,14 +160,11 @@ export class GLPIClient {
     } else if (result.data && typeof result.data === 'object') {
       rows = Object.values(result.data);
     } else {
-      loggers.glpi.warn(
-        { totalcount: result.totalcount, response: JSON.stringify(result).slice(0, 500) },
-        'GLPI search returned no data',
-      );
+      loggers.glpi.warn({ response: JSON.stringify(result).slice(0, 300) }, 'GLPI search returned no data');
       return [];
     }
 
-    loggers.glpi.info({ totalcount: result.totalcount, count: rows.length }, 'GLPI search tickets parsed');
+    loggers.glpi.info({ totalcount: result.totalcount, count: rows.length }, 'GLPI tickets fetched');
 
     return rows.map((row) => ({
       id: Number(row[SF.ID]),
