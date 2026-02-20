@@ -130,15 +130,21 @@ function sortTickets(tickets: GLPITicketWithInstance[], key: ColKey, dir: SortDi
 }
 
 // --- Component ---
-export function TicketList() {
+interface TicketListProps {
+  statusFilter?: string;
+  onStatusFilterChange?: (status: string) => void;
+}
+
+export function TicketList({ statusFilter = '', onStatusFilterChange }: TicketListProps) {
   const { data: tickets, loading, error, refresh } = useTickets();
   const { widths, startResize, resetWidths } = useColumnResize(DEFAULT_WIDTHS);
 
   const glpiUrl = process.env.NEXT_PUBLIC_GLPI_URL || '';
 
-  // Filters
+  // Filters — status is controlled from parent (stats cards) or local Select
   const [searchText, setSearchText] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const filterStatus = statusFilter;
+  const setFilterStatus = onStatusFilterChange ?? (() => {});
   const [filterPriority, setFilterPriority] = useState('');
   const [filterType, setFilterType] = useState('');
 
@@ -166,7 +172,7 @@ export function TicketList() {
     setFilterStatus('');
     setFilterPriority('');
     setFilterType('');
-  }, []);
+  }, [setFilterStatus]);
 
   // Filter + sort
   const processedTickets = useMemo(() => {

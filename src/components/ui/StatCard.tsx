@@ -12,12 +12,25 @@ interface StatCardProps {
     positive?: boolean;
   };
   subtitle?: string;
+  onClick?: () => void;
+  active?: boolean;
 }
 
-export function StatCard({ label, value, color, icon, badge, trend, subtitle }: StatCardProps) {
+export function StatCard({ label, value, color, icon, badge, trend, subtitle, onClick, active }: StatCardProps) {
   if (icon) {
     return (
-      <Card className="border-t-2 transition-colors" style={{ borderTopColor: color ?? 'var(--color-primary)' }}>
+      <Card
+        className={cn(
+          'border-t-2 transition-colors',
+          onClick && 'hover:bg-muted/30 cursor-pointer',
+          active && 'ring-offset-background ring-2 ring-offset-1',
+        )}
+        style={{
+          borderTopColor: color ?? 'var(--color-primary)',
+          ...(active ? { ringColor: color } : {}),
+        }}
+        onClick={onClick}
+      >
         <CardContent className="flex items-center gap-3 p-4 2xl:p-5">
           <div
             className="flex h-10 w-10 items-center justify-center rounded-md"
@@ -48,7 +61,18 @@ export function StatCard({ label, value, color, icon, badge, trend, subtitle }: 
   }
 
   return (
-    <Card className="border-t-2 transition-colors" style={{ borderTopColor: color ?? 'var(--color-primary)' }}>
+    <Card
+      className={cn(
+        'border-t-2 transition-colors',
+        onClick && 'hover:bg-muted/30 cursor-pointer',
+        active && 'ring-offset-background ring-2 ring-offset-1',
+      )}
+      style={{
+        borderTopColor: color ?? 'var(--color-primary)',
+        ...(active ? { ringColor: color } : {}),
+      }}
+      onClick={onClick}
+    >
       <CardContent className="p-4 2xl:p-5">
         <p className="text-muted-foreground text-xs">{label}</p>
         <p className="mt-0.5 text-2xl font-bold tabular-nums" style={color ? { color } : undefined}>
