@@ -61,9 +61,9 @@ export default function BackupsPage() {
       <BackupStats />
 
       {/* Job list (left) + Repository capacity (right) */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
         <JobList />
-        <div className="self-start xl:sticky xl:top-4">
+        <div className="self-start lg:sticky lg:top-4">
           <RepositoryBars />
         </div>
       </div>
