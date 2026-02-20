@@ -16,6 +16,8 @@ const SF = {
   CLOSEDATE: 16,
   CONTENT: 21,
   CATEGORY: 7,
+  REQUESTER: 4,
+  ASSIGNED: 5,
 } as const;
 
 interface GLPISearchResponse {
@@ -142,6 +144,8 @@ export class GLPIClient {
       SF.CLOSEDATE,
       SF.CONTENT,
       SF.CATEGORY,
+      SF.REQUESTER,
+      SF.ASSIGNED,
     ];
     fields.forEach((f, i) => params.append(`forcedisplay[${i}]`, String(f)));
 
@@ -179,6 +183,8 @@ export class GLPIClient {
       closedate: row[SF.CLOSEDATE] ? String(row[SF.CLOSEDATE]) : undefined,
       content: row[SF.CONTENT] ? String(row[SF.CONTENT]) : undefined,
       itilcategories_id: row[SF.CATEGORY] ? Number(row[SF.CATEGORY]) : undefined,
+      _users_id_requester: row[SF.REQUESTER] ? String(row[SF.REQUESTER]) : undefined,
+      _users_id_assign: row[SF.ASSIGNED] ? String(row[SF.ASSIGNED]) : undefined,
     }));
   }
 
