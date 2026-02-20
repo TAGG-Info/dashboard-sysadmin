@@ -25,11 +25,11 @@
   Expected Basic auth password.
 
 .EXAMPLE
-  .\veeam-ps-bridge.ps1 -Port 9420 -Username "TAGGINFO\test.veeam" -Password "P@ssw0rd73410"
+  .\veeam-ps-bridge.ps1 -Port 9421 -Username "TAGGINFO\test.veeam" -Password "P@ssw0rd73410"
 #>
 
 param(
-    [int]$Port = 9420,
+    [int]$Port = 9421,
     [int]$CacheRefreshSeconds = 45,
     [string]$Username = "",
     [string]$Password = ""
