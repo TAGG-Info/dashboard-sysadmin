@@ -47,18 +47,18 @@ export function MobileNav() {
         className={cn(
           'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-150',
           active
-            ? 'text-foreground border-primary -ml-[2px] border-l-2 bg-white/[0.07] pl-[14px]'
-            : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.04]',
+            ? 'text-accent-foreground bg-accent'
+            : 'text-muted-foreground hover:text-accent-foreground hover:bg-accent/70',
         )}
       >
-        <Icon className={cn('h-[18px] w-[18px] shrink-0', active && 'text-primary')} />
+        <Icon className="h-[18px] w-[18px] shrink-0" />
         <span>{item.label}</span>
       </Link>
     );
   };
 
   return (
-    <div className="border-border/30 bg-background/50 flex h-12 items-center border-b px-4 backdrop-blur-sm">
+    <div className="border-border/60 bg-card flex h-12 items-center border-b px-4">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="mr-2 h-8 w-8">
@@ -69,8 +69,8 @@ export function MobileNav() {
         <SheetContent side="left" className="bg-sidebar w-64 p-0">
           <SheetHeader className="p-4">
             <SheetTitle className="text-foreground flex items-center gap-2.5">
-              <div className="bg-primary/15 flex h-8 w-8 items-center justify-center rounded-lg">
-                <Zap className="text-primary h-4 w-4" />
+              <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
+                <Zap className="text-foreground h-4 w-4" />
               </div>
               SysAdmin
             </SheetTitle>
@@ -78,7 +78,7 @@ export function MobileNav() {
           <ScrollArea className="flex-1 py-2">
             <nav className="flex flex-col gap-4 px-3">
               <div>
-                <p className="text-muted-foreground/60 mb-2 px-3 text-[11px] font-semibold tracking-wider uppercase">
+                <p className="text-muted-foreground/60 mb-2 px-3 text-[11px] font-medium tracking-wider uppercase">
                   MAIN NAVIGATION
                 </p>
                 <div className="flex flex-col gap-0.5">{filteredNavItems.map(renderLink)}</div>
@@ -86,7 +86,7 @@ export function MobileNav() {
             </nav>
           </ScrollArea>
           {showSettings && (
-            <div className="border-border/30 border-t px-3 py-3">
+            <div className="border-sidebar-border border-t px-3 py-3">
               {renderLink({ href: '/settings', label: 'Settings', icon: Settings })}
             </div>
           )}
@@ -95,10 +95,10 @@ export function MobileNav() {
 
       {/* Brand on mobile */}
       <Link href="/" className="flex items-center gap-2">
-        <div className="bg-primary/15 flex h-7 w-7 items-center justify-center rounded-lg">
-          <Zap className="text-primary h-3.5 w-3.5" />
+        <div className="bg-muted flex h-7 w-7 items-center justify-center rounded-lg">
+          <Zap className="text-foreground h-3.5 w-3.5" />
         </div>
-        <span className="text-foreground text-sm font-bold tracking-tight">SysAdmin</span>
+        <span className="text-foreground text-sm font-semibold tracking-tight">SysAdmin</span>
       </Link>
     </div>
   );

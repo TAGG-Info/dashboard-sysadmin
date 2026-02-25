@@ -32,17 +32,12 @@ export function StatCard({ label, value, color, icon, badge, trend, subtitle, on
         onClick={onClick}
       >
         <CardContent className="flex items-center gap-3 p-4 2xl:p-5">
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-md"
-            style={{
-              backgroundColor: color ? `${color}18` : 'var(--color-primary-alpha-10, oklch(0.72 0.19 155 / 0.1))',
-            }}
-          >
+          <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-md">
             <div style={{ color }}>{icon}</div>
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-muted-foreground truncate text-xs">{label}</p>
-            <p className="text-foreground text-3xl font-bold tabular-nums">{value}</p>
+            <p className="text-foreground text-2xl font-semibold tabular-nums">{value}</p>
             {trend && (
               <span
                 className={cn(

@@ -52,6 +52,7 @@ html {
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-table-header: var(--table-header);
 
   /* Status color tokens */
   --color-status-healthy: oklch(0.72 0.19 155);
@@ -63,96 +64,61 @@ html {
   --color-status-paused: oklch(0.70 0.16 315);
 }
 
-/* ---- Nordic Frost — cool blue-gray + teal accent ---- */
+/* ---- Beszel-inspired dark theme ---- */
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.8rem;
 
-  /* Surface hierarchy: bg(0.13) → muted(0.18) → card(0.22) → popover(0.25) */
-  --background: oklch(0.13 0.012 230);
-  --foreground: oklch(0.93 0.005 230);
+  /* Surface hierarchy */
+  --background: hsl(220 5.5% 9%);
+  --foreground: hsl(220 2% 97%);
 
-  --card: oklch(0.22 0.012 230);
-  --card-foreground: oklch(0.93 0.005 230);
+  --card: hsl(220 5.5% 10.5%);
+  --card-foreground: hsl(220 2% 97%);
 
-  --popover: oklch(0.25 0.012 230);
-  --popover-foreground: oklch(0.93 0.005 230);
+  --popover: hsl(220 5.5% 9%);
+  --popover-foreground: hsl(220 2% 97%);
 
-  /* Primary — distinctive teal */
-  --primary: oklch(0.72 0.14 195);
-  --primary-foreground: oklch(0.12 0.015 195);
+  /* Primary — neutral white */
+  --primary: hsl(220 2% 96%);
+  --primary-foreground: hsl(220 4% 10%);
 
-  --secondary: oklch(0.18 0.010 230);
-  --secondary-foreground: oklch(0.88 0.005 230);
+  --secondary: hsl(220 4% 16%);
+  --secondary-foreground: hsl(220 0% 98%);
 
-  --muted: oklch(0.18 0.010 230);
-  --muted-foreground: oklch(0.65 0.015 230);
+  --muted: hsl(220 6% 16%);
+  --muted-foreground: hsl(220 4% 67%);
 
-  --accent: oklch(0.26 0.012 230);
-  --accent-foreground: oklch(0.93 0.005 230);
+  --accent: hsl(220 5% 15.5%);
+  --accent-foreground: hsl(220 2% 98%);
 
-  --destructive: oklch(0.60 0.20 25);
-  --destructive-foreground: oklch(0.97 0.005 0);
+  --destructive: hsl(0 62% 46%);
+  --destructive-foreground: hsl(0 0% 97%);
 
   /* Borders & inputs */
-  --border: oklch(0.30 0.012 230);
-  --input: oklch(0.20 0.010 230);
-  --ring: oklch(0.72 0.14 195);
+  --border: hsl(220 3% 17%);
+  --input: hsl(220 4% 22%);
+  --ring: hsl(220 4% 80%);
 
-  /* Charts — balanced for cool bg */
-  --chart-1: oklch(0.72 0.14 195);
-  --chart-2: oklch(0.62 0.17 260);
-  --chart-3: oklch(0.78 0.15 85);
-  --chart-4: oklch(0.65 0.16 140);
-  --chart-5: oklch(0.60 0.20 25);
+  /* Table header */
+  --table-header: hsl(220 6% 13%);
+
+  /* Charts — Beszel palette */
+  --chart-1: hsl(220 70% 50%);
+  --chart-2: hsl(160 60% 45%);
+  --chart-3: hsl(30 80% 55%);
+  --chart-4: hsl(280 65% 60%);
+  --chart-5: hsl(340 75% 55%);
 
   /* Sidebar — deepest surface */
-  --sidebar: oklch(0.10 0.012 230);
-  --sidebar-foreground: oklch(0.93 0.005 230);
-  --sidebar-primary: oklch(0.72 0.14 195);
-  --sidebar-primary-foreground: oklch(0.12 0.015 195);
-  --sidebar-accent: oklch(0.16 0.010 230);
-  --sidebar-accent-foreground: oklch(0.93 0.005 230);
-  --sidebar-border: oklch(0.20 0.010 230);
-  --sidebar-ring: oklch(0.72 0.14 195);
-
-  /* Brand colors — source logos */
-  --brand-prtg: #f99e1c;
-  --brand-vmware: #879AC3;
-  --brand-proxmox: #E57000;
-  --brand-veeam: #4caf50;
-  --brand-glpi: #00a5f3;
-  --brand-st: #D9272D;
-}
-
-.dark {
-  --background: oklch(0.13 0.012 230);
-  --foreground: oklch(0.93 0.005 230);
-
-  --card: oklch(0.22 0.012 230);
-  --card-foreground: oklch(0.93 0.005 230);
-
-  --popover: oklch(0.25 0.012 230);
-  --popover-foreground: oklch(0.93 0.005 230);
-
-  --primary: oklch(0.72 0.14 195);
-  --primary-foreground: oklch(0.12 0.015 195);
-
-  --secondary: oklch(0.18 0.010 230);
-  --secondary-foreground: oklch(0.88 0.005 230);
-
-  --muted: oklch(0.18 0.010 230);
-  --muted-foreground: oklch(0.65 0.015 230);
-
-  --accent: oklch(0.26 0.012 230);
-  --accent-foreground: oklch(0.93 0.005 230);
-
-  --destructive: oklch(0.60 0.20 25);
-  --destructive-foreground: oklch(0.97 0.005 0);
-
-  --border: oklch(0.30 0.012 230);
-  --input: oklch(0.20 0.010 230);
-  --ring: oklch(0.72 0.14 195);
+  --sidebar: hsl(220 5.5% 7%);
+  --sidebar-foreground: hsl(220 2% 97%);
+  --sidebar-primary: hsl(220 2% 96%);
+  --sidebar-primary-foreground: hsl(220 4% 10%);
+  --sidebar-accent: hsl(220 5% 13%);
+  --sidebar-accent-foreground: hsl(220 2% 98%);
+  --sidebar-border: hsl(220 3% 14%);
+  --sidebar-ring: hsl(220 4% 80%);
 
   /* Brand colors — source logos */
   --brand-prtg: #f99e1c;
@@ -167,6 +133,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-variant-ligatures: no-contextual;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -174,24 +141,8 @@ body {
 /* ---- Subtle effects ---- */
 
 @keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(3px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.settings-card-glow {
-  position: relative;
-}
-.settings-card-glow::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01), rgba(255,255,255,0.04));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
 }
 
 .stagger-in > * {
@@ -209,15 +160,5 @@ body {
 @layer utilities {
   .page-content {
     @apply space-y-6;
-  }
-  .shadow-card {
-    box-shadow:
-      0 1px 3px rgba(0,0,0,0.3),
-      0 0 0 1px rgba(148,163,184,0.06);
-  }
-  .shadow-card-hover {
-    box-shadow:
-      0 4px 16px rgba(0,0,0,0.4),
-      0 0 0 1px rgba(148,163,184,0.1);
   }
 }

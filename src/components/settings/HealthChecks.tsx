@@ -81,12 +81,12 @@ export function HealthChecks() {
   const hasResults = Object.keys(results).length > 0;
 
   return (
-    <div className="settings-card-glow bg-background shadow-card overflow-hidden rounded-xl">
+    <div className="bg-card border-border/60 overflow-hidden rounded-lg border shadow-xs">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.04] px-5 py-4">
+      <div className="border-border/60 flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10">
-            <Activity className="h-4 w-4 text-emerald-400" />
+          <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
+            <Activity className="text-muted-foreground h-4 w-4" />
           </div>
           <div>
             <h3 className="text-foreground text-base font-semibold tracking-wide">Health Checks</h3>
@@ -97,20 +97,14 @@ export function HealthChecks() {
             )}
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={runAllChecks}
-          disabled={testing}
-          className="h-8 gap-2 border-white/10 bg-white/[0.03] text-sm hover:bg-white/[0.06]"
-        >
+        <Button variant="outline" size="sm" onClick={runAllChecks} disabled={testing} className="h-8 gap-2 text-sm">
           {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
           Tout tester
         </Button>
       </div>
 
       {/* Status Tile Grid */}
-      <div className="stagger-in grid grid-cols-3 gap-[1px] bg-white/[0.03]">
+      <div className="stagger-in bg-border/40 grid grid-cols-3 gap-[1px]">
         {sources.map(({ key, label, color }) => {
           const result = results[key];
           const isTestingThis = testingSource === key || (testing && !result);
@@ -123,8 +117,8 @@ export function HealthChecks() {
               onClick={() => testSingle(key)}
               disabled={testing || testingSource !== null}
               className={cn(
-                'bg-background relative flex flex-col items-center justify-center px-3 py-5 transition-all duration-300',
-                'hover:bg-white/[0.02] disabled:pointer-events-none',
+                'bg-card relative flex flex-col items-center justify-center px-3 py-5 transition-all duration-300',
+                'hover:bg-accent/50 disabled:pointer-events-none',
                 'group cursor-pointer',
               )}
             >

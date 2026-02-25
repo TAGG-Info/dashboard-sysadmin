@@ -70,14 +70,14 @@ export function Sidebar() {
         className={cn(
           'group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
           active
-            ? 'text-foreground border-primary -ml-[2px] border-l-2 bg-white/[0.07] pl-[14px]'
-            : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.04]',
+            ? 'text-accent-foreground bg-accent'
+            : 'text-muted-foreground hover:text-accent-foreground hover:bg-accent/70',
         )}
       >
         {item.source ? (
           <SourceLogo source={item.source} size={18} className={cn(!active && 'opacity-70')} />
         ) : Icon ? (
-          <Icon className={cn('h-[18px] w-[18px] shrink-0', active && 'text-primary')} />
+          <Icon className="h-[18px] w-[18px] shrink-0" />
         ) : null}
         {!collapsed && <span>{item.label}</span>}
       </Link>
@@ -100,7 +100,7 @@ export function Sidebar() {
   return (
     <div
       className={cn(
-        'border-border/30 bg-sidebar relative flex h-screen flex-col border-r transition-all duration-300',
+        'border-sidebar-border bg-sidebar relative flex h-screen flex-col border-r transition-all duration-300',
         collapsed ? 'w-16' : 'w-56 2xl:w-64',
       )}
     >
@@ -109,12 +109,10 @@ export function Sidebar() {
         {!collapsed ? (
           <>
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="bg-primary/15 flex h-8 w-8 items-center justify-center rounded-lg">
-                <Zap className="text-primary h-4 w-4" />
+              <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
+                <Zap className="text-foreground h-4 w-4" />
               </div>
-              <span className="from-primary to-primary/60 bg-gradient-to-r bg-clip-text text-sm font-bold tracking-tight text-transparent">
-                SysAdmin
-              </span>
+              <span className="text-foreground text-sm font-semibold tracking-tight">SysAdmin</span>
             </Link>
             <Button
               variant="ghost"
@@ -128,8 +126,8 @@ export function Sidebar() {
         ) : (
           <div className="mx-auto flex flex-col items-center gap-1">
             <Link href="/">
-              <div className="bg-primary/15 flex h-8 w-8 items-center justify-center rounded-lg">
-                <Zap className="text-primary h-4 w-4" />
+              <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
+                <Zap className="text-foreground h-4 w-4" />
               </div>
             </Link>
             <Button
@@ -144,8 +142,8 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* Decorative accent line */}
-      <div className="from-primary/40 via-primary/10 mx-3 h-px bg-gradient-to-r to-transparent" />
+      {/* Separator */}
+      <div className="bg-border/60 mx-3 h-px" />
 
       {/* Navigation sections */}
       <ScrollArea className="flex-1 py-2">
@@ -153,8 +151,7 @@ export function Sidebar() {
           {filteredSections.map((section) => (
             <div key={section.label}>
               {!collapsed && (
-                <p className="text-muted-foreground/60 mb-2 flex items-center gap-1.5 px-3 text-[11px] font-semibold tracking-wider uppercase">
-                  <span className="bg-primary/50 inline-block h-1 w-1 rounded-full" />
+                <p className="text-muted-foreground/60 mb-2 px-3 text-[11px] font-medium tracking-wider uppercase">
                   {section.label}
                 </p>
               )}

@@ -80,12 +80,12 @@ export function SourceConfigs() {
   }, 0);
 
   return (
-    <div className="settings-card-glow bg-background shadow-card overflow-hidden rounded-xl">
+    <div className="bg-card border-border/60 overflow-hidden rounded-lg border shadow-xs">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.04] px-5 py-4">
+      <div className="border-border/60 flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="bg-primary/10 border-primary/20 flex h-8 w-8 items-center justify-center rounded-lg border">
-            <Database className="text-primary h-4 w-4" />
+          <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
+            <Database className="text-foreground h-4 w-4" />
           </div>
           <div>
             <h3 className="text-foreground text-base font-semibold tracking-wide">Sources de donnees</h3>
@@ -93,7 +93,7 @@ export function SourceConfigs() {
           </div>
         </div>
         {!loading && totalInstances > 0 && (
-          <Badge className="bg-primary/10 text-primary border-primary/20 h-6 px-2.5 text-sm font-semibold">
+          <Badge className="bg-muted text-muted-foreground h-6 px-2.5 text-sm font-semibold">
             {totalInstances} instance{totalInstances > 1 ? 's' : ''}
           </Badge>
         )}
@@ -104,7 +104,7 @@ export function SourceConfigs() {
         {loading ? (
           <>
             {sources.map(({ key }) => (
-              <div key={key} className="h-14 animate-pulse rounded-lg border border-white/[0.03] bg-white/[0.02]" />
+              <div key={key} className="border-border/40 bg-muted/50 h-14 animate-pulse rounded-lg border" />
             ))}
           </>
         ) : (

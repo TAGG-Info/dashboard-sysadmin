@@ -23,15 +23,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <MobileNav />
         </div>
         <Topbar />
-        <main
-          className="flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-6"
-          style={{
-            background:
-              'radial-gradient(ellipse at 20% 0%, rgba(45,212,191,0.03) 0%, transparent 60%), radial-gradient(ellipse at 80% 100%, rgba(96,165,250,0.02) 0%, transparent 50%)',
-          }}
-        >
-          {children}
-        </main>
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-6">{children}</main>
       </div>
     </div>
   );

@@ -54,17 +54,11 @@ function Sparkline({ color }: { color: string }) {
 function OverviewCard({ title, icon, href, accentColor, children }: OverviewCardProps) {
   return (
     <Link href={href}>
-      <Card className="group relative h-full cursor-pointer overflow-hidden hover:bg-white/[0.03]">
-        <div
-          className="absolute top-0 bottom-0 left-0 w-[3px] rounded-l-xl"
-          style={{ background: `linear-gradient(180deg, ${accentColor}, ${accentColor}30)` }}
-        />
+      <Card className="group relative h-full cursor-pointer overflow-hidden duration-200 hover:-translate-y-px hover:shadow-md">
+        <div className="absolute top-0 bottom-0 left-0 w-[3px]" style={{ backgroundColor: accentColor }} />
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{title}</CardTitle>
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-md opacity-80 transition-opacity group-hover:opacity-100"
-            style={{ color: accentColor, backgroundColor: `${accentColor}15` }}
-          >
+          <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-md" style={{ color: accentColor }}>
             {icon}
           </div>
         </CardHeader>
@@ -80,7 +74,7 @@ function OverviewCard({ title, icon, href, accentColor, children }: OverviewCard
 function PlaceholderContent() {
   return (
     <div>
-      <p className="text-muted-foreground/30 text-3xl font-extrabold tracking-tight">—</p>
+      <p className="text-muted-foreground/30 text-2xl font-semibold tracking-tight">—</p>
       <p className="text-muted-foreground mt-1 text-xs">non configure</p>
     </div>
   );
@@ -134,7 +128,7 @@ function InfrastructureContent() {
 
   return (
     <div>
-      <p className="text-foreground text-3xl font-extrabold tracking-tight">{runningVMs}</p>
+      <p className="text-foreground text-2xl font-semibold tracking-tight">{runningVMs}</p>
       <p className="text-muted-foreground mt-1 text-xs">VMs en fonctionnement</p>
       <p className="mt-1.5 text-xs font-semibold">
         <span className="text-muted-foreground">
@@ -171,7 +165,7 @@ function BackupsContent({ veeamSummary }: { veeamSummary: UseAutoRefreshReturn<V
 
   return (
     <div>
-      <p className="text-foreground text-3xl font-extrabold tracking-tight">{SuccessfulJobRuns}</p>
+      <p className="text-foreground text-2xl font-semibold tracking-tight">{SuccessfulJobRuns}</p>
       <p className="text-muted-foreground mt-1 text-xs">succes</p>
       <p className="mt-1.5 text-xs font-semibold">
         {FailedJobRuns > 0 || WarningsJobRuns > 0 ? (
@@ -210,7 +204,7 @@ function TicketsContent() {
 
   return (
     <div>
-      <p className="text-foreground text-3xl font-extrabold tracking-tight">{summary.openCount}</p>
+      <p className="text-foreground text-2xl font-semibold tracking-tight">{summary.openCount}</p>
       <p className="text-muted-foreground mt-1 text-xs">tickets ouverts</p>
       <p className="mt-1.5 text-xs font-semibold">
         {summary.criticalCount > 0 && (
@@ -252,7 +246,7 @@ function TransfersContent() {
 
   return (
     <div>
-      <p className="text-foreground text-3xl font-extrabold tracking-tight">{summary.accounts.active}</p>
+      <p className="text-foreground text-2xl font-semibold tracking-tight">{summary.accounts.active}</p>
       <p className="text-muted-foreground mt-1 text-xs">comptes actifs</p>
       <p className="mt-1.5 text-xs font-semibold">
         {expiringSoonCount > 0 && (
@@ -297,7 +291,7 @@ export function OverviewCards({ prtgAlerts, veeamSummary }: OverviewCardsProps) 
           <ErrorState title="Erreur PRTG" message={error.message} source="PRTG" onRetry={refresh} />
         ) : (
           <div>
-            <p className="text-foreground text-3xl font-extrabold tracking-tight">{alerts?.length ?? 0}</p>
+            <p className="text-foreground text-2xl font-semibold tracking-tight">{alerts?.length ?? 0}</p>
             <p className="text-muted-foreground mt-1 text-xs">capteurs en alerte</p>
             <p className="mt-1.5 text-xs font-semibold">
               {downCount > 0 || warningCount > 0 ? (

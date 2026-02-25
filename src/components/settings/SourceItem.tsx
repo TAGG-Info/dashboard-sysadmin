@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  ChevronDown,
-  ChevronRight,
-  Plus,
-  Server,
-  X,
-} from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Server, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SourceConfigForm } from '@/components/settings/SourceConfigForm';
@@ -58,16 +52,14 @@ export function SourceItem({
   return (
     <div
       className={cn(
-        'relative rounded-lg border transition-all duration-300 overflow-hidden',
-        expanded
-          ? 'border-white/[0.08]'
-          : 'border-white/[0.04] hover:border-white/[0.08]',
+        'relative overflow-hidden rounded-lg border transition-all duration-300',
+        expanded ? 'border-white/[0.08]' : 'border-white/[0.04] hover:border-white/[0.08]',
       )}
       style={{ backgroundColor: `${color}${expanded ? '0a' : '06'}` }}
     >
       {/* Colored top line */}
       <div
-        className="absolute top-0 left-0 right-0 h-[2px] transition-opacity duration-300"
+        className="absolute top-0 right-0 left-0 h-[2px] transition-opacity duration-300"
         style={{
           background: `linear-gradient(90deg, ${color}, ${color}60, transparent)`,
           opacity: expanded ? 0.7 : isConfigured ? 0.4 : 0.1,
@@ -75,13 +67,16 @@ export function SourceItem({
       />
 
       {/* Source header */}
-      <div className="flex items-center h-14">
+      <div className="flex h-14 items-center">
         <button
           type="button"
           onClick={onToggleExpanded}
-          className="flex flex-1 items-center gap-3 pl-4 pr-2 h-full text-left transition-colors hover:bg-white/[0.015]"
+          className="hover:bg-accent/50 flex h-full flex-1 items-center gap-3 pr-2 pl-4 text-left transition-colors"
         >
-          <div className="flex items-center justify-center h-7 w-7 rounded-md shrink-0" style={{ backgroundColor: `${color}15` }}>
+          <div
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
+            style={{ backgroundColor: `${color}15` }}
+          >
             {expanded ? (
               <ChevronDown className="h-3.5 w-3.5" style={{ color }} />
             ) : (
@@ -89,13 +84,13 @@ export function SourceItem({
             )}
           </div>
           <SourceLogo source={key} size={18} colored={isConfigured} />
-          <span className="text-sm font-semibold text-foreground">{label}</span>
+          <span className="text-foreground text-sm font-semibold">{label}</span>
         </button>
 
         <div className="flex items-center gap-2 pr-3">
           {isConfigured ? (
             <Badge
-              className="border-transparent text-sm h-5 px-2 font-semibold"
+              className="h-5 border-transparent px-2 text-sm font-semibold"
               style={{
                 backgroundColor: `${color}15`,
                 color: color,
@@ -104,13 +99,13 @@ export function SourceItem({
               {instanceCount}
             </Badge>
           ) : (
-            <span className="text-sm text-muted-foreground/30 mr-1">--</span>
+            <span className="text-muted-foreground/30 mr-1 text-sm">--</span>
           )}
           <Button
             variant="ghost"
             size="sm"
             onClick={onStartAddingInstance}
-            className="h-7 w-7 p-0 text-muted-foreground/40 hover:text-foreground rounded-md"
+            className="text-muted-foreground/40 hover:text-foreground h-7 w-7 rounded-md p-0"
             title="Ajouter une instance"
           >
             <Plus className="h-4 w-4" />
@@ -120,12 +115,12 @@ export function SourceItem({
 
       {/* Expanded content */}
       {expanded && (
-        <div className="px-3 pb-3 pt-1 border-t border-white/[0.04] space-y-2">
+        <div className="border-border/60 space-y-2 border-t px-3 pt-1 pb-3">
           {instances.length === 0 && !isAddingNew && (
             <button
               type="button"
               onClick={onStartAddingInstance}
-              className="flex items-center justify-center gap-2.5 w-full py-6 rounded-lg border border-dashed border-white/[0.08] text-muted-foreground/40 hover:text-muted-foreground hover:border-white/[0.15] transition-all"
+              className="border-border text-muted-foreground/40 hover:text-muted-foreground hover:border-border/80 flex w-full items-center justify-center gap-2.5 rounded-lg border border-dashed py-6 transition-all"
             >
               <Plus className="h-4 w-4" />
               <span className="text-sm">Ajouter une instance {label}</span>
@@ -148,10 +143,7 @@ export function SourceItem({
             // Single instance: show form directly, no sub-accordion
             if (singleInstance) {
               return (
-                <div
-                  key={instance.id}
-                  className="rounded-lg border border-white/[0.04] bg-white/[0.01]"
-                >
+                <div key={instance.id} className="border-border/60 bg-card rounded-lg border">
                   <div className="px-4 py-4">
                     <SourceConfigForm
                       source={key}
@@ -173,37 +165,33 @@ export function SourceItem({
               <div
                 key={instance.id}
                 className={cn(
-                  'rounded-lg border transition-all duration-200 overflow-hidden',
-                  isExpanded
-                    ? 'border-white/[0.08] bg-background'
-                    : 'border-white/[0.04] bg-white/[0.01] hover:border-white/[0.08]',
+                  'overflow-hidden rounded-lg border transition-all duration-200',
+                  isExpanded ? 'border-border bg-background' : 'border-border/60 bg-card hover:border-border',
                 )}
               >
                 <button
                   type="button"
                   onClick={() => onToggleInstance(iKey)}
-                  className="flex w-full items-center justify-between px-3.5 py-3 text-left hover:bg-white/[0.015] transition-colors"
+                  className="hover:bg-accent/50 flex w-full items-center justify-between px-3.5 py-3 text-left transition-colors"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex min-w-0 items-center gap-2.5">
                     {isExpanded ? (
-                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+                      <ChevronDown className="text-muted-foreground/50 h-3.5 w-3.5 shrink-0" />
                     ) : (
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+                      <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5 shrink-0" />
                     )}
                     <Server className="h-3.5 w-3.5 shrink-0" style={{ color: `${color}80` }} />
-                    <span className="text-sm font-medium text-foreground truncate">
-                      {instance.name}
-                    </span>
+                    <span className="text-foreground truncate text-sm font-medium">{instance.name}</span>
                   </div>
                   {instance.baseUrl && (
-                    <span className="text-sm text-muted-foreground/40 truncate max-w-[200px] ml-3 font-mono">
+                    <span className="text-muted-foreground/40 ml-3 max-w-[200px] truncate font-mono text-sm">
                       {instance.baseUrl.replace(/^https?:\/\//, '')}
                     </span>
                   )}
                 </button>
 
                 {isExpanded && (
-                  <div className="px-4 pb-4 pt-2 border-t border-white/[0.04]">
+                  <div className="border-border/60 border-t px-4 pt-2 pb-4">
                     <SourceConfigForm
                       source={key}
                       config={configFields}
@@ -223,26 +211,24 @@ export function SourceItem({
           {/* New instance form */}
           {isAddingNew && (
             <div
-              className="rounded-lg border border-dashed p-4 overflow-hidden"
+              className="overflow-hidden rounded-lg border border-dashed p-4"
               style={{ borderColor: `${color}30`, backgroundColor: `${color}06` }}
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div
-                    className="h-5 w-5 rounded-md flex items-center justify-center"
+                    className="flex h-5 w-5 items-center justify-center rounded-md"
                     style={{ backgroundColor: `${color}15` }}
                   >
                     <Plus className="h-3 w-3" style={{ color }} />
                   </div>
-                  <span className="text-sm font-semibold text-foreground">
-                    Nouvelle instance {label}
-                  </span>
+                  <span className="text-foreground text-sm font-semibold">Nouvelle instance {label}</span>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={onCancelAddingInstance}
-                  className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground h-7 w-7 p-0"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -267,7 +253,7 @@ export function SourceItem({
             <button
               type="button"
               onClick={onStartAddingInstance}
-              className="flex items-center justify-center gap-2 w-full py-2 rounded-lg text-muted-foreground/30 hover:text-muted-foreground/60 transition-all text-sm hover:bg-white/[0.02]"
+              className="text-muted-foreground/30 hover:text-muted-foreground/60 hover:bg-accent/50 flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sm transition-all"
             >
               <Plus className="h-3.5 w-3.5" />
               Ajouter une instance

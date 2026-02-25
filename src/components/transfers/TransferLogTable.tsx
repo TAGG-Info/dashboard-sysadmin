@@ -117,7 +117,7 @@ export function TransferLogTable({ direction }: TransferLogTableProps) {
   return (
     <div className="relative">
       {loading && data && (
-        <div className="bg-background/30 absolute inset-0 z-20 flex items-center justify-center rounded-lg backdrop-blur-sm">
+        <div className="bg-background/80 absolute inset-0 z-20 flex items-center justify-center rounded-lg">
           <div className="bg-background/80 border-border/50 flex items-center gap-2 rounded-full border px-4 py-2 shadow-md">
             <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
             <span className="text-muted-foreground text-xs">Chargement…</span>

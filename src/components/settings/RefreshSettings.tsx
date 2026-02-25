@@ -79,12 +79,12 @@ export function RefreshSettings() {
   const isValid = refreshConfigs.every(({ key }) => draft[key] >= MIN_SECONDS);
 
   return (
-    <div className="settings-card-glow bg-background shadow-card overflow-hidden rounded-xl">
+    <div className="bg-card border-border/60 overflow-hidden rounded-lg border shadow-xs">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.04] px-5 py-4">
+      <div className="border-border/60 flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="bg-primary/10 border-primary/20 flex h-8 w-8 items-center justify-center rounded-lg border">
-            <Timer className="text-primary h-4 w-4" />
+          <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
+            <Timer className="text-foreground h-4 w-4" />
           </div>
           <div>
             <h3 className="text-foreground text-base font-semibold tracking-wide">Intervalles de refresh</h3>
@@ -153,7 +153,7 @@ export function RefreshSettings() {
                   </span>
                 )}
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.04]">
+              <div className="bg-muted h-1.5 overflow-hidden rounded-full">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{

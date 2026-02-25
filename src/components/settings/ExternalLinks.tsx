@@ -22,12 +22,12 @@ export function ExternalLinks() {
   const configuredCount = linkConfigs.filter((c) => c.url).length;
 
   return (
-    <div className="settings-card-glow bg-background shadow-card overflow-hidden rounded-xl">
+    <div className="bg-card border-border/60 overflow-hidden rounded-lg border shadow-xs">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.04] px-5 py-4">
+      <div className="border-border/60 flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-violet-500/20 bg-violet-500/10">
-            <Globe className="h-4 w-4 text-violet-400" />
+          <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
+            <Globe className="text-muted-foreground h-4 w-4" />
           </div>
           <div>
             <h3 className="text-foreground text-base font-semibold tracking-wide">Liens externes</h3>
@@ -39,7 +39,7 @@ export function ExternalLinks() {
       </div>
 
       {/* Link Grid */}
-      <div className="stagger-in grid grid-cols-2 gap-[1px] bg-white/[0.03]">
+      <div className="stagger-in bg-border/40 grid grid-cols-2 gap-[1px]">
         {linkConfigs.map(({ key, label, color, url }) => {
           if (url) {
             return (
@@ -48,7 +48,7 @@ export function ExternalLinks() {
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-background group relative flex flex-col gap-1.5 px-4 py-3.5 transition-all duration-200 hover:bg-white/[0.03]"
+                className="bg-card group hover:bg-accent/50 relative flex flex-col gap-1.5 px-4 py-3.5 transition-all duration-200"
               >
                 {/* Left accent */}
                 <div
@@ -71,7 +71,7 @@ export function ExternalLinks() {
           }
 
           return (
-            <div key={key} className="bg-background relative flex flex-col gap-1.5 px-4 py-3.5">
+            <div key={key} className="bg-card relative flex flex-col gap-1.5 px-4 py-3.5">
               <div
                 className="absolute top-2 bottom-2 left-0 w-[2px] rounded-full opacity-10"
                 style={{ backgroundColor: '#6b7280' }}

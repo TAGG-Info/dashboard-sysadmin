@@ -27,12 +27,12 @@ export function Topbar() {
     .slice(0, 2);
 
   return (
-    <header className="relative">
-      <div className="border-border/30 bg-background/50 flex h-12 items-center justify-between border-b px-4 backdrop-blur-sm lg:px-6">
+    <header>
+      <div className="border-border/60 bg-card flex h-12 items-center justify-between border-b px-4 lg:px-6">
         {/* Left: Welcome message */}
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-sm">
-            Welcome back, <span className="text-primary font-medium">{userName}</span>
+            Welcome back, <span className="text-foreground font-medium">{userName}</span>
           </span>
         </div>
 
@@ -48,7 +48,7 @@ export function Topbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex h-8 items-center gap-2 px-2">
                 <Avatar className="h-6 w-6">
-                  <AvatarFallback className="bg-primary/15 text-primary text-xs font-medium">
+                  <AvatarFallback className="bg-muted text-muted-foreground text-xs font-medium">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
@@ -69,8 +69,6 @@ export function Topbar() {
           </DropdownMenu>
         </div>
       </div>
-      {/* Subtle gradient accent line */}
-      <div className="from-primary/30 via-primary/10 absolute right-0 bottom-0 left-0 h-px bg-gradient-to-r to-transparent" />
     </header>
   );
 }

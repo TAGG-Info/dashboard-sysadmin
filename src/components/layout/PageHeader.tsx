@@ -17,16 +17,13 @@ export function PageHeader({ title, subtitle, source, badge, actions }: PageHead
         <div className="flex items-center gap-3">
           {source && <SourceLogo source={source} size={32} />}
           <div>
-            <h1 className="from-foreground to-primary bg-gradient-to-br from-60% bg-clip-text text-[22px] font-extrabold tracking-[-0.5px] text-transparent">
-              {title}
-            </h1>
+            <h1 className="text-2xl leading-none font-semibold tracking-tight">{title}</h1>
             {subtitle && <p className="text-muted-foreground mt-0.5 text-[13px]">{subtitle}</p>}
           </div>
           {badge}
         </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
-      <div className="from-primary/30 via-primary/10 mt-3 h-px bg-gradient-to-r to-transparent" />
     </div>
   );
 }
