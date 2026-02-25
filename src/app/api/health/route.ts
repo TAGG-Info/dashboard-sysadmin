@@ -39,7 +39,8 @@ async function checkInstance(
 export async function GET() {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Unauthenticated: basic liveness probe for Docker healthcheck
+    return NextResponse.json({ status: 'ok' });
   }
 
   // Cache de 30s pour éviter de créer des sessions vCenter/GLPI à chaque requête
