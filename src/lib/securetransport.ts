@@ -165,7 +165,7 @@ export class SecureTransportClient {
 
   /** Server configurations for all protocols (GET /servers) */
   async getServerConfigs(): Promise<STServerConfig[]> {
-    const data = await this.request<{ result: STServerConfig[] }>('/servers?fields=id,protocol,serverName,isActive');
+    const data = await this.request<{ result: STServerConfig[] }>('/servers');
     return data.result ?? [];
   }
 
