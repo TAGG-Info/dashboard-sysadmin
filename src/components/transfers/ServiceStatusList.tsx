@@ -77,7 +77,7 @@ export function ServiceStatusList() {
           >
             <div className="flex items-center gap-2.5">
               <span
-                className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-xs font-semibold ${protocolCls}`}
+                className={`inline-flex w-12 items-center justify-center rounded border px-1.5 py-0.5 font-mono text-xs font-semibold ${protocolCls}`}
               >
                 {p}
               </span>
