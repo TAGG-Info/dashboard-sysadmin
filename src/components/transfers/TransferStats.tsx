@@ -5,6 +5,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTransferSummary } from '@/hooks/useTransfers';
+import { ServiceStatusList } from '@/components/transfers/ServiceStatusList';
 
 interface TransferStatsProps {
   /** Compact mode : une seule carte avec des lignes, pour la sidebar */
@@ -98,9 +99,9 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
     );
   }
 
-  /* ── Normal (3 cartes) ── */
+  /* ── Normal (3 stats + services) ── */
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {/* Comptes actifs */}
       <Card>
         <CardContent className="p-4">
@@ -133,6 +134,16 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
         <CardContent className="p-4">
           <p className="text-muted-foreground text-sm">Sites de transfert</p>
           <p className="text-foreground text-xl font-bold">{summary.sites.total}</p>
+        </CardContent>
+      </Card>
+
+      {/* Services / Protocoles */}
+      <Card>
+        <CardHeader className="px-4 pt-3 pb-2">
+          <CardTitle className="text-muted-foreground text-xs font-medium tracking-wider uppercase">Services</CardTitle>
+        </CardHeader>
+        <CardContent className="px-3 pt-0 pb-3">
+          <ServiceStatusList />
         </CardContent>
       </Card>
     </div>
