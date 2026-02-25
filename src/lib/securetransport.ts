@@ -5,6 +5,10 @@ import type {
   STTransferSummary,
   STTransferLog,
   STTransferLogList,
+  STDaemonsStatus,
+  STServerConfig,
+  STServiceStatus,
+  STProtocol,
 } from '@/types/securetransport';
 import type { STInstance } from '@/lib/config';
 import { loggers } from '@/lib/logger';
@@ -145,6 +149,37 @@ export class SecureTransportClient {
       resultSet: { returnCount: result.resultSet.returnCount, totalCount },
       transfers: (result.result || []).reverse(), // newest first within the page
     };
+  }
+
+  /** Status of all 5 protocol daemons (GET /daemons) */
+  async getDaemonsStatus(): Promise<STDaemonsStatus> {
+    return this.request<STDaemonsStatus>('/daemons');
+  }
+
+  /** Server configurations for all protocols (GET /servers) */
+  async getServerConfigs(): Promise<STServerConfig[]> {
+    const data = await this.request<{ result: STServerConfig[] }>('/servers?fields=id,protocol,serverName,isActive');
+    return data.result ?? [];
+  }
+
+  /** Combined view: daemon status + server info per protocol */
+  async getServicesStatus(): Promise<STServiceStatus[]> {
+    const [daemons, servers] = await Promise.all([this.getDaemonsStatus(), this.getServerConfigs()]);
+
+    const daemonMap: Record<STProtocol, keyof STDaemonsStatus> = {
+      http: 'httpStatus',
+      ftp: 'ftpStatus',
+      ssh: 'sshStatus',
+      as2: 'as2Status',
+      pesit: 'pesitStatus',
+    };
+
+    return servers.map((server) => ({
+      protocol: server.protocol,
+      daemonStatus: daemons[daemonMap[server.protocol]] ?? 'Not running',
+      serverName: server.serverName,
+      isActive: server.isActive,
+    }));
   }
 
   // Transfer summary combining accounts + certificates

@@ -3,9 +3,14 @@
 import { useMemo } from 'react';
 import { useAutoRefresh } from './useAutoRefresh';
 import { useRefreshIntervals } from '@/components/providers/RefreshIntervalsProvider';
-import type { STTransferSummary, STCertificateExpiring, STTransferLogList } from '@/types/securetransport';
+import type {
+  STTransferSummary,
+  STCertificateExpiring,
+  STTransferLogList,
+  STServiceStatus,
+} from '@/types/securetransport';
 
-export type { STTransferSummary, STCertificateExpiring, STTransferLogList };
+export type { STTransferSummary, STCertificateExpiring, STTransferLogList, STServiceStatus };
 
 export interface TransferLogsParams {
   account?: string;
@@ -54,4 +59,12 @@ export function useTransferLogs(params: TransferLogsParams = {}) {
   ]);
 
   return useAutoRefresh<STTransferLogList>({ url, interval: intervals.transferLogs });
+}
+
+export function useSTServices() {
+  const { intervals } = useRefreshIntervals();
+  return useAutoRefresh<STServiceStatus[]>({
+    url: '/api/securetransport/services',
+    interval: intervals.transfers,
+  });
 }
