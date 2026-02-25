@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 
-function getGaugeColor(pct: number): [string, string] {
-  if (pct > 80) return ['#f87171', '#ef4444'];
-  if (pct >= 60) return ['#fbbf24', '#f59e0b'];
-  return ['#60a5fa', '#3b82f6'];
+function getGaugeColor(pct: number): string {
+  if (pct > 80) return '#ef4444';
+  if (pct >= 60) return '#f59e0b';
+  return '#3b82f6';
 }
 
 function ArcGauge({ value, label, id }: { value: number; label: string; id: string }) {
@@ -16,29 +16,23 @@ function ArcGauge({ value, label, id }: { value: number; label: string; id: stri
   const circumference = 2 * Math.PI * r;
   const arcLength = circumference * 0.75;
   const filledLength = arcLength * (value / 100);
-  const [c1, c2] = getGaugeColor(value);
+  const color = getGaugeColor(value);
 
   return (
     <svg width={72} height={72} viewBox="0 0 72 72">
-      <circle cx={36} cy={36} r={r} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={5} />
+      <circle cx={36} cy={36} r={r} fill="none" stroke="var(--secondary)" strokeWidth={5} />
       <circle
         cx={36}
         cy={36}
         r={r}
         fill="none"
-        stroke={`url(#${id})`}
+        stroke={color}
         strokeWidth={5}
         strokeDasharray={`${filledLength} ${circumference - filledLength}`}
         strokeDashoffset={-circumference * 0.25}
         strokeLinecap="round"
         transform="rotate(-90 36 36)"
       />
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor={c1} />
-          <stop offset="100%" stopColor={c2} />
-        </linearGradient>
-      </defs>
       <text
         x={36}
         y={34}

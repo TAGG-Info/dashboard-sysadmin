@@ -79,16 +79,16 @@ export function RefreshSettings() {
   const isValid = refreshConfigs.every(({ key }) => draft[key] >= MIN_SECONDS);
 
   return (
-    <div className="bg-card border-border/60 overflow-hidden rounded-lg border shadow-xs">
+    <div className="bg-card border-border overflow-hidden rounded-lg border">
       {/* Header */}
-      <div className="border-border/60 flex items-center justify-between border-b px-5 py-4">
+      <div className="border-border flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
-            <Timer className="text-foreground h-4 w-4" />
+            <Timer className="text-muted-foreground h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-foreground text-base font-semibold tracking-wide">Intervalles de refresh</h3>
-            <p className="text-muted-foreground mt-0.5 text-sm">Frequence de mise a jour des donnees</p>
+            <h3 className="text-foreground text-sm font-semibold">Intervalles de refresh</h3>
+            <p className="text-muted-foreground mt-0.5 text-xs">Frequence de mise a jour des donnees</p>
           </div>
         </div>
 
@@ -132,7 +132,7 @@ export function RefreshSettings() {
             <div key={config.key} className="group">
               <div className="mb-1.5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: config.color }} />
+                  <div className="bg-muted-foreground/30 h-2 w-2 rounded-full" />
                   <span className="text-foreground text-sm font-medium">{config.label}</span>
                 </div>
 
@@ -143,7 +143,7 @@ export function RefreshSettings() {
                       min={MIN_SECONDS}
                       value={draft[config.key]}
                       onChange={(e) => setDraftValue(config.key, parseInt(e.target.value) || MIN_SECONDS)}
-                      className="bg-muted/20 border-border/50 focus:ring-ring h-6 w-16 rounded border px-1.5 text-right font-mono text-xs tabular-nums focus:ring-1 focus:outline-none"
+                      className="bg-muted/20 border-border focus:ring-ring h-6 w-16 rounded border px-1.5 text-right font-mono text-xs tabular-nums focus:ring-1 focus:outline-none"
                     />
                     <span className="text-muted-foreground text-xs">s</span>
                   </div>
@@ -158,7 +158,8 @@ export function RefreshSettings() {
                   className="h-full rounded-full transition-all duration-700"
                   style={{
                     width: `${barWidth}%`,
-                    background: `linear-gradient(90deg, ${config.color}60, ${config.color})`,
+                    backgroundColor: 'var(--color-muted-foreground)',
+                    opacity: 0.5,
                   }}
                 />
               </div>

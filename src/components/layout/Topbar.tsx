@@ -28,7 +28,7 @@ export function Topbar() {
 
   return (
     <header>
-      <div className="border-border/60 bg-card flex h-12 items-center justify-between border-b px-4 lg:px-6">
+      <div className="border-border bg-background flex h-12 items-center justify-between border-b px-4 lg:px-6">
         {/* Left: Welcome message */}
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-sm">

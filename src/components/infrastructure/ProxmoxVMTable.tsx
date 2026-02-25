@@ -107,7 +107,7 @@ export function ProxmoxVMTable() {
       {instanceGroups.map(([instanceId, { instanceName, items }]) => (
         <div key={instanceId}>
           {hasMultipleInstances && <InstanceSectionHeader instanceName={instanceName} className="mb-2" />}
-          <div className="border-border/50 overflow-x-auto rounded-lg border">
+          <div className="border-border overflow-x-auto rounded-lg border">
             <table className="w-full text-sm">
               <colgroup>
                 {widths.map((w, i) => (
@@ -115,7 +115,7 @@ export function ProxmoxVMTable() {
                 ))}
               </colgroup>
               <thead>
-                <tr className="border-border/50 bg-muted/30 border-b">
+                <tr className="border-border bg-muted/30 border-b">
                   {COLS.map((col, i) => {
                     const isLast = i === COLS.length - 1;
                     return (
@@ -140,7 +140,7 @@ export function ProxmoxVMTable() {
               <tbody>
                 {loading && !vms ? (
                   Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="border-border/30 border-b">
+                    <tr key={i} className="border-border border-b">
                       <td className="px-3 py-1.5">
                         <Skeleton className="h-3.5 w-10" />
                       </td>
@@ -179,7 +179,7 @@ export function ProxmoxVMTable() {
                     return (
                       <tr
                         key={`${instanceId}-${vm.node}-${vm.type}-${vm.vmid}`}
-                        className="border-border/30 hover:bg-muted/15 border-b transition-colors"
+                        className="border-border hover:bg-muted/15 border-b transition-colors"
                       >
                         <td className="overflow-hidden px-3 py-2">
                           <Badge
@@ -233,7 +233,7 @@ export function ProxmoxVMTable() {
 
       {/* Show loading skeletons when no data */}
       {loading && !vms && instanceGroups.length === 0 && (
-        <div className="border-border/50 overflow-x-auto rounded-lg border">
+        <div className="border-border overflow-x-auto rounded-lg border">
           <table className="w-full text-sm">
             <colgroup>
               {widths.map((w, i) => (
@@ -241,7 +241,7 @@ export function ProxmoxVMTable() {
               ))}
             </colgroup>
             <thead>
-              <tr className="border-border/50 bg-muted/30 border-b">
+              <tr className="border-border bg-muted/30 border-b">
                 {COLS.map((col) => (
                   <th
                     key={col.label}
@@ -254,7 +254,7 @@ export function ProxmoxVMTable() {
             </thead>
             <tbody>
               {Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-border/30 border-b">
+                <tr key={i} className="border-border border-b">
                   <td className="px-3 py-1.5">
                     <Skeleton className="h-3.5 w-10" />
                   </td>

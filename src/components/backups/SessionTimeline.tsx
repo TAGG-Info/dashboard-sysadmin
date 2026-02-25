@@ -150,7 +150,7 @@ export function SessionTimeline() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-foreground truncate text-sm font-medium">{session.name}</span>
                     {hasMultipleInstances && session._instanceName && (
-                      <Badge variant="outline" className="text-muted-foreground border-border/50 text-sm">
+                      <Badge variant="outline" className="text-muted-foreground border-border text-sm">
                         {session._instanceName}
                       </Badge>
                     )}

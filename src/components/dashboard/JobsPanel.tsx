@@ -80,13 +80,8 @@ export function JobsPanel() {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span
-              className="flex h-[22px] w-[22px] items-center justify-center rounded-md"
-              style={{ background: 'rgba(76,175,80,0.12)' }}
-            >
-              <SourceLogo source="veeam" size={14} />
-            </span>
-            <CardTitle className="text-[13px] font-semibold">Statistiques Veeam</CardTitle>
+            <SourceLogo source="veeam" size={16} />
+            <CardTitle className="text-sm font-semibold">Statistiques Veeam</CardTitle>
           </div>
           <StatusBadge
             status={successRate >= 99 ? 'healthy' : successRate >= 90 ? 'warning' : 'critical'}

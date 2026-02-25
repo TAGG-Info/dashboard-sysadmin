@@ -45,61 +45,40 @@ export function SourceItem({
   onCancelAddingInstance,
   onSave,
 }: SourceItemProps) {
-  const { key, label, color } = source;
+  const { key, label } = source;
   const instanceCount = instances.length;
   const isConfigured = instanceCount > 0;
 
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-lg border transition-all duration-300',
-        expanded ? 'border-white/[0.08]' : 'border-white/[0.04] hover:border-white/[0.08]',
+        'rounded-lg border transition-colors',
+        expanded ? 'border-border bg-card' : 'border-border hover:bg-accent/50',
       )}
-      style={{ backgroundColor: `${color}${expanded ? '0a' : '06'}` }}
     >
-      {/* Colored top line */}
-      <div
-        className="absolute top-0 right-0 left-0 h-[2px] transition-opacity duration-300"
-        style={{
-          background: `linear-gradient(90deg, ${color}, ${color}60, transparent)`,
-          opacity: expanded ? 0.7 : isConfigured ? 0.4 : 0.1,
-        }}
-      />
-
       {/* Source header */}
-      <div className="flex h-14 items-center">
+      <div className="flex h-12 items-center">
         <button
           type="button"
           onClick={onToggleExpanded}
           className="hover:bg-accent/50 flex h-full flex-1 items-center gap-3 pr-2 pl-4 text-left transition-colors"
         >
-          <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
-            style={{ backgroundColor: `${color}15` }}
-          >
-            {expanded ? (
-              <ChevronDown className="h-3.5 w-3.5" style={{ color }} />
-            ) : (
-              <ChevronRight className="h-3.5 w-3.5" style={{ color }} />
-            )}
-          </div>
+          {expanded ? (
+            <ChevronDown className="text-muted-foreground h-4 w-4 shrink-0" />
+          ) : (
+            <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
+          )}
           <SourceLogo source={key} size={18} colored={isConfigured} />
-          <span className="text-foreground text-sm font-semibold">{label}</span>
+          <span className="text-foreground text-sm font-medium">{label}</span>
         </button>
 
         <div className="flex items-center gap-2 pr-3">
           {isConfigured ? (
-            <Badge
-              className="h-5 border-transparent px-2 text-sm font-semibold"
-              style={{
-                backgroundColor: `${color}15`,
-                color: color,
-              }}
-            >
+            <Badge variant="secondary" className="h-5 px-2 text-xs font-medium">
               {instanceCount}
             </Badge>
           ) : (
-            <span className="text-muted-foreground/30 mr-1 text-sm">--</span>
+            <span className="text-muted-foreground/30 mr-1 text-xs">--</span>
           )}
           <Button
             variant="ghost"
@@ -115,12 +94,12 @@ export function SourceItem({
 
       {/* Expanded content */}
       {expanded && (
-        <div className="border-border/60 space-y-2 border-t px-3 pt-1 pb-3">
+        <div className="border-border space-y-2 border-t px-3 pt-1 pb-3">
           {instances.length === 0 && !isAddingNew && (
             <button
               type="button"
               onClick={onStartAddingInstance}
-              className="border-border text-muted-foreground/40 hover:text-muted-foreground hover:border-border/80 flex w-full items-center justify-center gap-2.5 rounded-lg border border-dashed py-6 transition-all"
+              className="border-border text-muted-foreground/40 hover:text-muted-foreground hover:border-border flex w-full items-center justify-center gap-2.5 rounded-lg border border-dashed py-6 transition-all"
             >
               <Plus className="h-4 w-4" />
               <span className="text-sm">Ajouter une instance {label}</span>
@@ -143,7 +122,7 @@ export function SourceItem({
             // Single instance: show form directly, no sub-accordion
             if (singleInstance) {
               return (
-                <div key={instance.id} className="border-border/60 bg-card rounded-lg border">
+                <div key={instance.id} className="border-border bg-card rounded-lg border">
                   <div className="px-4 py-4">
                     <SourceConfigForm
                       source={key}
@@ -165,8 +144,8 @@ export function SourceItem({
               <div
                 key={instance.id}
                 className={cn(
-                  'overflow-hidden rounded-lg border transition-all duration-200',
-                  isExpanded ? 'border-border bg-background' : 'border-border/60 bg-card hover:border-border',
+                  'overflow-hidden rounded-lg border transition-colors',
+                  isExpanded ? 'border-border bg-background' : 'border-border bg-card hover:bg-accent/50',
                 )}
               >
                 <button
@@ -176,22 +155,22 @@ export function SourceItem({
                 >
                   <div className="flex min-w-0 items-center gap-2.5">
                     {isExpanded ? (
-                      <ChevronDown className="text-muted-foreground/50 h-3.5 w-3.5 shrink-0" />
+                      <ChevronDown className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                     ) : (
-                      <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5 shrink-0" />
+                      <ChevronRight className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                     )}
-                    <Server className="h-3.5 w-3.5 shrink-0" style={{ color: `${color}80` }} />
+                    <Server className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                     <span className="text-foreground truncate text-sm font-medium">{instance.name}</span>
                   </div>
                   {instance.baseUrl && (
-                    <span className="text-muted-foreground/40 ml-3 max-w-[200px] truncate font-mono text-sm">
+                    <span className="text-muted-foreground/40 ml-3 max-w-[200px] truncate font-mono text-xs">
                       {instance.baseUrl.replace(/^https?:\/\//, '')}
                     </span>
                   )}
                 </button>
 
                 {isExpanded && (
-                  <div className="border-border/60 border-t px-4 pt-2 pb-4">
+                  <div className="border-border border-t px-4 pt-2 pb-4">
                     <SourceConfigForm
                       source={key}
                       config={configFields}
@@ -210,19 +189,11 @@ export function SourceItem({
 
           {/* New instance form */}
           {isAddingNew && (
-            <div
-              className="overflow-hidden rounded-lg border border-dashed p-4"
-              style={{ borderColor: `${color}30`, backgroundColor: `${color}06` }}
-            >
+            <div className="border-border overflow-hidden rounded-lg border border-dashed p-4">
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div
-                    className="flex h-5 w-5 items-center justify-center rounded-md"
-                    style={{ backgroundColor: `${color}15` }}
-                  >
-                    <Plus className="h-3 w-3" style={{ color }} />
-                  </div>
-                  <span className="text-foreground text-sm font-semibold">Nouvelle instance {label}</span>
+                  <Plus className="text-muted-foreground h-4 w-4" />
+                  <span className="text-foreground text-sm font-medium">Nouvelle instance {label}</span>
                 </div>
                 <Button
                   variant="ghost"

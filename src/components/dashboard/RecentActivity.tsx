@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Inbox } from 'lucide-react';
+import { Clock, Inbox } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { TimeAgo } from '@/components/ui/TimeAgo';
@@ -111,25 +111,8 @@ export function RecentActivity({ prtgAlerts }: RecentActivityProps) {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span
-              className="flex h-[22px] w-[22px] items-center justify-center rounded-md"
-              style={{ background: 'rgba(148,163,184,0.08)' }}
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--muted-foreground)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-            </span>
-            <span className="text-foreground text-[13px] font-semibold">Activite recente</span>
+            <Clock className="text-muted-foreground h-4 w-4" />
+            <span className="text-foreground text-sm font-semibold">Activite recente</span>
           </div>
           {events.length > 0 && <span className="text-muted-foreground text-[11px]">{events.length} ev.</span>}
         </div>
@@ -167,13 +150,7 @@ export function RecentActivity({ prtgAlerts }: RecentActivityProps) {
                         : '#6b7280';
               return (
                 <div key={event.id} className="border-border flex items-start gap-3 border-b py-[7px] last:border-b-0">
-                  <div
-                    className="mt-[5px] h-2 w-2 shrink-0 rounded-full"
-                    style={{
-                      backgroundColor: dotColor,
-                      boxShadow: `0 0 8px ${dotColor}`,
-                    }}
-                  />
+                  <div className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
                   <div className="min-w-0 flex-1">
                     <div className="text-foreground flex items-center gap-1 text-xs font-medium">
                       <span className="truncate">{event.title}</span>

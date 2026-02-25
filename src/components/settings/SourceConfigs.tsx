@@ -80,20 +80,20 @@ export function SourceConfigs() {
   }, 0);
 
   return (
-    <div className="bg-card border-border/60 overflow-hidden rounded-lg border shadow-xs">
+    <div className="bg-card border-border overflow-hidden rounded-lg border">
       {/* Header */}
-      <div className="border-border/60 flex items-center justify-between border-b px-5 py-4">
+      <div className="border-border flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
-            <Database className="text-foreground h-4 w-4" />
+            <Database className="text-muted-foreground h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-foreground text-base font-semibold tracking-wide">Sources de donnees</h3>
-            <p className="text-muted-foreground mt-0.5 text-sm">Connexions vers vos outils d&apos;infrastructure</p>
+            <h3 className="text-foreground text-sm font-semibold">Sources de donnees</h3>
+            <p className="text-muted-foreground mt-0.5 text-xs">Connexions vers vos outils d&apos;infrastructure</p>
           </div>
         </div>
         {!loading && totalInstances > 0 && (
-          <Badge className="bg-muted text-muted-foreground h-6 px-2.5 text-sm font-semibold">
+          <Badge variant="secondary" className="h-5 px-2 text-xs font-medium">
             {totalInstances} instance{totalInstances > 1 ? 's' : ''}
           </Badge>
         )}
@@ -104,7 +104,7 @@ export function SourceConfigs() {
         {loading ? (
           <>
             {sources.map(({ key }) => (
-              <div key={key} className="border-border/40 bg-muted/50 h-14 animate-pulse rounded-lg border" />
+              <div key={key} className="border-border bg-muted/50 h-12 animate-pulse rounded-lg border" />
             ))}
           </>
         ) : (

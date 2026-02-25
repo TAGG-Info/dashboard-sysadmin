@@ -9,12 +9,12 @@ import { GLPI_STATUS_LABELS } from '@/types/glpi';
 import type { GLPITicketStatus } from '@/types/glpi';
 
 const STATUS_COLORS: Record<number, string> = {
-  1: 'linear-gradient(90deg,#60a5fa,#3b82f6)',
-  2: 'linear-gradient(90deg,#2dd4bf,#14b8a6)',
-  3: 'linear-gradient(90deg,#a78bfa,#8b5cf6)',
-  4: 'linear-gradient(90deg,#fbbf24,#f59e0b)',
-  5: 'linear-gradient(90deg,#34d399,#10b981)',
-  6: 'linear-gradient(90deg,#94a3b8,#64748b)',
+  1: '#3b82f6',
+  2: '#14b8a6',
+  3: '#8b5cf6',
+  4: '#f59e0b',
+  5: '#10b981',
+  6: '#64748b',
 };
 
 export function TicketsBreakdown() {
@@ -49,13 +49,8 @@ export function TicketsBreakdown() {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
-          <span
-            className="flex h-[22px] w-[22px] items-center justify-center rounded-md"
-            style={{ background: 'rgba(0,165,243,0.12)' }}
-          >
-            <SourceLogo source="glpi" size={14} />
-          </span>
-          <CardTitle className="text-[13px] font-semibold">Tickets &mdash; R&eacute;partition</CardTitle>
+          <SourceLogo source="glpi" size={16} />
+          <CardTitle className="text-sm font-semibold">Tickets &mdash; R&eacute;partition</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
@@ -69,16 +64,13 @@ export function TicketsBreakdown() {
                 <span className="text-muted-foreground w-[80px] shrink-0 text-right text-[13px] font-medium">
                   {GLPI_STATUS_LABELS[status]}
                 </span>
-                <div
-                  className="flex-1 overflow-hidden rounded-md"
-                  style={{ height: 26, background: 'rgba(255,255,255,0.04)' }}
-                >
+                <div className="bg-secondary flex-1 overflow-hidden rounded-md" style={{ height: 26 }}>
                   {count > 0 && (
                     <div
                       className="flex h-full items-center rounded-md pl-2.5 text-xs font-bold text-white"
                       style={{
                         width: `${widthPct}%`,
-                        background: STATUS_COLORS[status],
+                        backgroundColor: STATUS_COLORS[status],
                         transition: 'width 0.4s ease',
                       }}
                     >

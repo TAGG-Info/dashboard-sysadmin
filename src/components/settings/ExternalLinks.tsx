@@ -5,33 +5,32 @@ type SourceName = 'prtg' | 'vcenter' | 'proxmox' | 'veeam' | 'glpi' | 'securetra
 interface ExternalLinkConfig {
   key: SourceName;
   label: string;
-  color: string;
   url: string | undefined;
 }
 
 const linkConfigs: ExternalLinkConfig[] = [
-  { key: 'prtg', label: 'PRTG', color: '#2196F3', url: process.env.NEXT_PUBLIC_PRTG_URL },
-  { key: 'vcenter', label: 'VMware', color: '#4CAF50', url: process.env.NEXT_PUBLIC_VCENTER_URL },
-  { key: 'proxmox', label: 'Proxmox', color: '#E87D0D', url: process.env.NEXT_PUBLIC_PROXMOX_URL },
-  { key: 'veeam', label: 'Veeam', color: '#00B336', url: process.env.NEXT_PUBLIC_VEEAM_URL },
-  { key: 'glpi', label: 'GLPI', color: '#FEC72D', url: process.env.NEXT_PUBLIC_GLPI_URL },
-  { key: 'securetransport', label: 'ST', color: '#FF6D00', url: process.env.NEXT_PUBLIC_ST_URL },
+  { key: 'prtg', label: 'PRTG', url: process.env.NEXT_PUBLIC_PRTG_URL },
+  { key: 'vcenter', label: 'VMware', url: process.env.NEXT_PUBLIC_VCENTER_URL },
+  { key: 'proxmox', label: 'Proxmox', url: process.env.NEXT_PUBLIC_PROXMOX_URL },
+  { key: 'veeam', label: 'Veeam', url: process.env.NEXT_PUBLIC_VEEAM_URL },
+  { key: 'glpi', label: 'GLPI', url: process.env.NEXT_PUBLIC_GLPI_URL },
+  { key: 'securetransport', label: 'ST', url: process.env.NEXT_PUBLIC_ST_URL },
 ];
 
 export function ExternalLinks() {
   const configuredCount = linkConfigs.filter((c) => c.url).length;
 
   return (
-    <div className="bg-card border-border/60 overflow-hidden rounded-lg border shadow-xs">
+    <div className="bg-card border-border overflow-hidden rounded-lg border">
       {/* Header */}
-      <div className="border-border/60 flex items-center justify-between border-b px-5 py-4">
+      <div className="border-border flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
             <Globe className="text-muted-foreground h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-foreground text-base font-semibold tracking-wide">Liens externes</h3>
-            <p className="text-muted-foreground mt-0.5 text-sm">
+            <h3 className="text-foreground text-sm font-semibold">Liens externes</h3>
+            <p className="text-muted-foreground mt-0.5 text-xs">
               {configuredCount}/{linkConfigs.length} configures
             </p>
           </div>
@@ -39,8 +38,8 @@ export function ExternalLinks() {
       </div>
 
       {/* Link Grid */}
-      <div className="stagger-in bg-border/40 grid grid-cols-2 gap-[1px]">
-        {linkConfigs.map(({ key, label, color, url }) => {
+      <div className="stagger-in bg-border grid grid-cols-2 gap-px">
+        {linkConfigs.map(({ key, label, url }) => {
           if (url) {
             return (
               <a
@@ -48,22 +47,13 @@ export function ExternalLinks() {
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-card group hover:bg-accent/50 relative flex flex-col gap-1.5 px-4 py-3.5 transition-all duration-200"
+                className="bg-card group hover:bg-accent flex flex-col gap-1.5 px-4 py-3.5 transition-colors"
               >
-                {/* Left accent */}
-                <div
-                  className="absolute top-2 bottom-2 left-0 w-[2px] rounded-full transition-all duration-200 group-hover:top-1 group-hover:bottom-1"
-                  style={{
-                    backgroundColor: color,
-                    opacity: 0.5,
-                    boxShadow: `0 0 8px ${color}30`,
-                  }}
-                />
                 <div className="flex items-center justify-between">
-                  <span className="text-foreground text-sm font-semibold">{label}</span>
+                  <span className="text-foreground text-sm font-medium">{label}</span>
                   <ExternalLinkIcon className="text-muted-foreground/30 group-hover:text-muted-foreground h-3 w-3 transition-colors" />
                 </div>
-                <span className="text-muted-foreground/60 group-hover:text-muted-foreground/90 truncate font-mono text-sm transition-colors">
+                <span className="text-muted-foreground/60 group-hover:text-muted-foreground truncate font-mono text-xs transition-colors">
                   {url.replace(/^https?:\/\//, '').split('/')[0]}
                 </span>
               </a>
@@ -71,13 +61,9 @@ export function ExternalLinks() {
           }
 
           return (
-            <div key={key} className="bg-card relative flex flex-col gap-1.5 px-4 py-3.5">
-              <div
-                className="absolute top-2 bottom-2 left-0 w-[2px] rounded-full opacity-10"
-                style={{ backgroundColor: '#6b7280' }}
-              />
+            <div key={key} className="bg-card flex flex-col gap-1.5 px-4 py-3.5">
               <span className="text-muted-foreground/50 text-sm font-medium">{label}</span>
-              <span className="text-muted-foreground/25 text-sm italic">Non configure</span>
+              <span className="text-muted-foreground/25 text-xs italic">Non configure</span>
             </div>
           );
         })}

@@ -64,7 +64,7 @@ export function jobTypeLabel(type?: string): string {
 
 // Veeam job type → colored badge CSS classes
 export function jobTypeColor(type?: string): string {
-  if (!type) return 'bg-muted/30 text-muted-foreground border-border/50';
+  if (!type) return 'bg-muted/30 text-muted-foreground border-border';
   switch (type) {
     case 'Backup':
       return 'bg-blue-500/15 text-blue-400 border-blue-500/30';
@@ -85,7 +85,7 @@ export function jobTypeColor(type?: string): string {
     case 'HyperVReplica':
       return 'bg-orange-500/15 text-orange-400 border-orange-500/30';
     default:
-      return 'bg-muted/30 text-muted-foreground border-border/50';
+      return 'bg-muted/30 text-muted-foreground border-border';
   }
 }
 

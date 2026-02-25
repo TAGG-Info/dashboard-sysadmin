@@ -38,7 +38,7 @@ export default function LoginPage() {
   return (
     <div className="bg-background flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="bg-card border-border/60 rounded-lg border p-8 shadow-lg">
+        <div className="bg-card border-border rounded-lg border p-8 shadow-lg">
           <div className="mb-8 text-center">
             <h1 className="text-foreground mb-2 text-2xl font-bold">
               {process.env.NEXT_PUBLIC_APP_NAME || 'SysAdmin Dashboard'}

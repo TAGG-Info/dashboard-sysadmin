@@ -216,12 +216,12 @@ export function JobList() {
             placeholder="Nom du job..."
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
-            className="bg-muted/20 border-border/50 focus:ring-ring h-8 w-44 rounded border pr-3 pl-7 text-sm focus:ring-1 focus:outline-none"
+            className="bg-muted/20 border-border focus:ring-ring h-8 w-44 rounded border pr-3 pl-7 text-sm focus:ring-1 focus:outline-none"
           />
         </div>
 
         <Select value={filterType} onValueChange={(v) => setFilterType(v === '__all__' ? '' : v)}>
-          <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[130px] text-sm">
+          <SelectTrigger className="bg-muted/20 border-border h-8 w-auto min-w-[130px] text-sm">
             <SelectValue placeholder="Tous types" />
           </SelectTrigger>
           <SelectContent>
@@ -235,7 +235,7 @@ export function JobList() {
         </Select>
 
         <Select value={filterResult} onValueChange={(v) => setFilterResult(v === '__all__' ? '' : v)}>
-          <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[130px] text-sm">
+          <SelectTrigger className="bg-muted/20 border-border h-8 w-auto min-w-[130px] text-sm">
             <SelectValue placeholder="Tous resultats" />
           </SelectTrigger>
           <SelectContent>
@@ -249,7 +249,7 @@ export function JobList() {
         </Select>
 
         <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v === '__all__' ? '' : v)}>
-          <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[110px] text-sm">
+          <SelectTrigger className="bg-muted/20 border-border h-8 w-auto min-w-[110px] text-sm">
             <SelectValue placeholder="Tous statuts" />
           </SelectTrigger>
           <SelectContent>
@@ -277,7 +277,7 @@ export function JobList() {
       {instanceGroups.map(({ instanceId, instanceName, items }) => (
         <div key={instanceId}>
           {multipleInstances && <InstanceSectionHeader instanceName={instanceName} className="mb-2" />}
-          <div className="border-border/50 max-h-[900px] overflow-auto rounded-lg border">
+          <div className="border-border max-h-[900px] overflow-auto rounded-lg border">
             <table className="table-fixed text-sm" style={{ width: tableWidth }}>
               <colgroup>
                 {widths.map((w, i) => (
@@ -285,7 +285,7 @@ export function JobList() {
                 ))}
               </colgroup>
               <thead>
-                <tr className="border-border/50 bg-muted/20 border-b">
+                <tr className="border-border bg-muted/20 border-b">
                   {COLS.map((col, i) => {
                     const isLast = i === COLS.length - 1;
                     const isSorted = sortKey === col.key;
@@ -333,7 +333,7 @@ export function JobList() {
                   items.map((job) => (
                     <tr
                       key={`${instanceId}-${job.id}`}
-                      className={`border-border/30 hover:bg-muted/10 border-b transition-colors ${job.isDisabled ? 'opacity-50' : ''}`}
+                      className={`border-border hover:bg-muted/10 border-b transition-colors ${job.isDisabled ? 'opacity-50' : ''}`}
                     >
                       <td className="text-foreground overflow-hidden px-3 py-1.5 text-xs font-medium">
                         <span className="block truncate">{job.name}</span>
@@ -372,7 +372,7 @@ export function JobList() {
 
       {/* Loading skeletons */}
       {loading && !jobs && instanceGroups.length === 0 && (
-        <div className="border-border/50 overflow-x-auto rounded-lg border">
+        <div className="border-border overflow-x-auto rounded-lg border">
           <table className="table-fixed text-sm" style={{ width: tableWidth }}>
             <colgroup>
               {widths.map((w, i) => (
@@ -380,7 +380,7 @@ export function JobList() {
               ))}
             </colgroup>
             <thead>
-              <tr className="border-border/50 bg-muted/20 border-b">
+              <tr className="border-border bg-muted/20 border-b">
                 {COLS.map((col) => (
                   <th
                     key={col.key}
@@ -393,7 +393,7 @@ export function JobList() {
             </thead>
             <tbody>
               {Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-border/30 border-b">
+                <tr key={i} className="border-border border-b">
                   {Array.from({ length: COLS.length }).map((_, j) => (
                     <td key={j} className="px-3 py-1.5">
                       <Skeleton className="h-3.5 w-full" />

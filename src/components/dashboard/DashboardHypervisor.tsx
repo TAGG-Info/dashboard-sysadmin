@@ -12,17 +12,20 @@ import { formatMemory, formatBytes } from '@/lib/formatters';
 type StatusLevel = 'healthy' | 'warning' | 'critical' | 'info' | 'neutral' | 'new';
 
 function gaugeColor(pct: number): string {
-  if (pct > 80) return 'linear-gradient(90deg,#f87171,#ef4444)';
-  if (pct >= 60) return 'linear-gradient(90deg,#fbbf24,#f59e0b)';
-  return 'linear-gradient(90deg,#60a5fa,#3b82f6)';
+  if (pct > 80) return '#ef4444';
+  if (pct >= 60) return '#f59e0b';
+  return '#3b82f6';
 }
 
 function MiniGauge({ label, pct }: { label: string; pct: number }) {
   return (
     <div className="flex items-center gap-1 text-[11px]">
       <span className="text-muted-foreground min-w-[24px] font-semibold">{label}</span>
-      <div className="h-1.5 w-12 overflow-hidden rounded-sm" style={{ background: 'rgba(255,255,255,0.06)' }}>
-        <div className="h-full rounded-sm" style={{ width: `${Math.min(pct, 100)}%`, background: gaugeColor(pct) }} />
+      <div className="bg-secondary h-1.5 w-12 overflow-hidden rounded-sm">
+        <div
+          className="h-full rounded-sm"
+          style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: gaugeColor(pct) }}
+        />
       </div>
       <span className="text-secondary-foreground min-w-[30px] font-bold">{Math.round(pct)}%</span>
     </div>

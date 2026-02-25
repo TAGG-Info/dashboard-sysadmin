@@ -16,56 +16,18 @@ interface OverviewCardProps {
   title: string;
   icon: React.ReactNode;
   href: string;
-  accentColor: string;
   children: React.ReactNode;
 }
 
-const SPARKLINE_DATA: Record<string, number[]> = {
-  '#f99e1c': [20, 18, 22, 14, 16, 10, 12, 8, 5],
-  '#879AC3': [14, 12, 16, 10, 8, 12, 10, 8, 10],
-  '#4caf50': [10, 8, 12, 6, 18, 8, 6, 10, 8],
-  '#00a5f3': [16, 14, 18, 12, 20, 16, 14, 18, 12],
-  '#D9272D': [18, 14, 16, 10, 12, 8, 14, 10, 8],
-};
-
-function Sparkline({ color }: { color: string }) {
-  const points = SPARKLINE_DATA[color] ?? [14, 12, 16, 10, 8, 12, 10, 8, 10];
-  const step = 120 / (points.length - 1);
-  const linePoints = points.map((y, i) => `${i * step},${y}`).join(' ');
-  const areaPoints = `0,28 ${linePoints} 120,28`;
-  const gradientId = `spark-${color.replace('#', '')}`;
-
-  return (
-    <div className="mt-2 h-[28px] opacity-80">
-      <svg viewBox="0 0 120 28" className="h-full w-full" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-            <stop offset="100%" stopColor={color} stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <polyline fill={`url(#${gradientId})`} stroke="none" points={areaPoints} />
-        <polyline fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" points={linePoints} />
-      </svg>
-    </div>
-  );
-}
-
-function OverviewCard({ title, icon, href, accentColor, children }: OverviewCardProps) {
+function OverviewCard({ title, icon, href, children }: OverviewCardProps) {
   return (
     <Link href={href}>
-      <Card className="group relative h-full cursor-pointer overflow-hidden duration-200 hover:-translate-y-px hover:shadow-md">
-        <div className="absolute top-0 bottom-0 left-0 w-[3px]" style={{ backgroundColor: accentColor }} />
+      <Card className="hover:bg-accent h-full cursor-pointer transition-colors">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-muted-foreground text-xs font-medium tracking-wide uppercase">{title}</CardTitle>
-          <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-md" style={{ color: accentColor }}>
-            {icon}
-          </div>
+          <div className="text-muted-foreground">{icon}</div>
         </CardHeader>
-        <CardContent>
-          {children}
-          <Sparkline color={accentColor} />
-        </CardContent>
+        <CardContent>{children}</CardContent>
       </Card>
     </Link>
   );
@@ -74,7 +36,7 @@ function OverviewCard({ title, icon, href, accentColor, children }: OverviewCard
 function PlaceholderContent() {
   return (
     <div>
-      <p className="text-muted-foreground/30 text-2xl font-semibold tracking-tight">—</p>
+      <p className="text-muted-foreground/30 text-2xl font-semibold tracking-tight">&mdash;</p>
       <p className="text-muted-foreground mt-1 text-xs">non configure</p>
     </div>
   );
@@ -276,12 +238,7 @@ export function OverviewCards({ prtgAlerts, veeamSummary }: OverviewCardsProps) 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:gap-5">
       {/* PRTG Monitoring */}
-      <OverviewCard
-        title="Monitoring"
-        icon={<SourceLogo source="prtg" size={20} />}
-        href="/monitoring"
-        accentColor="#f99e1c"
-      >
+      <OverviewCard title="Monitoring" icon={<SourceLogo source="prtg" size={20} />} href="/monitoring">
         {loading && !alerts ? (
           <div className="space-y-2">
             <Skeleton className="h-6 w-24" />
@@ -309,37 +266,22 @@ export function OverviewCards({ prtgAlerts, veeamSummary }: OverviewCardsProps) 
       </OverviewCard>
 
       {/* Infrastructure */}
-      <OverviewCard
-        title="Infrastructure"
-        icon={<SourceLogo source="vcenter" size={20} />}
-        href="/infrastructure"
-        accentColor="#879AC3"
-      >
+      <OverviewCard title="Infrastructure" icon={<SourceLogo source="vcenter" size={20} />} href="/infrastructure">
         <InfrastructureContent />
       </OverviewCard>
 
       {/* Backups */}
-      <OverviewCard
-        title="Backups"
-        icon={<SourceLogo source="veeam" size={20} />}
-        href="/backups"
-        accentColor="#4caf50"
-      >
+      <OverviewCard title="Backups" icon={<SourceLogo source="veeam" size={20} />} href="/backups">
         <BackupsContent veeamSummary={veeamSummary} />
       </OverviewCard>
 
       {/* Tickets */}
-      <OverviewCard title="Tickets" icon={<SourceLogo source="glpi" size={20} />} href="/tickets" accentColor="#00a5f3">
+      <OverviewCard title="Tickets" icon={<SourceLogo source="glpi" size={20} />} href="/tickets">
         <TicketsContent />
       </OverviewCard>
 
       {/* Transferts */}
-      <OverviewCard
-        title="Transferts"
-        icon={<SourceLogo source="securetransport" size={20} />}
-        href="/transfers"
-        accentColor="#D9272D"
-      >
+      <OverviewCard title="Transferts" icon={<SourceLogo source="securetransport" size={20} />} href="/transfers">
         <TransfersContent />
       </OverviewCard>
     </div>

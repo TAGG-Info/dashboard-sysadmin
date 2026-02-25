@@ -16,24 +16,20 @@ interface StatCardProps {
   active?: boolean;
 }
 
-export function StatCard({ label, value, color, icon, badge, trend, subtitle, onClick, active }: StatCardProps) {
+export function StatCard({ label, value, icon, badge, trend, subtitle, onClick, active }: StatCardProps) {
   if (icon) {
     return (
       <Card
         className={cn(
-          'border-t-2 transition-colors',
-          onClick && 'hover:bg-muted/30 cursor-pointer',
-          active && 'ring-offset-background ring-2 ring-offset-1',
+          'transition-colors',
+          onClick && 'hover:bg-accent cursor-pointer',
+          active && 'ring-ring ring-offset-background ring-2 ring-offset-1',
         )}
-        style={{
-          borderTopColor: color ?? 'var(--color-primary)',
-          ...(active ? { ringColor: color } : {}),
-        }}
         onClick={onClick}
       >
         <CardContent className="flex items-center gap-3 p-4 2xl:p-5">
           <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-md">
-            <div style={{ color }}>{icon}</div>
+            <div className="text-muted-foreground">{icon}</div>
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-muted-foreground truncate text-xs">{label}</p>
@@ -58,21 +54,15 @@ export function StatCard({ label, value, color, icon, badge, trend, subtitle, on
   return (
     <Card
       className={cn(
-        'border-t-2 transition-colors',
-        onClick && 'hover:bg-muted/30 cursor-pointer',
-        active && 'ring-offset-background ring-2 ring-offset-1',
+        'transition-colors',
+        onClick && 'hover:bg-accent cursor-pointer',
+        active && 'ring-ring ring-offset-background ring-2 ring-offset-1',
       )}
-      style={{
-        borderTopColor: color ?? 'var(--color-primary)',
-        ...(active ? { ringColor: color } : {}),
-      }}
       onClick={onClick}
     >
       <CardContent className="p-4 2xl:p-5">
         <p className="text-muted-foreground text-xs">{label}</p>
-        <p className="mt-0.5 text-2xl font-bold tabular-nums" style={color ? { color } : undefined}>
-          {value}
-        </p>
+        <p className="text-foreground mt-0.5 text-2xl font-bold tabular-nums">{value}</p>
         {trend && (
           <span
             className={cn(

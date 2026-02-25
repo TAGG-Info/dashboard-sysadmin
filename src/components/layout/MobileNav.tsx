@@ -58,7 +58,7 @@ export function MobileNav() {
   };
 
   return (
-    <div className="border-border/60 bg-card flex h-12 items-center border-b px-4">
+    <div className="border-border bg-background flex h-12 items-center border-b px-4">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="mr-2 h-8 w-8">

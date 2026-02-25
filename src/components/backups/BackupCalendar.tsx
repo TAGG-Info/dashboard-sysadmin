@@ -199,13 +199,8 @@ export function BackupCalendar() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span
-            className="flex h-[22px] w-[22px] items-center justify-center rounded-md"
-            style={{ background: 'rgba(76,175,80,0.12)' }}
-          >
-            <SourceLogo source="veeam" size={14} />
-          </span>
-          <h3 className="text-foreground text-[13px] font-semibold capitalize">Sauvegardes &mdash; {monthLabel}</h3>
+          <SourceLogo source="veeam" size={16} />
+          <h3 className="text-foreground text-sm font-semibold capitalize">Sauvegardes &mdash; {monthLabel}</h3>
         </div>
         <div className="flex items-center gap-0.5">
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={goToPreviousMonth}>

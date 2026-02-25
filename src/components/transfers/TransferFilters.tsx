@@ -118,7 +118,7 @@ export function TransferFilters({ onFilterChange, onPageReset, hideDirection }: 
           placeholder="Compte..."
           value={accountInput}
           onChange={(e) => setAccountInput(e.target.value)}
-          className="bg-muted/20 border-border/50 focus:ring-ring h-8 w-36 rounded border pr-3 pl-7 text-sm focus:ring-1 focus:outline-none"
+          className="bg-muted/20 border-border focus:ring-ring h-8 w-36 rounded border pr-3 pl-7 text-sm focus:ring-1 focus:outline-none"
         />
       </div>
 
@@ -130,13 +130,13 @@ export function TransferFilters({ onFilterChange, onPageReset, hideDirection }: 
           placeholder="Fichier..."
           value={filenameInput}
           onChange={(e) => setFilenameInput(e.target.value)}
-          className="bg-muted/20 border-border/50 focus:ring-ring h-8 w-40 rounded border pr-3 pl-7 text-sm focus:ring-1 focus:outline-none"
+          className="bg-muted/20 border-border focus:ring-ring h-8 w-40 rounded border pr-3 pl-7 text-sm focus:ring-1 focus:outline-none"
         />
       </div>
 
       {!hideDirection && (
         <Select value={incoming || '__all__'} onValueChange={(v) => setIncoming(v === '__all__' ? '' : v)}>
-          <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[110px] text-sm">
+          <SelectTrigger className="bg-muted/20 border-border h-8 w-auto min-w-[110px] text-sm">
             <SelectValue placeholder="Tous sens" />
           </SelectTrigger>
           <SelectContent>
@@ -149,7 +149,7 @@ export function TransferFilters({ onFilterChange, onPageReset, hideDirection }: 
 
       {/* Protocol */}
       <Select value={protocol || '__all__'} onValueChange={(v) => setProtocol(v === '__all__' ? '' : v)}>
-        <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[110px] text-sm">
+        <SelectTrigger className="bg-muted/20 border-border h-8 w-auto min-w-[110px] text-sm">
           <SelectValue placeholder="Protocole" />
         </SelectTrigger>
         <SelectContent>
@@ -164,7 +164,7 @@ export function TransferFilters({ onFilterChange, onPageReset, hideDirection }: 
 
       {/* Status */}
       <Select value={status || '__all__'} onValueChange={(v) => setStatus(v === '__all__' ? '' : v)}>
-        <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[110px] text-sm">
+        <SelectTrigger className="bg-muted/20 border-border h-8 w-auto min-w-[110px] text-sm">
           <SelectValue placeholder="Statut" />
         </SelectTrigger>
         <SelectContent>
@@ -182,7 +182,7 @@ export function TransferFilters({ onFilterChange, onPageReset, hideDirection }: 
 
       {/* Date range */}
       <Select value={dateRange} onValueChange={setDateRange}>
-        <SelectTrigger className="bg-muted/20 border-border/50 h-8 w-auto min-w-[140px] text-sm">
+        <SelectTrigger className="bg-muted/20 border-border h-8 w-auto min-w-[140px] text-sm">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
