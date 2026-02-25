@@ -10,9 +10,10 @@ export default auth((req) => {
   const isAuth = !!req.auth;
   const isLoginPage = pathname === '/login';
   const isAuthApi = pathname.startsWith('/api/auth');
+  const isHealthCheck = pathname === '/api/health';
   const isStaticAsset = pathname.startsWith('/_next') || pathname === '/favicon.ico';
 
-  if (isAuthApi || isStaticAsset) return NextResponse.next();
+  if (isAuthApi || isHealthCheck || isStaticAsset) return NextResponse.next();
 
   if (!isAuth && !isLoginPage) {
     return NextResponse.redirect(new URL('/login', req.url));
