@@ -84,8 +84,8 @@ export async function authenticateLDAP(username: string, password: string): Prom
             return;
           }
 
-          // ldapjs v3: SearchEntry has `dn` (string) inherited from LDAPMessage
-          const userDN = userEntry.dn;
+          // ldapjs v3: SearchEntry.dn is a DN object, not a string — must convert
+          const userDN = userEntry.dn.toString();
 
           // 3. Bind with user credentials to verify the password
           client.bind(userDN, password, (err) => {
