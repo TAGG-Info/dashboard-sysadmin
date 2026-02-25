@@ -1,12 +1,42 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 interface TimeAgoProps {
   date: string | Date;
   className?: string;
+}
+
+// Global tick store — one single setInterval shared by all TimeAgo instances
+let tick = 0;
+const listeners = new Set<() => void>();
+
+const interval =
+  typeof window !== 'undefined'
+    ? setInterval(() => {
+        tick += 1;
+        listeners.forEach((l) => l());
+      }, 15000)
+    : null;
+
+// Prevent the interval from keeping the process alive in tests/SSR
+if (interval && typeof interval === 'object' && 'unref' in interval) {
+  (interval as NodeJS.Timeout).unref();
+}
+
+function subscribe(callback: () => void) {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
+
+function getSnapshot() {
+  return tick;
+}
+
+function getServerSnapshot() {
+  return 0;
 }
 
 function formatTimeAgo(date: Date): string {
@@ -39,15 +69,11 @@ function formatFullDate(date: Date): string {
 
 export function TimeAgo({ date, className }: TimeAgoProps) {
   const dateObj = useMemo(() => (typeof date === 'string' ? new Date(date) : date), [date]);
-  const [display, setDisplay] = useState(formatTimeAgo(dateObj));
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDisplay(formatTimeAgo(dateObj));
-    }, 15000); // Update every 15 seconds
+  // Subscribe to global tick — triggers re-render for all TimeAgo instances at once
+  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-    return () => clearInterval(interval);
-  }, [dateObj]);
+  const display = formatTimeAgo(dateObj);
 
   return (
     <Tooltip>

@@ -77,7 +77,7 @@ export class GLPIClient {
     }
     this.sessionToken = data.session_token;
     this.sessionExpiry = Date.now() + 50 * 60 * 1000;
-    return this.sessionToken!;
+    return this.sessionToken as string;
   }
 
   async request<T>(path: string): Promise<T> {
@@ -154,8 +154,7 @@ export class GLPIClient {
     params.append('order', 'DESC');
     params.append('range', '0-199');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await this.request<any>(`/search/Ticket?${params.toString()}`);
+    const result = await this.request<GLPISearchResponse>(`/search/Ticket?${params.toString()}`);
 
     // GLPI search peut retourner data comme array ou object (as_map)
     let rows: Record<string, string | number | null>[];

@@ -47,7 +47,7 @@ function getDerivedKey(): Buffer {
     );
   }
   const effectiveSalt = salt || 'dashboard-tagg-config-salt';
-  _derivedKey = scryptSync(secret, effectiveSalt, 32);
+  _derivedKey = scryptSync(secret, effectiveSalt, 32, { N: 131072, r: 8, p: 1, maxmem: 256 * 1024 * 1024 });
   return _derivedKey;
 }
 
@@ -181,7 +181,7 @@ export async function writeConfig(config: SourceConfig): Promise<void> {
 // ---------------------------------------------------------------------------
 
 let configCache: { data: SourceConfig; ts: number } | null = null;
-const CACHE_TTL_MS = 10_000; // 10 seconds
+const CACHE_TTL_MS = Number(process.env.CONFIG_CACHE_TTL_MS || 10) * 1000;
 
 async function getCachedConfig(): Promise<SourceConfig> {
   if (configCache && Date.now() - configCache.ts < CACHE_TTL_MS) {

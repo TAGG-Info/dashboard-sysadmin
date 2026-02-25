@@ -151,7 +151,7 @@ export class VeeamClient {
 const clientCache = new Map<string, { client: VeeamClient; fingerprint: string }>();
 
 function configFingerprint(instance: VeeamInstance): string {
-  return `${instance.baseUrl}|${instance.username}|${instance.psBaseUrl || ''}`;
+  return `${instance.baseUrl}|${instance.username}|${instance.password}|${instance.psBaseUrl || ''}`;
 }
 
 export function getVeeamClient(instance: VeeamInstance): VeeamClient {

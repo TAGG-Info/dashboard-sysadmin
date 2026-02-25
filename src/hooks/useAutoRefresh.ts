@@ -50,6 +50,7 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
   const countdownIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
   const fetchingRef = useRef(false);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastManualRefreshRef = useRef(0);
 
   const fetchData = useCallback(
@@ -108,7 +109,7 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
         if (!isScheduled && retryCountRef.current < MAX_RETRIES) {
           const backoff = BACKOFF_BASE * Math.pow(2, retryCountRef.current);
           retryCountRef.current += 1;
-          setTimeout(() => {
+          retryTimerRef.current = setTimeout(() => {
             if (mountedRef.current) {
               fetchingRef.current = false;
               fetchData(false);
@@ -148,6 +149,7 @@ export function useAutoRefresh<T>(options: UseAutoRefreshOptions): UseAutoRefres
 
     return () => {
       mountedRef.current = false;
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
     };
   }, [fetchData, enabled]);
 

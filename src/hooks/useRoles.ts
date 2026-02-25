@@ -29,7 +29,6 @@ export function useRoles(): UseRolesReturn {
       const data = await res.json();
       setRoles(data.roles || []);
     } catch (err) {
-      console.error('[useRoles] Failed to load roles:', err);
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
       setLoading(false);

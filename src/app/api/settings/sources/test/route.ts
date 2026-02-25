@@ -47,6 +47,26 @@ export async function POST(request: Request) {
       );
     }
 
+    // SSRF protection: validate baseUrl is not targeting internal/cloud metadata endpoints
+    if (config.baseUrl) {
+      try {
+        const parsed = new URL(config.baseUrl);
+        const hostname = parsed.hostname.toLowerCase();
+        const isInternal =
+          hostname === 'localhost' ||
+          hostname === '127.0.0.1' ||
+          hostname === '[::1]' ||
+          hostname === '0.0.0.0' ||
+          hostname.startsWith('169.254.') ||
+          hostname === 'metadata.google.internal';
+        if (isInternal) {
+          return NextResponse.json({ error: 'Invalid baseUrl: internal addresses are not allowed' }, { status: 400 });
+        }
+      } catch {
+        return NextResponse.json({ error: 'Invalid baseUrl format' }, { status: 400 });
+      }
+    }
+
     // Resolve **** values from saved config for existing instances
     const resolvedConfig = { ...config };
     if (instanceId) {

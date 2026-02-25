@@ -14,7 +14,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  serverExternalPackages: ['ioredis', 'ldapjs', 'pino'],
+  serverExternalPackages: ['ioredis', 'ldapjs', 'pino', 'pino-pretty'],
 };
 
 export default withBundleAnalyzer(nextConfig);

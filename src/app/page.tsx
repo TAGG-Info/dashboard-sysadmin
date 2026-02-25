@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const veeamSummary = useVeeamSummary();
 
   return (
-    <div className="space-y-5" style={{ zoom: 1.15 }}>
+    <div className="space-y-5">
       <PageHeader title="Dashboard" subtitle="Vue d'ensemble de l'infrastructure" />
 
       {/* Row 1: Overview stat cards */}

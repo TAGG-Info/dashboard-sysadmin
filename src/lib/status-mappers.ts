@@ -26,7 +26,7 @@ export function resultLabel(result?: string): string {
     case 'failed':
       return 'Failed';
     case 'none':
-      return 'Jamais execute';
+      return 'Jamais exécuté';
     default:
       return result;
   }
@@ -108,7 +108,7 @@ export function jobStatusLabel(status?: string): string {
     case 'Working':
       return 'En cours';
     case 'Stopped':
-      return 'Arrete';
+      return 'Arrêté';
     default:
       return status;
   }

@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { readRoles, writeRoles } from '@/lib/roles';
 import type { DashboardRole } from '@/types/roles';
 import { ALL_PAGE_PATHS } from '@/types/roles';
+import { loggers } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,6 +62,18 @@ export async function POST(request: Request) {
       );
     }
 
+    if (body.name.length > 64) {
+      return NextResponse.json({ error: 'Role name must be 64 characters or less' }, { status: 400 });
+    }
+
+    if (body.adGroups && body.adGroups.length > 50) {
+      return NextResponse.json({ error: 'Maximum 50 AD groups per role' }, { status: 400 });
+    }
+
+    if (body.adGroups?.some((g) => g.length > 256)) {
+      return NextResponse.json({ error: 'AD group names must be 256 characters or less' }, { status: 400 });
+    }
+
     if (!body.pages || body.pages.length === 0) {
       return NextResponse.json({ error: 'At least one page must be selected' }, { status: 400 });
     }
@@ -89,7 +102,7 @@ export async function POST(request: Request) {
     roles.push(newRole);
     await writeRoles(roles);
 
-    console.log(`[roles] Created role: ${newRole.id}`);
+    loggers.auth.info({ roleId: newRole.id }, 'Role created');
     return NextResponse.json({ success: true, role: newRole }, { status: 201 });
   } catch (error) {
     return NextResponse.json(
@@ -160,7 +173,7 @@ export async function PUT(request: Request) {
 
     await writeRoles(roles);
 
-    console.log(`[roles] Updated role: ${body.id}`);
+    loggers.auth.info({ roleId: body.id }, 'Role updated');
     return NextResponse.json({ success: true, role: roles[idx] });
   } catch (error) {
     return NextResponse.json(
@@ -205,7 +218,7 @@ export async function DELETE(request: Request) {
     roles.splice(idx, 1);
     await writeRoles(roles);
 
-    console.log(`[roles] Deleted role: ${body.id}`);
+    loggers.auth.info({ roleId: body.id }, 'Role deleted');
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(

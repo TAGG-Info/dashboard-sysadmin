@@ -6,8 +6,8 @@ interface CircuitState {
 }
 
 const circuits = new Map<string, CircuitState>();
-const FAILURE_THRESHOLD = 3;
-const OPEN_DURATION = 30_000; // 30s
+const FAILURE_THRESHOLD = Number(process.env.CIRCUIT_BREAKER_THRESHOLD || 3);
+const OPEN_DURATION = Number(process.env.CIRCUIT_BREAKER_OPEN_MS || 30_000);
 
 /**
  * Check if the circuit for a given key is open (tripped).

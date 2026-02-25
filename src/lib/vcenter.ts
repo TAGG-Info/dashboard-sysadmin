@@ -105,22 +105,28 @@ export interface HostVMData {
 }
 
 export async function getHostVMData(client: VCenterClient, hosts: VCenterHost[]): Promise<HostVMData> {
-  const hostMappings = await Promise.all(
-    hosts.map(async (host) => {
-      const hostVMs = await client.getVMsByHost(host.host).catch(() => []);
-      return { hostId: host.host, hostVMs };
-    }),
-  );
+  // Fetch all VMs once instead of N+1 per-host calls
+  const allVMs = await client.getVMs().catch(() => [] as VCenterVM[]);
 
   const vmHostMap: Record<string, string> = {};
   const hostCounts: Record<string, { total: number; running: number }> = {};
 
-  for (const { hostId, hostVMs } of hostMappings) {
-    for (const vm of hostVMs) vmHostMap[vm.vm] = hostId;
-    hostCounts[hostId] = {
-      total: hostVMs.length,
-      running: hostVMs.filter((vm) => vm.power_state === 'POWERED_ON').length,
-    };
+  // Initialize counts for all hosts
+  for (const host of hosts) {
+    hostCounts[host.host] = { total: 0, running: 0 };
+  }
+
+  // Build mapping from VM host field
+  for (const vm of allVMs) {
+    if (vm.host) {
+      vmHostMap[vm.vm] = vm.host;
+      if (hostCounts[vm.host]) {
+        hostCounts[vm.host].total += 1;
+        if (vm.power_state === 'POWERED_ON') {
+          hostCounts[vm.host].running += 1;
+        }
+      }
+    }
   }
 
   return { vmHostMap, hostCounts };

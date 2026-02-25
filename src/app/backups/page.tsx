@@ -54,7 +54,7 @@ function BackupStats() {
 
 export default function BackupsPage() {
   return (
-    <div className="space-y-6" style={{ zoom: 1.15 }}>
+    <div className="space-y-6">
       <PageHeader title="Backups Veeam" source="veeam" />
 
       {/* Stats cards (VBEM summary) */}

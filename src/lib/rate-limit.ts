@@ -8,11 +8,7 @@ const attempts = new Map<string, { count: number; resetAt: number }>();
  * Check if a key (username or IP) is rate limited.
  * Returns false if the key has exceeded maxAttempts within windowMs.
  */
-export function checkRateLimit(
-  key: string,
-  maxAttempts = 10,
-  windowMs = 60_000,
-): boolean {
+export function checkRateLimit(key: string, maxAttempts = 10, windowMs = 60_000): boolean {
   const now = Date.now();
   const entry = attempts.get(key);
 
@@ -34,4 +30,16 @@ export function checkRateLimit(
  */
 export function resetRateLimit(key: string): void {
   attempts.delete(key);
+}
+
+/**
+ * Check rate limit by IP address (stricter: 5 attempts / minute).
+ */
+export function checkRateLimitIP(ip: string, maxAttempts = 5, windowMs = 60_000): boolean {
+  return checkRateLimit(`ip:${ip}`, maxAttempts, windowMs);
+}
+
+/** Constant delay to make brute-force timing-expensive. */
+export async function rateLimitDelay(): Promise<void> {
+  await new Promise((r) => setTimeout(r, 1500));
 }

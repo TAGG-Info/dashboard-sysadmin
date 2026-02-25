@@ -32,7 +32,7 @@ async function getRedis(): Promise<import('ioredis').default | null> {
   }
 }
 
-// In-memory fallback with LRU eviction
+// In-memory fallback with FIFO eviction
 const MAX_MEMORY_ENTRIES = 500;
 const memoryCache = new Map<string, string>();
 const memoryTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -53,7 +53,7 @@ function memoryEvict(): void {
 }
 
 function memorySet(key: string, value: string, maxTtlMs: number): void {
-  // LRU: evict if at capacity (skip if updating existing key)
+  // FIFO: evict if at capacity (skip if updating existing key)
   if (!memoryCache.has(key)) {
     while (memoryCache.size >= MAX_MEMORY_ENTRIES) {
       memoryEvict();
@@ -159,13 +159,14 @@ export async function cacheFetch<T>(key: string, ttlMs: number, fetcher: () => P
       const revalidate = fetcher()
         .then(async (data) => {
           await cacheSet(key, data, ttlMs);
-          inFlight.delete(key);
           return data;
         })
-        .catch(() => {
+        .finally(() => {
           inFlight.delete(key);
         });
       inFlight.set(key, revalidate);
+      // Safety timeout: ensure inFlight entry is cleaned up even if promise hangs
+      setTimeout(() => inFlight.delete(key), ttlMs * CACHE_TTL.STALE_MULTIPLIER);
     }
     return stale;
   }
@@ -177,12 +178,13 @@ export async function cacheFetch<T>(key: string, ttlMs: number, fetcher: () => P
   const promise = fetcher()
     .then(async (data) => {
       await cacheSet(key, data, ttlMs);
-      inFlight.delete(key);
       return data;
     })
     .catch((err) => {
-      inFlight.delete(key);
       throw err;
+    })
+    .finally(() => {
+      inFlight.delete(key);
     });
 
   inFlight.set(key, promise);

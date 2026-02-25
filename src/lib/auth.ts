@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { ALL_PAGE_PATHS } from '@/types/roles';
 import { checkRateLimit, resetRateLimit } from './rate-limit';
 import { authConfig } from './auth.config';
+import { loggers } from './logger';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -14,6 +15,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        if (!credentials?.username || !credentials?.password) return null;
+
         const { username, password } = credentials as {
           username: string;
           password: string;
@@ -32,7 +35,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         if (!checkRateLimit(username)) {
-          console.warn(`[auth] Rate limit dépassé pour: ${username}`);
+          loggers.auth.warn('Login rate limit exceeded');
           return null;
         }
 
@@ -57,9 +60,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               authSource: 'ldap',
             };
           }
-          console.log('[auth] LDAP: user not found, trying local admin');
+          loggers.auth.info('LDAP: user not found, trying local admin');
         } catch (err) {
-          console.log('[auth] LDAP unavailable:', (err as Error).message, '→ trying local admin');
+          loggers.auth.warn({ err: (err as Error).message }, 'LDAP unavailable, trying local admin');
         }
 
         if (username === localUser && localHash && (await bcrypt.compare(password, localHash))) {
@@ -72,9 +75,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             authSource: 'local',
           };
         }
-        console.warn(
-          `[auth] Login failed for "${username}" — localUser="${localUser}", hashLen=${localHash?.length ?? 0}, match=${username === localUser}`,
-        );
+        loggers.auth.warn('Login failed');
         return null;
       },
     }),

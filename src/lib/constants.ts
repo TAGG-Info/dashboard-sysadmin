@@ -9,3 +9,5 @@ export const CACHE_TTL = {
   ST_COUNT: Number(process.env.CACHE_TTL_ST_COUNT || 120) * 1000,
   STALE_MULTIPLIER: 5,
 } as const;
+
+export const CONFIG_CACHE_TTL_MS = Number(process.env.CONFIG_CACHE_TTL_MS || 10) * 1000;

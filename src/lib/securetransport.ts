@@ -70,6 +70,13 @@ export class SecureTransportClient {
     } catch {
       loggers.st.warn('transferSites endpoint unavailable, falling back to /sites');
       this.useSitesEndpoint = true;
+      // Retry the primary endpoint after 5 minutes
+      setTimeout(
+        () => {
+          this.useSitesEndpoint = false;
+        },
+        5 * 60 * 1000,
+      );
       return extract(await this.request<{ result?: STTransferSite[] } | STTransferSite[]>('/sites'));
     }
   }

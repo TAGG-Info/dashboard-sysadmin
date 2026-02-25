@@ -43,7 +43,7 @@ export function createApiRoute<K extends SourceKey>(options: ApiRouteOptions<K>)
       );
     }
 
-    const noCache = req.headers.get('x-no-cache') === '1';
+    const noCache = req.headers.get('x-no-cache') === '1' && session.user?.role === 'admin';
 
     const results = await Promise.allSettled(
       instances.map(async (instance) => {
@@ -128,7 +128,7 @@ export function createSummaryApiRoute<K extends SourceKey, TRaw, TAggregated>(
       );
     }
 
-    const noCache = req.headers.get('x-no-cache') === '1';
+    const noCache = req.headers.get('x-no-cache') === '1' && session.user?.role === 'admin';
 
     const results = await Promise.allSettled(
       instances.map(async (instance) => {
