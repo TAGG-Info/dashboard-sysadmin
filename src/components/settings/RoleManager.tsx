@@ -158,9 +158,9 @@ export function RoleManager() {
   };
 
   return (
-    <div className="bg-card border-border overflow-hidden rounded-lg border">
+    <div className="bg-card border-border/60 overflow-hidden rounded-lg border">
       {/* Header */}
-      <div className="border-border flex items-center justify-between border-b px-5 py-4">
+      <div className="border-border/60 flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
             <ShieldCheck className="text-muted-foreground h-4 w-4" />
@@ -188,14 +188,14 @@ export function RoleManager() {
         {loading ? (
           <>
             {[1, 2].map((k) => (
-              <div key={k} className="border-border bg-muted/50 h-24 animate-pulse rounded-lg border" />
+              <div key={k} className="border-border/60 bg-muted/50 h-24 animate-pulse rounded-lg border" />
             ))}
           </>
         ) : sortedRoles.length === 0 ? (
           <div className="text-muted-foreground py-8 text-center text-sm">Aucun role configure</div>
         ) : (
           sortedRoles.map((role) => (
-            <div key={role.id} className="border-border bg-card space-y-3 rounded-lg border p-4">
+            <div key={role.id} className="border-border/60 bg-card space-y-3 rounded-lg border p-4">
               {/* Role header row */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -354,7 +354,7 @@ export function RoleManager() {
                 {DASHBOARD_PAGES.map((page) => (
                   <label
                     key={page.path}
-                    className="border-border bg-card hover:bg-accent flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 transition-colors"
+                    className="border-border/60 bg-card hover:bg-accent flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 transition-colors"
                   >
                     <input
                       type="checkbox"

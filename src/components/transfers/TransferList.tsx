@@ -58,7 +58,7 @@ export function TransferList() {
       </CardHeader>
       <CardContent>
         {expiringSoon.length === 0 ? (
-          <div className="border-border flex items-center gap-3 rounded-lg border bg-[#10b981]/5 p-4">
+          <div className="border-border/60 flex items-center gap-3 rounded-lg border bg-[#10b981]/5 p-4">
             <CheckCircle2 className="h-5 w-5 shrink-0 text-[#10b981]" />
             <p className="text-muted-foreground text-sm">Aucun certificat n&apos;expire prochainement.</p>
           </div>
@@ -67,13 +67,13 @@ export function TransferList() {
             {expiringSoon.map((cert, index) => (
               <div
                 key={`${cert.alias}-${index}`}
-                className="border-border flex items-center justify-between rounded-lg border bg-[#ef4444]/5 p-3"
+                className="border-border/60 flex items-center justify-between rounded-lg border bg-[#ef4444]/5 p-3"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <StatusBadge status="critical" label="Expire" />
                   <span className="text-foreground truncate text-sm font-medium">{cert.alias}</span>
                   {hasMultipleInstances && cert._instanceName && (
-                    <Badge variant="outline" className="text-muted-foreground border-border shrink-0 text-sm">
+                    <Badge variant="outline" className="text-muted-foreground border-border/60 shrink-0 text-sm">
                       {cert._instanceName}
                     </Badge>
                   )}

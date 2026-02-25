@@ -21,9 +21,9 @@ export function ExternalLinks() {
   const configuredCount = linkConfigs.filter((c) => c.url).length;
 
   return (
-    <div className="bg-card border-border overflow-hidden rounded-lg border">
+    <div className="bg-card border-border/60 overflow-hidden rounded-lg border">
       {/* Header */}
-      <div className="border-border flex items-center justify-between border-b px-5 py-4">
+      <div className="border-border/60 flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
             <Globe className="text-muted-foreground h-4 w-4" />

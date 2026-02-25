@@ -31,7 +31,7 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
           </CardHeader>
           <CardContent className="p-0">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="border-border flex items-center justify-between border-t px-4 py-3">
+              <div key={i} className="border-border/60 flex items-center justify-between border-t px-4 py-3">
                 <Skeleton className="h-3 w-24" />
                 <Skeleton className="h-4 w-12" />
               </div>
@@ -67,7 +67,7 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
         </CardHeader>
         <CardContent className="p-0">
           {/* Comptes */}
-          <div className="border-border flex items-center justify-between border-t px-4 py-2.5">
+          <div className="border-border/60 flex items-center justify-between border-t px-4 py-2.5">
             <span className="text-muted-foreground text-xs">Comptes actifs</span>
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-semibold text-[#FF6D00]">{summary.accounts.active}</span>
@@ -78,7 +78,7 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
             </div>
           </div>
           {/* Certificats */}
-          <div className="border-border flex items-center justify-between border-t px-4 py-2.5">
+          <div className="border-border/60 flex items-center justify-between border-t px-4 py-2.5">
             <span className="text-muted-foreground text-xs">Certificats</span>
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-semibold">{summary.certificates.total}</span>
@@ -90,7 +90,7 @@ export function TransferStats({ compact = false }: TransferStatsProps) {
             </div>
           </div>
           {/* Sites */}
-          <div className="border-border flex items-center justify-between border-t px-4 py-2.5">
+          <div className="border-border/60 flex items-center justify-between border-t px-4 py-2.5">
             <span className="text-muted-foreground text-xs">Sites de transfert</span>
             <span className="text-sm font-semibold">{summary.sites.total}</span>
           </div>

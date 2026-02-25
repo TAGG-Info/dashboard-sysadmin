@@ -41,7 +41,7 @@ function AlertItem({ sensor }: { sensor: PRTGSensor }) {
   const prtgUrl = process.env.NEXT_PUBLIC_PRTG_URL || '';
 
   return (
-    <div className="border-border hover:bg-accent/30 flex items-start justify-between gap-3 rounded-lg border p-3 transition-colors">
+    <div className="border-border/60 hover:bg-accent/30 flex items-start justify-between gap-3 rounded-lg border p-3 transition-colors">
       <div className="flex-1 space-y-1">
         <div className="flex items-center gap-2">
           <StatusBadge status={statusToLevel(sensor.status)} label={sensor.status} />
@@ -112,7 +112,7 @@ export function AlertList() {
             <p className="text-destructive text-sm">Erreur de chargement des alertes</p>
           </div>
         ) : !alerts || alerts.length === 0 ? (
-          <div className="border-border flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+          <div className="border-border/60 flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
             <CheckCircle className="mb-2 h-8 w-8 text-[#10b981]" />
             <p className="text-foreground text-sm font-medium">Aucune alerte active</p>
             <p className="text-muted-foreground text-sm">Tous les sensors fonctionnent normalement</p>

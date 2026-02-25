@@ -68,12 +68,12 @@ export function ServiceStatusList() {
     <div className="space-y-1.5">
       {services.map((svc) => {
         const p = svc.protocol.toUpperCase();
-        const protocolCls = PROTOCOL_COLORS[p] ?? 'bg-muted/30 text-muted-foreground border-border';
+        const protocolCls = PROTOCOL_COLORS[p] ?? 'bg-muted/30 text-muted-foreground border-border/60';
 
         return (
           <div
             key={`${svc._instanceId ?? 'default'}-${svc.protocol}`}
-            className="border-border bg-card/50 flex items-center justify-between rounded-lg border px-3 py-2"
+            className="border-border/60 bg-card/50 flex items-center justify-between rounded-lg border px-3 py-2"
           >
             <div className="flex items-center gap-2.5">
               <span

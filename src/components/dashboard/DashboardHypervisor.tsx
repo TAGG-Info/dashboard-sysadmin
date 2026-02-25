@@ -104,7 +104,7 @@ export function DashboardHypervisor() {
             ) : (
               <>
                 {hostList.map((h) => (
-                  <div key={h.host} className="border-border border-b py-2 last:border-b-0">
+                  <div key={h.host} className="border-border/60 border-b py-2 last:border-b-0">
                     <div className="mb-0.5 flex items-center gap-1.5">
                       <span className="text-foreground text-sm font-semibold">{h.name}</span>
                       <StatusBadge
@@ -124,7 +124,7 @@ export function DashboardHypervisor() {
                     </div>
                   </div>
                 ))}
-                <div className="text-muted-foreground mt-2 border-t border-[var(--border)] pt-2 text-xs">
+                <div className="text-muted-foreground border-border/60 mt-2 border-t pt-2 text-xs">
                   <strong className="text-foreground">{totalVMs}</strong> VMs &middot;{' '}
                   <strong className="text-foreground">{hostList.length}</strong> hosts &middot;{' '}
                   <span className="text-emerald-400">
@@ -145,7 +145,7 @@ export function DashboardHypervisor() {
                   const ramPct = (n.mem / n.maxmem) * 100;
                   const diskPct = (n.disk / n.maxdisk) * 100;
                   return (
-                    <div key={n.node} className="border-border border-b py-2 last:border-b-0">
+                    <div key={n.node} className="border-border/60 border-b py-2 last:border-b-0">
                       <div className="mb-0.5 flex items-center gap-1.5">
                         <span className="text-foreground text-sm font-semibold">{n.node}</span>
                         <StatusBadge
@@ -165,7 +165,7 @@ export function DashboardHypervisor() {
                     </div>
                   );
                 })}
-                <div className="text-muted-foreground mt-2 border-t border-[var(--border)] pt-2 text-xs">
+                <div className="text-muted-foreground border-border/60 mt-2 border-t pt-2 text-xs">
                   <strong className="text-foreground">{nodeList.length}</strong> nodes &middot;{' '}
                   <span className="text-emerald-400">
                     {onlineNodes}/{nodeList.length} online

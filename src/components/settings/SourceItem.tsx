@@ -53,7 +53,7 @@ export function SourceItem({
     <div
       className={cn(
         'rounded-lg border transition-colors',
-        expanded ? 'border-border bg-card' : 'border-border hover:bg-accent/50',
+        expanded ? 'border-border/60 bg-card' : 'border-border/60 hover:bg-accent/50',
       )}
     >
       {/* Source header */}
@@ -94,12 +94,12 @@ export function SourceItem({
 
       {/* Expanded content */}
       {expanded && (
-        <div className="border-border space-y-2 border-t px-3 pt-1 pb-3">
+        <div className="border-border/60 space-y-2 border-t px-3 pt-1 pb-3">
           {instances.length === 0 && !isAddingNew && (
             <button
               type="button"
               onClick={onStartAddingInstance}
-              className="border-border text-muted-foreground/40 hover:text-muted-foreground hover:border-border flex w-full items-center justify-center gap-2.5 rounded-lg border border-dashed py-6 transition-all"
+              className="border-border/60 text-muted-foreground/40 hover:text-muted-foreground hover:border-border/60 flex w-full items-center justify-center gap-2.5 rounded-lg border border-dashed py-6 transition-all"
             >
               <Plus className="h-4 w-4" />
               <span className="text-sm">Ajouter une instance {label}</span>
@@ -122,7 +122,7 @@ export function SourceItem({
             // Single instance: show form directly, no sub-accordion
             if (singleInstance) {
               return (
-                <div key={instance.id} className="border-border bg-card rounded-lg border">
+                <div key={instance.id} className="border-border/60 bg-card rounded-lg border">
                   <div className="px-4 py-4">
                     <SourceConfigForm
                       source={key}
@@ -145,7 +145,7 @@ export function SourceItem({
                 key={instance.id}
                 className={cn(
                   'overflow-hidden rounded-lg border transition-colors',
-                  isExpanded ? 'border-border bg-background' : 'border-border bg-card hover:bg-accent/50',
+                  isExpanded ? 'border-border/60 bg-background' : 'border-border/60 bg-card hover:bg-accent/50',
                 )}
               >
                 <button
@@ -170,7 +170,7 @@ export function SourceItem({
                 </button>
 
                 {isExpanded && (
-                  <div className="border-border border-t px-4 pt-2 pb-4">
+                  <div className="border-border/60 border-t px-4 pt-2 pb-4">
                     <SourceConfigForm
                       source={key}
                       config={configFields}
@@ -189,7 +189,7 @@ export function SourceItem({
 
           {/* New instance form */}
           {isAddingNew && (
-            <div className="border-border overflow-hidden rounded-lg border border-dashed p-4">
+            <div className="border-border/60 overflow-hidden rounded-lg border border-dashed p-4">
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <Plus className="text-muted-foreground h-4 w-4" />

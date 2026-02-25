@@ -143,7 +143,7 @@ export function Sidebar() {
       </div>
 
       {/* Separator */}
-      <div className="bg-border mx-3 h-px" />
+      <div className="bg-border/60 mx-3 h-px" />
 
       {/* Navigation sections */}
       <ScrollArea className="flex-1 py-2">
@@ -162,7 +162,7 @@ export function Sidebar() {
       </ScrollArea>
 
       {/* Settings at bottom — admin only */}
-      {showSettings && <div className="border-border border-t px-3 py-3">{renderNavLink(settingsItem)}</div>}
+      {showSettings && <div className="border-border/60 border-t px-3 py-3">{renderNavLink(settingsItem)}</div>}
     </div>
   );
 }

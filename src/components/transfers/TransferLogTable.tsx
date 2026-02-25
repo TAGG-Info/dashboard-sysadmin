@@ -49,7 +49,7 @@ function StatusCell({ status }: { status: string }) {
           ? 'bg-[#3b82f6]/10 text-[#3b82f6] border-[#3b82f6]/20'
           : status === 'Paused' || status === 'Waiting' || status === 'Pending receipt'
             ? 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20'
-            : 'bg-muted/30 text-muted-foreground border-border';
+            : 'bg-muted/30 text-muted-foreground border-border/60';
   return (
     <span
       className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium whitespace-nowrap ${cls}`}
@@ -69,7 +69,7 @@ const PROTOCOL_COLORS: Record<string, string> = {
 
 function ProtocolBadge({ protocol }: { protocol: string }) {
   const p = protocol.toUpperCase();
-  const cls = PROTOCOL_COLORS[p] ?? 'bg-muted/30 text-muted-foreground border-border';
+  const cls = PROTOCOL_COLORS[p] ?? 'bg-muted/30 text-muted-foreground border-border/60';
   return (
     <span className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-xs font-semibold ${cls}`}>
       {p}
@@ -118,7 +118,7 @@ export function TransferLogTable({ direction }: TransferLogTableProps) {
     <div className="relative">
       {loading && data && (
         <div className="bg-background/80 absolute inset-0 z-20 flex items-center justify-center rounded-lg">
-          <div className="bg-card border-border flex items-center gap-2 rounded-full border px-4 py-2">
+          <div className="bg-card border-border/60 flex items-center gap-2 rounded-full border px-4 py-2">
             <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
             <span className="text-muted-foreground text-xs">Chargement…</span>
           </div>
@@ -172,7 +172,7 @@ export function TransferLogTable({ direction }: TransferLogTableProps) {
                 ))}
               </colgroup>
               <thead>
-                <tr className="border-border bg-muted/20 border-b">
+                <tr className="border-border/60 bg-muted/20 border-b">
                   {cols.map((col, i) => (
                     <th
                       key={col.key}
@@ -192,7 +192,7 @@ export function TransferLogTable({ direction }: TransferLogTableProps) {
               <tbody>
                 {loading && !data ? (
                   Array.from({ length: 8 }).map((_, i) => (
-                    <tr key={i} className="border-border border-b">
+                    <tr key={i} className="border-border/60 border-b">
                       {Array.from({ length: cols.length }).map((_, j) => (
                         <td key={j} className="px-3 py-1.5">
                           <Skeleton className="h-3.5 w-full" />
@@ -210,7 +210,7 @@ export function TransferLogTable({ direction }: TransferLogTableProps) {
                   transfers.map((t, i) => (
                     <tr
                       key={t.id?.urlrepresentation ?? i}
-                      className="border-border hover:bg-muted/10 border-b transition-colors"
+                      className="border-border/60 hover:bg-muted/10 border-b transition-colors"
                     >
                       <td className="overflow-hidden px-3 py-1.5" title={t.startTime}>
                         {(() => {
@@ -281,7 +281,7 @@ export function TransferLogTable({ direction }: TransferLogTableProps) {
           </div>
 
           {/* Pagination */}
-          <div className="border-border flex items-center justify-between border-t px-4 py-3">
+          <div className="border-border/60 flex items-center justify-between border-t px-4 py-3">
             <span className="text-muted-foreground text-xs">
               {totalCount > 0
                 ? `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalCount)} sur ${totalCount.toLocaleString('fr-FR')}`
@@ -293,7 +293,7 @@ export function TransferLogTable({ direction }: TransferLogTableProps) {
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0 || loading}
-                className="border-border text-muted-foreground hover:text-foreground hover:bg-muted/20 flex h-7 w-7 items-center justify-center rounded border transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                className="border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/20 flex h-7 w-7 items-center justify-center rounded border transition-colors disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -303,7 +303,7 @@ export function TransferLogTable({ direction }: TransferLogTableProps) {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1 || loading}
-                className="border-border text-muted-foreground hover:text-foreground hover:bg-muted/20 flex h-7 w-7 items-center justify-center rounded border transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                className="border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/20 flex h-7 w-7 items-center justify-center rounded border transition-colors disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>

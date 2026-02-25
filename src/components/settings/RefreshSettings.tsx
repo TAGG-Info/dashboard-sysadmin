@@ -79,9 +79,9 @@ export function RefreshSettings() {
   const isValid = refreshConfigs.every(({ key }) => draft[key] >= MIN_SECONDS);
 
   return (
-    <div className="bg-card border-border overflow-hidden rounded-lg border">
+    <div className="bg-card border-border/60 overflow-hidden rounded-lg border">
       {/* Header */}
-      <div className="border-border flex items-center justify-between border-b px-5 py-4">
+      <div className="border-border/60 flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
             <Timer className="text-muted-foreground h-4 w-4" />
@@ -143,7 +143,7 @@ export function RefreshSettings() {
                       min={MIN_SECONDS}
                       value={draft[config.key]}
                       onChange={(e) => setDraftValue(config.key, parseInt(e.target.value) || MIN_SECONDS)}
-                      className="bg-muted/20 border-border focus:ring-ring h-6 w-16 rounded border px-1.5 text-right font-mono text-xs tabular-nums focus:ring-1 focus:outline-none"
+                      className="bg-muted/20 border-border/60 focus:ring-ring h-6 w-16 rounded border px-1.5 text-right font-mono text-xs tabular-nums focus:ring-1 focus:outline-none"
                     />
                     <span className="text-muted-foreground text-xs">s</span>
                   </div>

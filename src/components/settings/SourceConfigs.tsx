@@ -80,9 +80,9 @@ export function SourceConfigs() {
   }, 0);
 
   return (
-    <div className="bg-card border-border overflow-hidden rounded-lg border">
+    <div className="bg-card border-border/60 overflow-hidden rounded-lg border">
       {/* Header */}
-      <div className="border-border flex items-center justify-between border-b px-5 py-4">
+      <div className="border-border/60 flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-3">
           <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-lg">
             <Database className="text-muted-foreground h-4 w-4" />
@@ -104,7 +104,7 @@ export function SourceConfigs() {
         {loading ? (
           <>
             {sources.map(({ key }) => (
-              <div key={key} className="border-border bg-muted/50 h-12 animate-pulse rounded-lg border" />
+              <div key={key} className="border-border/60 bg-muted/50 h-12 animate-pulse rounded-lg border" />
             ))}
           </>
         ) : (

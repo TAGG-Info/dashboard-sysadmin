@@ -83,7 +83,7 @@ export function StatusGrid() {
     return (
       <div className="space-y-3">
         <h2 className="text-foreground text-base font-semibold">Carte des devices</h2>
-        <div className="border-border flex items-center justify-center rounded-lg border-2 border-dashed p-8">
+        <div className="border-border/60 flex items-center justify-center rounded-lg border-2 border-dashed p-8">
           <p className="text-muted-foreground text-sm">{error ? 'Erreur de chargement des devices' : 'Aucun device'}</p>
         </div>
       </div>

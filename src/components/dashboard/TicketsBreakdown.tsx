@@ -82,7 +82,7 @@ export function TicketsBreakdown() {
             );
           })}
         </div>
-        <div className="text-muted-foreground mt-3 flex gap-6 border-t border-[var(--border)] pt-2.5 text-[13px]">
+        <div className="text-muted-foreground border-border/60 mt-3 flex gap-6 border-t pt-2.5 text-[13px]">
           {summary?.avgResolutionHours != null && (
             <span>
               R&eacute;solution moyenne{' '}

@@ -149,7 +149,10 @@ export function RecentActivity({ prtgAlerts }: RecentActivityProps) {
                         ? '#3b82f6'
                         : '#6b7280';
               return (
-                <div key={event.id} className="border-border flex items-start gap-3 border-b py-[7px] last:border-b-0">
+                <div
+                  key={event.id}
+                  className="border-border/60 flex items-start gap-3 border-b py-[7px] last:border-b-0"
+                >
                   <div className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
                   <div className="min-w-0 flex-1">
                     <div className="text-foreground flex items-center gap-1 text-xs font-medium">

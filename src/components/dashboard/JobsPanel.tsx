@@ -94,7 +94,7 @@ export function JobsPanel() {
           {stats.map((s) => (
             <div
               key={s.label}
-              className="border-border flex items-center justify-between border-b py-2 last:border-b-0"
+              className="border-border/60 flex items-center justify-between border-b py-2 last:border-b-0"
             >
               <div>
                 <div className="text-foreground text-[13px] font-medium">{s.label}</div>
@@ -107,7 +107,7 @@ export function JobsPanel() {
             </div>
           ))}
           {jobStats.MaxDurationBackupJobName && (
-            <div className="border-border col-span-2 flex items-center justify-between border-t pt-2">
+            <div className="border-border/60 col-span-2 flex items-center justify-between border-t pt-2">
               <div>
                 <div className="text-foreground text-[13px] font-medium">Job le plus long</div>
                 <div className="text-muted-foreground mt-0.5 text-[11px]">{jobStats.MaxDurationBackupJobName}</div>

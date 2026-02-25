@@ -249,7 +249,7 @@ export function SourceConfigForm({
           value={instanceName}
           onChange={(e) => setInstanceName(e.target.value)}
           placeholder={`Ex: ${sourceLabels[source]} Production`}
-          className="bg-background border-border"
+          className="bg-background border-border/60"
           disabled={isLoading}
         />
       </div>
@@ -276,7 +276,7 @@ export function SourceConfigForm({
                   value={formValues[field.key]}
                   onChange={(e) => handleFieldChange(field.key, e.target.value)}
                   placeholder={isMasked ? '****  (laisser vide pour conserver)' : field.placeholder || ''}
-                  className="bg-background border-border pr-10"
+                  className="bg-background border-border/60 pr-10"
                   disabled={isLoading}
                 />
                 {isSecret && (
