@@ -47,7 +47,7 @@ function getDerivedKey(): Buffer {
     );
   }
   const effectiveSalt = salt || 'dashboard-tagg-config-salt';
-  _derivedKey = scryptSync(secret, effectiveSalt, 32, { N: 131072, r: 8, p: 1, maxmem: 256 * 1024 * 1024 });
+  _derivedKey = scryptSync(secret, effectiveSalt, 32);
   return _derivedKey;
 }
 
