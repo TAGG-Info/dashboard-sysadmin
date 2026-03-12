@@ -769,6 +769,20 @@ async function graphDelete(url) {
   await graphFetch(url, { method: 'DELETE' });
 }
 
+async function uploadFileToDrive(noControleur, folderName, file) {
+  const sid = await getSiteId();
+  const folderPath = `PiecesJointes_Controleur/${encodeURIComponent(noControleur)}/${encodeURIComponent(folderName)}`;
+  const safeFileName = file.name.replace(/[#%]/g, '_');
+  const res = await graphFetch(`/sites/${sid}/drive/root:/${folderPath}/${encodeURIComponent(safeFileName)}:/content`, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    body: file
+  });
+  const item = await res.json();
+  delete pjCache[noControleur];
+  return item.webUrl;
+}
+
 async function getSiteId() {
   if (siteId) return siteId;
   const site = await graphGet(`/sites/${CONFIG.siteUrl}`);
@@ -1821,6 +1835,7 @@ function showAddForm(containerId, schemaKey) {
             const opts = getOptionsForField(field);
             input = `<select name="${field}"><option value="">-- Choisir --</option>${opts.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>`;
           }
+          else if (type === 'pj') input = `<input type="file" name="${field}" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">`;
           else input = `<input type="text" name="${field}">`;
           return `<div class="form-field"><label>${label}</label>${input}</div>`;
         }).join('')}
@@ -1838,8 +1853,17 @@ async function saveSubRow(containerId, schemaKey) {
   const schema = SUB_SCHEMAS[schemaKey];
   const container = document.getElementById(`addForm_${containerId}`);
 
+  // Collect file inputs before replacing DOM
+  const fileUploads = [];
+  for (const [field, , type] of schema.fields) {
+    if (type !== 'pj') continue;
+    const el = container.querySelector(`[name="${field}"]`);
+    if (el?.files?.[0]) fileUploads.push({ field, file: el.files[0] });
+  }
+
   const fields = { NoControleur: currentCommande.NoControleur };
   for (const [field, , type] of schema.fields) {
+    if (type === 'pj') continue;
     const el = container.querySelector(`[name="${field}"]`);
     if (!el) continue;
     let val = el.value;
@@ -1851,6 +1875,9 @@ async function saveSubRow(containerId, schemaKey) {
 
   try {
     container.innerHTML = '<div class="loading"><div class="spinner"></div> Enregistrement...</div>';
+    for (const { field, file } of fileUploads) {
+      fields[field] = await uploadFileToDrive(currentCommande.NoControleur, field, file);
+    }
     await createListItem(schema.list, fields);
     invalidateSubCache(currentCommande.NoControleur);
     toast('Ligne ajoutée');
