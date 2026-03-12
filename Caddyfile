@@ -1,17 +1,30 @@
-controleurs.tagginfo.fr {
+controleurs.tagginfo.fr, dashboard.tagginfo.fr {
     tls /etc/caddy/certs/wildcard.crt /etc/caddy/certs/wildcard.key
-    reverse_proxy sp-webapp:80
-}
 
-dashboard.tagginfo.fr {
-    tls /etc/caddy/certs/wildcard.crt /etc/caddy/certs/wildcard.key
-    reverse_proxy dashboard:3000
-    header {
-        X-Content-Type-Options nosniff
-        X-Frame-Options DENY
-        Referrer-Policy strict-origin-when-cross-origin
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'"
-        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    @controleurs host controleurs.tagginfo.fr
+    @dashboard host dashboard.tagginfo.fr
+
+    handle @controleurs {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            Referrer-Policy strict-origin-when-cross-origin
+            Strict-Transport-Security "max-age=31536000; includeSubDomains"
+            Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://login.microsoftonline.com https://graph.microsoft.com https://*.sharepoint.com; frame-src https://login.microsoftonline.com"
+            Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        }
+        reverse_proxy sp-webapp:80
+    }
+
+    handle @dashboard {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options DENY
+            Referrer-Policy strict-origin-when-cross-origin
+            Strict-Transport-Security "max-age=31536000; includeSubDomains"
+            Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'"
+            Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        }
+        reverse_proxy dashboard:3000
     }
 }
