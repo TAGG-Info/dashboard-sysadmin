@@ -1789,6 +1789,11 @@ function renderSubTable(schemaKey, items) {
           let val = r[field];
           if (type === 'date') val = fmtDate(val);
           else if (type === 'currency') val = fmtCur(val);
+          else if (type === 'pj') {
+            if (!val) return '<td></td>';
+            const fileName = decodeURIComponent(val.split('/').pop() || 'Fichier');
+            return `<td><a class="pj-inline" href="${esc(val)}" target="_blank" rel="noopener noreferrer"><span class="pj-icon">&#128206;</span><span class="pj-name">${esc(fileName)}</span></a></td>`;
+          }
           return `<td ${type === 'currency' ? 'class="currency"' : ''}>${esc(val)}</td>`;
         }).join('')}
         ${isAdmin ? `<td><button class="btn-del" onclick="deleteSubRow('${schemaKey}','${r._spItemId}','${esc(currentCommande?.NoControleur)}')" title="Supprimer">&#128465;</button></td>` : ''}
