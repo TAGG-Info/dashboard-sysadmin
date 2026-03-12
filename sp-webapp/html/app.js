@@ -1300,8 +1300,7 @@ function renderGeneralEdit(c, isNew) {
           const fileLinks = pjFiles.length > 0
             ? '<div class="pj-stack">' + pjFiles.map(pf => `<a class="pj-inline" href="#" onclick="openPJByDriveId('${pf.driveItemId}');return false;"><span class="pj-icon">&#128206;</span><span class="pj-name">${esc(pf.name)}</span></a>`).join('') + '</div>'
             : '<span class="pj-empty-inline">Aucune PJ</span>';
-          const uploadBtn = `<div class="pj-upload-row"><label class="btn-file-label"><input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" onchange="uploadPJFromForm(this,'${esc(c.NoControleur)}','${field}')">&#128206; Ajouter</label><span class="file-name-display pj-empty-inline"></span></div>`;
-          return `<div class="form-field"><label>${label}</label><div class="pj-edit-wrap">${fileLinks}${uploadBtn}</div></div>`;
+          return `<div class="form-field"><label>${label}</label>${fileLinks}</div>`;
         }
         const raw = c[field] ?? '';
         const readonly = field === 'NoControleur' && !isNew ? 'readonly' : '';
