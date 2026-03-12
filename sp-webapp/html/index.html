@@ -166,11 +166,41 @@
 
   /* ============ SIDEBAR ============ */
   .sidebar {
-    width: 370px; background: var(--bg-surface); border-right: 1px solid var(--border);
+    width: 370px; min-width: 280px; max-width: 600px;
+    background: var(--bg-surface); border-right: 1px solid var(--border);
     display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; min-height: 0;
-    transition: all 0.35s;
+    position: relative;
   }
   [data-theme="dark"] .sidebar { box-shadow: 2px 0 20px rgba(0,0,0,0.3); }
+
+  /* Resize handle */
+  .sidebar-resize {
+    position: absolute; top: 0; right: -3px; width: 6px; height: 100%;
+    cursor: col-resize; z-index: 20; background: transparent; transition: background 0.15s;
+  }
+  .sidebar-resize:hover, .sidebar-resize.active { background: var(--accent); opacity: 0.4; }
+
+  /* Client folder groups */
+  .client-group { border-bottom: 1px solid var(--border-light); }
+  .client-group:last-child { border-bottom: none; }
+  .client-header {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    cursor: pointer; user-select: none; transition: background 0.15s;
+    font-size: 13px; font-weight: 600; color: var(--text-primary);
+    position: sticky; top: 0; background: var(--bg-surface); z-index: 2;
+  }
+  .client-header:hover { background: var(--bg-raised); }
+  .client-header .chevron {
+    font-size: 10px; color: var(--text-tertiary); transition: transform 0.2s; flex-shrink: 0; width: 16px; text-align: center;
+  }
+  .client-header.open .chevron { transform: rotate(90deg); }
+  .client-header .client-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .client-header .client-badge {
+    font-size: 10px; font-weight: 700; color: var(--text-tertiary); background: var(--bg-sunken);
+    padding: 1px 7px; border-radius: 10px; flex-shrink: 0; font-family: var(--font-mono);
+  }
+  .client-items { display: none; padding-left: 4px; }
+  .client-group.open .client-items { display: block; }
   .search-bar { padding: 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; background: var(--bg-surface); transition: all 0.35s; }
   .search-row { display: flex; gap: 8px; align-items: center; }
   .search-input-wrap { flex: 1; position: relative; }
@@ -207,9 +237,9 @@
   .list-container::-webkit-scrollbar-track { background: transparent; }
   .list-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   .list-item {
-    padding: 10px 12px; margin: 2px 0; border-radius: 8px;
-    cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; gap: 4px;
-    height: 82px; box-sizing: border-box; justify-content: center;
+    padding: 8px 12px 8px 20px; margin: 1px 0; border-radius: 6px;
+    cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; gap: 3px;
+    box-sizing: border-box; justify-content: center;
     border: 1px solid transparent;
   }
   .list-item:hover { background: var(--bg-raised); }
@@ -567,7 +597,8 @@
     .add-form-grid { grid-template-columns: 1fr 1fr 1fr; }
   }
   @media (max-width: 900px) {
-    .sidebar { width: 100%; }
+    .sidebar { width: 100% !important; max-width: none !important; min-width: 0 !important; }
+    .sidebar-resize { display: none; }
     .detail { display: none; }
     .detail.visible { display: flex; }
     .sidebar.hidden { display: none; }
@@ -675,6 +706,7 @@
 
   <div class="main">
     <div class="sidebar" id="sidebar">
+      <div class="sidebar-resize" id="sidebarResize"></div>
       <div class="search-bar">
         <div class="search-row">
           <div class="search-input-wrap"><input type="text" id="searchInput" placeholder="Rechercher par N°, client..." oninput="filterList()"></div>
@@ -1555,6 +1587,7 @@ function renderAdminsList() {
         <li data-idx="${i}">
           <span class="admin-val">${displayName ? esc(displayName) + ' <span style="color:var(--text-tertiary);font-size:11px;">(' + esc(a.email) + ')</span>' : esc(a.email)}</span>
           <div class="admin-item-actions">
+            <button class="admin-edit" title="Modifier" onclick="editAdmin(${i})">&#9998;</button>
             <button class="admin-del" title="Retirer" onclick="removeAdmin('${esc(a._spItemId)}', ${i})">&#128465;</button>
           </div>
         </li>`;
@@ -1566,6 +1599,42 @@ function renderAdminsList() {
       <input type="email" id="adminsNewEmail" placeholder="Email" style="flex:1;" onkeydown="if(event.key==='Enter')addAdmin()">
       <button class="btn btn-primary btn-sm" onclick="addAdmin()">Ajouter</button>
     </div>`;
+}
+
+function editAdmin(idx) {
+  const a = adminsData[idx];
+  if (!a) return;
+  const li = document.querySelector(`.admin-list li[data-idx="${idx}"]`);
+  if (!li) return;
+  li.innerHTML = `
+    <div style="display:flex;gap:6px;flex:1;flex-wrap:wrap;align-items:center;">
+      <input type="text" class="adm-edit-prenom" value="${esc(a.prenom)}" placeholder="Prénom" style="flex:0 1 110px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg-surface);color:var(--text-primary);">
+      <input type="text" class="adm-edit-nom" value="${esc(a.nom)}" placeholder="Nom" style="flex:0 1 110px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg-surface);color:var(--text-primary);">
+      <input type="email" class="adm-edit-email" value="${esc(a.email)}" placeholder="Email" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg-surface);color:var(--text-primary);">
+    </div>
+    <div class="admin-item-actions" style="opacity:1;">
+      <button class="admin-save" title="Enregistrer" onclick="saveAdmin(${idx})">&#10003;</button>
+      <button class="admin-cancel" title="Annuler" onclick="renderAdminsList()">&#10005;</button>
+    </div>`;
+}
+
+async function saveAdmin(idx) {
+  const a = adminsData[idx];
+  if (!a) return;
+  const li = document.querySelector(`.admin-list li[data-idx="${idx}"]`);
+  if (!li) return;
+  const prenom = li.querySelector('.adm-edit-prenom').value.trim();
+  const nom = li.querySelector('.adm-edit-nom').value.trim();
+  const email = li.querySelector('.adm-edit-email').value.trim().toLowerCase();
+  if (!email) { toast('Email requis', 'error'); return; }
+  try {
+    await updateListItem('Admins', a._spItemId, { UserEmail: email, Title: email, Prenom: prenom, Nom: nom });
+    adminsData[idx] = { ...a, email, prenom, nom };
+    renderAdminsList();
+    toast('Admin mis à jour', 'success');
+  } catch (e) {
+    toast('Erreur: ' + e.message, 'error');
+  }
 }
 
 async function addAdmin() {
@@ -1677,60 +1746,107 @@ function _doFilterList() {
 }
 
 let _visibleItems = [];
+let _openGroups = new Set(); // tracks open client groups
+
 function renderList(items) {
   _visibleItems = items;
-  document.getElementById('listCount').innerHTML = '<span>' + items.length + ' commande(s)</span>';
   const container = document.getElementById('listContainer');
   if (items.length === 0) {
-    container.innerHTML = '<div style="padding:16px;color:#a0a0a0;text-align:center;">Aucun résultat</div>';
+    document.getElementById('listCount').innerHTML = '<span>0 commande(s)</span>';
+    container.innerHTML = '<div style="padding:16px;color:var(--text-tertiary);text-align:center;">Aucun résultat</div>';
     return;
   }
 
-  const ITEM_HEIGHT = 82;
+  // Group by client
+  const groups = new Map();
+  for (const c of items) {
+    const client = c.NomClient || '– Sans client –';
+    if (!groups.has(client)) groups.set(client, []);
+    groups.get(client).push(c);
+  }
 
-  container.innerHTML = '<div id="listSpacer" style="height:' + (items.length * ITEM_HEIGHT) + 'px;position:relative;"></div>';
-  const spacer = document.getElementById('listSpacer');
+  const clientCount = groups.size;
+  document.getElementById('listCount').innerHTML = '<span>' + items.length + ' commande(s) · ' + clientCount + ' client(s)</span>';
 
-  let _rafPending = false;
-  function renderVisible() {
-    const visibleCount = Math.ceil((container.clientHeight || 600) / ITEM_HEIGHT) + 5;
-    const scrollTop = container.scrollTop;
-    const startIdx = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - 2);
-    const endIdx = Math.min(items.length, startIdx + visibleCount);
+  // If only one group or search active, auto-open all
+  const searchActive = document.getElementById('searchInput').value.trim() !== ''
+    || document.getElementById('filterEtat').value !== ''
+    || (document.getElementById('filterDemandeur')?.value || '') !== '';
+  if (searchActive || clientCount <= 3) {
+    for (const client of groups.keys()) _openGroups.add(client);
+  }
 
-    spacer.innerHTML = '';
-    for (let i = startIdx; i < endIdx; i++) {
-      const c = items[i];
-      const div = document.createElement('div');
-      div.className = 'list-item' + (c.NoControleur === currentCommande?.NoControleur ? ' active' : '');
-      div.id = 'item-' + c.NoControleur;
-      div.style.position = 'absolute';
-      div.style.top = (i * ITEM_HEIGHT) + 'px';
-      div.style.left = '0';
-      div.style.right = '0';
-      div.onclick = () => selectCommande(c.NoControleur);
+  let html = '';
+  for (const [client, cmds] of groups) {
+    const isOpen = _openGroups.has(client);
+    html += '<div class="client-group' + (isOpen ? ' open' : '') + '" data-client="' + esc(client) + '">'
+      + '<div class="client-header' + (isOpen ? ' open' : '') + '" onclick="toggleGroup(this)">'
+      + '<span class="chevron">▶</span>'
+      + '<span class="client-name">' + esc(client) + '</span>'
+      + '<span class="client-badge">' + cmds.length + '</span>'
+      + '</div>'
+      + '<div class="client-items">';
+    for (const c of cmds) {
+      const isActive = c.NoControleur === currentCommande?.NoControleur;
       const metaParts = [];
       if (c.TypeControleur) metaParts.push(esc(c.TypeControleur));
       if (c.DemandeurFabricant) metaParts.push(esc(c.DemandeurFabricant));
       if (c.NoCommandeFabricant) metaParts.push(esc(c.NoCommandeFabricant));
-      div.innerHTML = '<div class="list-item-header">'
+      html += '<div class="list-item' + (isActive ? ' active' : '') + '" id="item-' + esc(c.NoControleur) + '" onclick="selectCommande(\'' + esc(c.NoControleur) + '\')">'
+        + '<div class="list-item-header">'
         + '<span class="list-item-id">' + esc(c.NoControleur || '') + '</span>'
-        + '<span class="list-item-client">' + esc(c.NomClient || '–') + '</span>'
         + '</div>'
         + (metaParts.length ? '<div class="list-item-meta">' + metaParts.join('<span class="dot">·</span>') + '</div>' : '')
-        + '<div class="list-item-status"><span class="status-badge ' + getStatusColor(c.EtatCommande) + '">' + esc(truncate(c.EtatCommande, 50)) + '</span></div>';
-      spacer.appendChild(div);
+        + '<div class="list-item-status"><span class="status-badge ' + getStatusColor(c.EtatCommande) + '">' + esc(truncate(c.EtatCommande, 50)) + '</span></div>'
+        + '</div>';
     }
+    html += '</div></div>';
   }
 
-  renderVisible();
-  container.onscroll = function() {
-    if (!_rafPending) {
-      _rafPending = true;
-      requestAnimationFrame(function() { renderVisible(); _rafPending = false; });
-    }
-  };
+  container.innerHTML = html;
 }
+
+function toggleGroup(headerEl) {
+  const group = headerEl.parentElement;
+  const client = group.dataset.client;
+  const isOpen = group.classList.toggle('open');
+  headerEl.classList.toggle('open', isOpen);
+  if (isOpen) _openGroups.add(client);
+  else _openGroups.delete(client);
+}
+
+// ============ SIDEBAR RESIZE ============
+(function() {
+  const sidebar = document.getElementById('sidebar');
+  const handle = document.getElementById('sidebarResize');
+  if (!handle) return;
+  let startX, startW;
+  handle.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    startX = e.clientX;
+    startW = sidebar.offsetWidth;
+    handle.classList.add('active');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+  function onMove(e) {
+    const w = Math.max(280, Math.min(600, startW + (e.clientX - startX)));
+    sidebar.style.width = w + 'px';
+  }
+  function onUp() {
+    handle.classList.remove('active');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    localStorage.setItem('sidebarWidth', sidebar.style.width);
+  }
+  // Restore saved width
+  const saved = localStorage.getItem('sidebarWidth');
+  if (saved) sidebar.style.width = saved;
+})();
 
 // ============ NEW COMMANDE ============
 function newCommande() {
@@ -1769,7 +1885,17 @@ async function selectCommande(no) {
 
   if (window._activeListItem) window._activeListItem.classList.remove('active');
   const el = document.getElementById(`item-${no}`);
-  if (el) { el.classList.add('active'); window._activeListItem = el; }
+  if (el) {
+    el.classList.add('active'); window._activeListItem = el;
+    // Auto-open parent group if collapsed
+    const group = el.closest('.client-group');
+    if (group && !group.classList.contains('open')) {
+      group.classList.add('open');
+      const header = group.querySelector('.client-header');
+      if (header) header.classList.add('open');
+      _openGroups.add(group.dataset.client);
+    }
+  }
 
   document.getElementById('detailEmpty').style.display = 'none';
   document.getElementById('detailContent').style.display = 'flex';
