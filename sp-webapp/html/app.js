@@ -1429,8 +1429,8 @@ function renderSubPanel(panelId, schemaKey, items) {
     kpisHtml = '<div class="dash-kpis">'
       + '<div class="dash-kpi"><div class="dash-kpi-label">Total</div><div class="dash-kpi-value blue">' + fmtCur(totalVal) + '</div><div class="dash-kpi-sub">' + items.length + ' contrat(s)</div></div>'
       + '<div class="dash-kpi border-green"><div class="dash-kpi-label">Actifs</div><div class="dash-kpi-value green">' + active + '</div></div>'
-      + '<div class="dash-kpi border-orange"><div class="dash-kpi-label">Expirés</div><div class="dash-kpi-value' + (expired > 0 ? ' orange' : '') + '">' + expired + '</div></div>'
-      + (alertItems > 0 ? '<div class="dash-kpi border-purple"><div class="dash-kpi-label">Expire bientôt</div><div class="dash-kpi-value orange">' + alertItems + '</div><div class="dash-kpi-sub">< 90 jours</div></div>' : '')
+      + '<div class="dash-kpi border-red"><div class="dash-kpi-label">Expirés</div><div class="dash-kpi-value' + (expired > 0 ? ' red' : '') + '">' + expired + '</div></div>'
+      + (alertItems > 0 ? '<div class="dash-kpi border-orange"><div class="dash-kpi-label">Expire bientôt</div><div class="dash-kpi-value orange">' + alertItems + '</div><div class="dash-kpi-sub">< 90 jours</div></div>' : '')
       + '</div>';
   }
 

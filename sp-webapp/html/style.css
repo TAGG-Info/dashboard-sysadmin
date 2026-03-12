@@ -424,9 +424,11 @@
   .dash-kpi-value { font-size: 20px; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono); }
   .dash-kpi-value.green { color: var(--green); }
   .dash-kpi-value.orange { color: var(--orange); }
+  .dash-kpi-value.red { color: var(--red); }
   .dash-kpi-value.blue { color: var(--accent); }
   .dash-kpi.border-green { border-left: 3px solid var(--green); }
   .dash-kpi.border-orange { border-left: 3px solid var(--orange); }
+  .dash-kpi.border-red { border-left: 3px solid var(--red); }
   .dash-kpi.border-purple { border-left: 3px solid var(--purple); }
   .dash-kpi-sub { font-size: 11px; color: var(--text-tertiary); margin-top: auto; }
   .maint-badge {
