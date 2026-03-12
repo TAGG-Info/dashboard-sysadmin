@@ -1835,10 +1835,12 @@ function renderPJButtons(buttons) {
     + '<div class="pj-grid">'
     + buttons.map((b, i) => {
       const icon = getFileIcon(b.mimeType, b.name);
-      return '<a class="pj-card" onclick="openPJModal(' + i + ')" title="' + esc(b.name) + '">'
+      return '<div class="pj-card-wrap"><a class="pj-card" onclick="openPJModal(' + i + ')" title="' + esc(b.name) + '">'
         + '<div class="pj-icon ' + icon.cls + '">' + icon.label + '</div>'
         + '<div class="pj-card-info"><div class="pj-card-label">' + esc(b.label) + '</div><div class="pj-card-name">' + esc(b.name) + '</div></div>'
-        + '</a>';
+        + '</a>'
+        + (isAdmin ? '<button class="pj-del" title="Supprimer" onclick="deletePJ(' + i + ')">&#128465;</button>' : '')
+        + '</div>';
     }).join('')
     + '</div>';
 
@@ -1853,6 +1855,25 @@ function renderPJButtons(buttons) {
   </div>` : '';
 
   document.getElementById('panelPJ').innerHTML = html + uploadSection;
+}
+
+async function deletePJ(idx) {
+  const b = currentPJButtons[idx];
+  if (!b || !b.driveItemId) return;
+  if (!await customConfirm(`Supprimer "${b.name}" ?`)) return;
+  try {
+    const sid = await getSiteId();
+    await graphDelete(`/sites/${sid}/drive/items/${b.driveItemId}`);
+    // Remove from cache and re-render
+    if (currentCommande && pjCache[currentCommande.NoControleur]) {
+      pjCache[currentCommande.NoControleur] = pjCache[currentCommande.NoControleur].filter(p => p.driveItemId !== b.driveItemId);
+    }
+    renderPJButtons(pjCache[currentCommande?.NoControleur] || []);
+    renderGeneral(currentCommande);
+    toast('"' + b.name + '" supprimé', 'success');
+  } catch (e) {
+    toast('Erreur: ' + e.message, 'error');
+  }
 }
 
 async function uploadPJFromPanel(input) {
