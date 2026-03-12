@@ -1272,7 +1272,8 @@ function renderGeneral(c) {
           if (type === 'pj') {
             const pjFiles = getPJFilesForField(c.NoControleur, field);
             if (pjFiles.length === 0) return '<div class="form-field"><label>' + label + '</label><div class="pj-empty-inline">Aucune PJ</div></div>';
-            return pjFiles.map(function(pf) { return '<div class="form-field"><label>' + label + '</label><a class="pj-inline" href="#" onclick="openPJByDriveId(\'' + pf.driveItemId + '\');return false;"><span class="pj-icon">&#128206;</span><span class="pj-name">' + esc(pf.name) + '</span></a></div>'; }).join('');
+            const links = pjFiles.map(function(pf) { return '<a class="pj-inline" href="#" onclick="openPJByDriveId(\'' + pf.driveItemId + '\');return false;"><span class="pj-icon">&#128206;</span><span class="pj-name">' + esc(pf.name) + '</span></a>'; }).join('');
+            return '<div class="form-field"><label>' + label + '</label><div class="pj-stack">' + links + '</div></div>';
           }
           const raw = c[field];
           let display;

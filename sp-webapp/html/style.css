@@ -480,6 +480,7 @@
   .modal-download .file-icon { font-size: 48px; }
 
   /* Inline PJ */
+  .pj-stack { display: flex; flex-direction: column; gap: 4px; }
   .pj-inline { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--accent-soft); border: 1px solid var(--accent-muted); border-radius: 4px; color: var(--accent); font-size: 12px; cursor: pointer; text-decoration: none; transition: all 0.15s; max-width: 420px; min-width: 0; }
   .pj-inline:hover { background: var(--accent-glow); }
   .pj-inline .pj-icon { font-size: 14px; flex-shrink: 0; }
