@@ -1961,7 +1961,13 @@ function getPJFilesForField(noControleur, pjFieldName) {
   const cached = pjCache[noControleur];
   if (!cached) return [];
   // pjFieldName is like 'PJ_CommandeFabricant', folder name in drive matches this
-  return cached.filter(b => b._folder === pjFieldName);
+  const seen = new Set();
+  return cached.filter(b => {
+    if (b._folder !== pjFieldName) return false;
+    if (seen.has(b.name)) return false;
+    seen.add(b.name);
+    return true;
+  });
 }
 
 // Open PJ viewer by drive item ID (for inline PJ buttons)
