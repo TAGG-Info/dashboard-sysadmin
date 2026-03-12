@@ -332,6 +332,8 @@
     font-size: 13px; font-family: inherit; outline: none; background: var(--bg-surface); color: var(--text-primary);
     transition: all 0.15s;
   }
+  .form-field input[type="date"] { color-scheme: light; }
+  [data-theme="dark"] .form-field input[type="date"] { color-scheme: dark; }
   .form-field input:focus, .form-field textarea:focus, .form-field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
   .form-field textarea { resize: vertical; min-height: 60px; }
   .form-field input[readonly] { background: var(--bg-raised); color: var(--text-tertiary); }
