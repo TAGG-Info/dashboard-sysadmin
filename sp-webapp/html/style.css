@@ -362,8 +362,17 @@
   table.gallery th {
     text-align: left; padding: 11px 16px; font-size: 12px; font-weight: 600;
     color: var(--text-secondary); background: var(--bg-raised); border-bottom: 1px solid var(--border);
-    text-transform: uppercase; letter-spacing: 0.5px;
+    text-transform: uppercase; letter-spacing: 0.5px; position: relative;
   }
+  table.gallery th.sortable { cursor: pointer; user-select: none; }
+  table.gallery th.sortable:hover { color: var(--accent); }
+  table.gallery th.sort-asc, table.gallery th.sort-desc { color: var(--accent); }
+  .sort-arrow { font-size: 9px; opacity: 0.6; margin-left: 2px; }
+  .col-resize {
+    position: absolute; top: 0; right: 0; width: 5px; height: 100%;
+    cursor: col-resize; background: transparent; z-index: 3;
+  }
+  .col-resize:hover, .col-resize.active { background: var(--accent); opacity: 0.4; }
   table.gallery td { padding: 11px 16px; font-size: 14px; border-bottom: 1px solid var(--border-light); color: var(--text-primary); }
   table.gallery tbody tr { transition: background 0.1s; }
   table.gallery tbody tr:hover td { background: var(--accent-soft); }

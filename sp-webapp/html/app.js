@@ -2150,6 +2150,118 @@ function fmtCur(val) {
   return num.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' EUR';
 }
 
+// ============ TABLE ENHANCEMENTS (Sort + Resize) ============
+function enhanceTables() {
+  document.querySelectorAll('table.gallery').forEach(function(t) {
+    if (t.dataset.enhanced) return;
+    t.dataset.enhanced = '1';
+    var ths = t.querySelectorAll('thead th');
+    ths.forEach(function(th, colIdx) {
+      if (!th.textContent.trim()) return;
+      // Sort arrow
+      var arrow = document.createElement('span');
+      arrow.className = 'sort-arrow';
+      th.appendChild(arrow);
+      th.classList.add('sortable');
+      // Sort on click
+      th.addEventListener('click', function(e) {
+        if (e.target.classList.contains('col-resize')) return;
+        var cur = th.dataset.sortDir;
+        ths.forEach(function(h) {
+          var a = h.querySelector('.sort-arrow');
+          if (a) a.textContent = '';
+          delete h.dataset.sortDir;
+          h.classList.remove('sort-asc', 'sort-desc');
+        });
+        var dir = cur === 'asc' ? 'desc' : 'asc';
+        th.dataset.sortDir = dir;
+        th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+        arrow.textContent = dir === 'asc' ? ' \u25B2' : ' \u25BC';
+        sortTableCol(t, colIdx, dir);
+      });
+      // Resize handle
+      var handle = document.createElement('div');
+      handle.className = 'col-resize';
+      th.style.position = 'relative';
+      th.appendChild(handle);
+      initColResize(th, handle);
+    });
+  });
+}
+
+function parseCellSort(td) {
+  var text = td.textContent.trim();
+  // Maintenance badge
+  var badge = td.querySelector('.maint-badge');
+  if (badge) {
+    if (badge.classList.contains('active')) return 1;
+    if (badge.classList.contains('alert')) return 2;
+    if (badge.classList.contains('expired')) return 3;
+    return 4;
+  }
+  // Currency "20 920,00 EUR"
+  var cur = text.match(/^([\d\s\u00a0]+,\d{2})\s*EUR$/);
+  if (cur) return parseFloat(cur[1].replace(/[\s\u00a0]/g, '').replace(',', '.'));
+  // Date DD/MM/YYYY
+  var dm = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (dm) return new Date(+dm[3], dm[2] - 1, +dm[1]).getTime();
+  // Dash = empty, push to bottom
+  if (text === '-' || text === '') return Infinity;
+  // Number
+  if (/^\d+$/.test(text)) return parseInt(text);
+  return text.toLowerCase();
+}
+
+function sortTableCol(table, colIdx, dir) {
+  var tbody = table.querySelector('tbody');
+  var rows = Array.from(tbody.querySelectorAll('tr'));
+  rows.sort(function(a, b) {
+    var cA = a.children[colIdx], cB = b.children[colIdx];
+    if (!cA || !cB) return 0;
+    var vA = parseCellSort(cA), vB = parseCellSort(cB);
+    var cmp;
+    if (typeof vA === 'number' && typeof vB === 'number') cmp = vA - vB;
+    else cmp = String(vA).localeCompare(String(vB), 'fr', { numeric: true });
+    return dir === 'asc' ? cmp : -cmp;
+  });
+  rows.forEach(function(r) { tbody.appendChild(r); });
+}
+
+function initColResize(th, handle) {
+  var startX, startW;
+  handle.addEventListener('mousedown', function(e) {
+    e.preventDefault(); e.stopPropagation();
+    startX = e.pageX; startW = th.offsetWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    handle.classList.add('active');
+    function onMove(ev) {
+      var w = Math.max(60, startW + (ev.pageX - startX));
+      th.style.width = w + 'px';
+      th.style.minWidth = w + 'px';
+    }
+    function onUp() {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      handle.classList.remove('active');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+// Auto-enhance tables via MutationObserver
+(function() {
+  var timer;
+  var obs = new MutationObserver(function() {
+    clearTimeout(timer);
+    timer = setTimeout(enhanceTables, 60);
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+})();
+
 function toast(msg, type = 'success') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
