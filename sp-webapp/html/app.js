@@ -233,6 +233,10 @@ async function authenticate(account) {
     const rb = document.getElementById('roleBadge');
     if (rb) rb.textContent = isAdmin ? 'Admin' : 'Lecteur';
     applyAccessMode();
+    // If restoring a commande, show spinner instead of "Sélectionnez une commande"
+    if (sessionStorage.getItem('selectedCommande')) {
+      document.getElementById('detailEmpty').innerHTML = '<div class="loading"><div class="spinner"></div> Chargement...</div>';
+    }
     await loadData();
   } catch (e) {
     if (e instanceof msal.InteractionRequiredAuthError) {
@@ -509,6 +513,9 @@ async function loadData() {
       var savedTab = sessionStorage.getItem('selectedTab') || 'General';
       await selectCommande(savedNo);
       if (savedTab !== 'General') switchTab(savedTab);
+    } else {
+      // Reset empty state if commande not found
+      document.getElementById('detailEmpty').innerHTML = 'Sélectionnez une commande';
     }
   } catch (e) {
     document.getElementById('listContainer').innerHTML = `<div style="padding:16px;color:#d13438;">Erreur: ${esc(e.message)}</div>`;
