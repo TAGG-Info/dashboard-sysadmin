@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="/msal-browser.min.js"></script>
-<link rel="stylesheet" href="/style.css?v=1">
+<link rel="stylesheet" href="/style.css?v=2">
 </head>
 <body>
 
@@ -49,13 +49,14 @@
   </div>
 </div>
 
-<!-- Admins Modal -->
+<!-- Admins/Users Modal -->
 <div class="admin-overlay" id="adminsModal" onclick="if(event.target===this)closeAdminsPanel()">
   <div class="admin-modal">
     <div class="modal-header">
-      <span class="modal-title">Gestion des administrateurs</span>
+      <span class="modal-title">Gestion des accès</span>
       <button class="modal-close" onclick="closeAdminsPanel()">&times;</button>
     </div>
+    <div class="admin-tabs" id="accessTabs"></div>
     <div class="admin-body" id="adminsBody" style="padding:16px;overflow-y:auto;"></div>
   </div>
 </div>
@@ -98,7 +99,7 @@
       <span class="topbar-user" id="userName"></span>
       <span class="role-badge" id="roleBadge">Admin</span>
       <button class="btn-topbar" onclick="openAdmin()">Listes de réf.</button>
-      <button class="btn-topbar" id="btnAdmins" onclick="openAdminsPanel()">Admins</button>
+      <button class="btn-topbar" id="btnAdmins" onclick="openAdminsPanel()">Accès</button>
       <button class="btn-topbar" onclick="openDiag()">Diagnostic</button>
       <button class="btn-theme" id="btnTheme" onclick="toggleTheme()" title="Changer le thème">🌙</button>
       <button class="btn-topbar" onclick="logout()">Déconnexion</button>
@@ -152,7 +153,7 @@
   </div>
 </div>
 
-<script src="/app.js?v=1"></script>
+<script src="/app.js?v=2"></script>
 
 </body>
 </html>

@@ -794,61 +794,87 @@ async function bulkImport(listName) {
   toast(`${added} élément(s) ajouté(s)`, 'success');
 }
 
-// ============ ADMINS PANEL ============
+// ============ ACCESS PANEL (Admins + Utilisateurs) ============
 let adminsData = []; // [{ email, prenom, nom, _spItemId }]
+let usersData = [];  // [{ email, prenom, nom, _spItemId }]
+let accessActiveTab = 'admins'; // 'admins' | 'users'
 
 function openAdminsPanel() {
   if (!isAdmin) return;
   document.getElementById('adminsModal').classList.add('visible');
-  loadAdminsList();
+  renderAccessTabs();
+  loadAccessTab();
 }
 
 function closeAdminsPanel() {
   document.getElementById('adminsModal').classList.remove('visible');
 }
 
-async function loadAdminsList() {
+function renderAccessTabs() {
+  document.getElementById('accessTabs').innerHTML = [
+    { key: 'admins', label: 'Administrateurs', count: adminsData.length },
+    { key: 'users', label: 'Utilisateurs', count: usersData.length },
+  ].map(t => `<div class="admin-tab ${t.key === accessActiveTab ? 'active' : ''}" onclick="switchAccessTab('${t.key}')">${t.label} (${t.count})</div>`).join('');
+}
+
+function switchAccessTab(tab) {
+  accessActiveTab = tab;
+  renderAccessTabs();
+  loadAccessTab();
+}
+
+async function loadAccessTab() {
   const body = document.getElementById('adminsBody');
   body.innerHTML = '<div class="loading"><div class="spinner"></div> Chargement...</div>';
+  const listName = accessActiveTab === 'admins' ? 'Admins' : 'Utilisateurs';
   try {
-    const items = await getListItems('Admins');
-    adminsData = items.map(i => ({ email: i.UserEmail || i.Title || '', prenom: i.Prenom || '', nom: i.Nom || '', _spItemId: i._spItemId }));
-    adminsData.sort((a, b) => a.email.localeCompare(b.email, 'fr'));
-    renderAdminsList();
+    const items = await getListItems(listName);
+    const data = items.map(i => ({ email: i.UserEmail || i.Title || '', prenom: i.Prenom || '', nom: i.Nom || '', _spItemId: i._spItemId }));
+    data.sort((a, b) => a.email.localeCompare(b.email, 'fr'));
+    if (accessActiveTab === 'admins') adminsData = data; else usersData = data;
+    renderAccessTabs();
+    renderAccessList();
   } catch (e) {
-    body.innerHTML = '<div style="color:#d13438;padding:8px;">Erreur: ' + esc(e.message) + '</div>';
+    body.innerHTML = '<div style="color:var(--red);padding:8px;">Erreur: ' + esc(e.message) + '</div>';
   }
 }
 
-function renderAdminsList() {
+function getAccessData() { return accessActiveTab === 'admins' ? adminsData : usersData; }
+function getAccessLabel() { return accessActiveTab === 'admins' ? 'administrateur' : 'utilisateur'; }
+function getAccessListName() { return accessActiveTab === 'admins' ? 'Admins' : 'Utilisateurs'; }
+
+function renderAccessList() {
   const body = document.getElementById('adminsBody');
+  const data = getAccessData();
+  const label = getAccessLabel();
   body.innerHTML = `
     <div style="margin-bottom:8px;">
-      <span class="admin-count">${adminsData.length} administrateur(s)</span>
+      <span class="admin-count">${data.length} ${label}(s)</span>
     </div>
     <ul class="admin-list">
-      ${adminsData.map((a, i) => {
+      ${data.map((a, i) => {
         const displayName = (a.prenom || a.nom) ? `${a.prenom} ${a.nom.toUpperCase()}`.trim() : '';
         return `
         <li data-idx="${i}">
           <span class="admin-val">${displayName ? esc(displayName) + ' <span style="color:var(--text-tertiary);font-size:11px;">(' + esc(a.email) + ')</span>' : esc(a.email)}</span>
           <div class="admin-item-actions">
-            <button class="admin-edit" title="Modifier" onclick="editAdmin(${i})">&#9998;</button>
-            <button class="admin-del" title="Retirer" onclick="removeAdmin('${esc(a._spItemId)}', ${i})">&#128465;</button>
+            <button class="admin-edit" title="Modifier" onclick="editAccessItem(${i})">&#9998;</button>
+            <button class="admin-del" title="Retirer" onclick="removeAccessItem('${esc(a._spItemId)}', ${i})">&#128465;</button>
           </div>
         </li>`;
       }).join('')}
     </ul>
     <div class="admin-add" style="flex-wrap:wrap;">
-      <input type="text" id="adminsNewPrenom" placeholder="Prénom" style="flex:0 1 120px;">
-      <input type="text" id="adminsNewNom" placeholder="Nom" style="flex:0 1 120px;">
-      <input type="email" id="adminsNewEmail" placeholder="Email" style="flex:1;" onkeydown="if(event.key==='Enter')addAdmin()">
-      <button class="btn btn-primary btn-sm" onclick="addAdmin()">Ajouter</button>
+      <input type="text" id="accessNewPrenom" placeholder="Prénom" style="flex:0 1 120px;">
+      <input type="text" id="accessNewNom" placeholder="Nom" style="flex:0 1 120px;">
+      <input type="email" id="accessNewEmail" placeholder="Email" style="flex:1;" onkeydown="if(event.key==='Enter')addAccessItem()">
+      <button class="btn btn-primary btn-sm" onclick="addAccessItem()">Ajouter</button>
     </div>`;
 }
 
-function editAdmin(idx) {
-  const a = adminsData[idx];
+function editAccessItem(idx) {
+  const data = getAccessData();
+  const a = data[idx];
   if (!a) return;
   const li = document.querySelector(`.admin-list li[data-idx="${idx}"]`);
   if (!li) return;
@@ -859,13 +885,14 @@ function editAdmin(idx) {
       <input type="email" class="adm-edit-email" value="${esc(a.email)}" placeholder="Email" style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;background:var(--bg-surface);color:var(--text-primary);">
     </div>
     <div class="admin-item-actions" style="opacity:1;">
-      <button class="admin-save" title="Enregistrer" onclick="saveAdmin(${idx})">&#10003;</button>
-      <button class="admin-cancel" title="Annuler" onclick="renderAdminsList()">&#10005;</button>
+      <button class="admin-save" title="Enregistrer" onclick="saveAccessItem(${idx})">&#10003;</button>
+      <button class="admin-cancel" title="Annuler" onclick="renderAccessList()">&#10005;</button>
     </div>`;
 }
 
-async function saveAdmin(idx) {
-  const a = adminsData[idx];
+async function saveAccessItem(idx) {
+  const data = getAccessData();
+  const a = data[idx];
   if (!a) return;
   const li = document.querySelector(`.admin-list li[data-idx="${idx}"]`);
   if (!li) return;
@@ -874,24 +901,25 @@ async function saveAdmin(idx) {
   const email = li.querySelector('.adm-edit-email').value.trim().toLowerCase();
   if (!email) { toast('Email requis', 'error'); return; }
   try {
-    await updateListItem('Admins', a._spItemId, { UserEmail: email, Title: email, Prenom: prenom, Nom: nom });
-    adminsData[idx] = { ...a, email, prenom, nom };
-    renderAdminsList();
-    toast('Admin mis à jour', 'success');
+    await updateListItem(getAccessListName(), a._spItemId, { UserEmail: email, Title: email, Prenom: prenom, Nom: nom });
+    data[idx] = { ...a, email, prenom, nom };
+    renderAccessList();
+    toast(`${getAccessLabel()} mis à jour`, 'success');
   } catch (e) {
     toast('Erreur: ' + e.message, 'error');
   }
 }
 
-async function addAdmin() {
-  const inputEmail = document.getElementById('adminsNewEmail');
-  const inputPrenom = document.getElementById('adminsNewPrenom');
-  const inputNom = document.getElementById('adminsNewNom');
+async function addAccessItem() {
+  const inputEmail = document.getElementById('accessNewEmail');
+  const inputPrenom = document.getElementById('accessNewPrenom');
+  const inputNom = document.getElementById('accessNewNom');
   const email = inputEmail.value.trim().toLowerCase();
   const prenom = inputPrenom.value.trim();
   const nom = inputNom.value.trim();
   if (!email) return;
-  if (adminsData.some(a => a.email.toLowerCase() === email)) {
+  const data = getAccessData();
+  if (data.some(a => a.email.toLowerCase() === email)) {
     toast('"' + email + '" existe déjà', 'error');
     return;
   }
@@ -899,29 +927,40 @@ async function addAdmin() {
     const fields = { UserEmail: email, Title: email };
     if (prenom) fields.Prenom = prenom;
     if (nom) fields.Nom = nom;
-    const item = await createListItem('Admins', fields);
-    adminsData.push({ email, prenom, nom, _spItemId: item._spItemId });
-    adminsData.sort((a, b) => a.email.localeCompare(b.email, 'fr'));
+    const item = await createListItem(getAccessListName(), fields);
+    data.push({ email, prenom, nom, _spItemId: item._spItemId });
+    data.sort((a, b) => a.email.localeCompare(b.email, 'fr'));
     inputEmail.value = ''; inputPrenom.value = ''; inputNom.value = '';
-    renderAdminsList();
-    toast('"' + email + '" ajouté aux admins', 'success');
+    renderAccessTabs();
+    renderAccessList();
+    toast(`"${email}" ajouté`, 'success');
   } catch (e) {
     toast('Erreur: ' + e.message, 'error');
   }
 }
 
-async function removeAdmin(itemId, idx) {
-  const email = adminsData[idx]?.email;
-  if (!await customConfirm('Retirer "' + email + '" des administrateurs ?')) return;
+async function removeAccessItem(itemId, idx) {
+  const data = getAccessData();
+  const email = data[idx]?.email;
+  const label = getAccessLabel();
+  if (!await customConfirm(`Retirer "${email}" des ${label}s ?`)) return;
   try {
-    await deleteListItem('Admins', itemId);
-    adminsData.splice(idx, 1);
-    renderAdminsList();
+    await deleteListItem(getAccessListName(), itemId);
+    data.splice(idx, 1);
+    renderAccessTabs();
+    renderAccessList();
     toast('"' + email + '" retiré', 'success');
   } catch (e) {
     toast('Erreur: ' + e.message, 'error');
   }
 }
+
+// Legacy aliases
+function renderAdminsList() { if (accessActiveTab === 'admins') renderAccessList(); }
+function editAdmin(idx) { editAccessItem(idx); }
+function saveAdmin(idx) { saveAccessItem(idx); }
+function addAdmin() { addAccessItem(); }
+function removeAdmin(itemId, idx) { removeAccessItem(itemId, idx); }
 
 async function loadSubData(noControleur) {
   if (subData[noControleur]) return subData[noControleur];
@@ -1806,7 +1845,7 @@ function renderPJButtons(buttons) {
   const folderOptions = Object.entries(PJ_LABELS)
     .map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
   const uploadSection = currentCommande ? `<div class="pj-upload-section">
-    <select id="pjUploadFolder" style="padding:6px 10px;border:1px solid #d0d0d0;border-radius:5px;font-size:12px;color:#323130;">
+    <select id="pjUploadFolder" style="padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:12px;color:var(--text-primary);background:var(--bg-surface);">
       <option value="">-- Type de PJ --</option>${folderOptions}
     </select>
     <label class="btn-file-label"><input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" onchange="uploadPJFromPanel(this)">&#128206; Ajouter une PJ</label>
@@ -2095,6 +2134,10 @@ const DIAG_LISTS = [
   { section: 'Listes de référence', entries: Object.entries(REF_LISTS).map(([k, v]) => ({
     key: k, spName: () => k, role: v.label,
   }))},
+  { section: 'Gestion des accès', entries: [
+    { key: 'admins',       spName: () => 'Admins',        role: 'Administrateurs' },
+    { key: 'utilisateurs', spName: () => 'Utilisateurs',  role: 'Utilisateurs' },
+  ]},
 ];
 
 let diagnosticResults = {}; // key → { count, error, checkedAt }
