@@ -233,12 +233,19 @@ async function authenticate(account) {
     const rb = document.getElementById('roleBadge');
     if (rb) rb.textContent = isAdmin ? 'Admin' : 'Lecteur';
     applyAccessMode();
-    // If restoring a commande, hide empty state and show loading in detail
+    // If restoring a commande, hide empty state and show loading spinner overlay
     if (sessionStorage.getItem('selectedCommande')) {
       document.getElementById('detailEmpty').style.display = 'none';
       var dc = document.getElementById('detailContent');
       dc.style.display = 'flex';
-      dc.innerHTML = '<div class="loading" style="flex:1;"><div class="spinner"></div> Chargement...</div>';
+      // Hide children but keep them in DOM, add a temporary spinner
+      Array.from(dc.children).forEach(function(ch) { ch.style.display = 'none'; });
+      var restoreSpinner = document.createElement('div');
+      restoreSpinner.className = 'loading';
+      restoreSpinner.id = 'restoreSpinner';
+      restoreSpinner.style.flex = '1';
+      restoreSpinner.innerHTML = '<div class="spinner"></div> Chargement...';
+      dc.appendChild(restoreSpinner);
     }
     await loadData();
   } catch (e) {
@@ -517,11 +524,22 @@ async function loadData() {
       await selectCommande(savedNo);
       if (savedTab !== 'General') switchTab(savedTab);
     } else {
-      // Reset empty state if commande not found
+      // Reset empty state if commande not found — clean up spinner
+      var rs2 = document.getElementById('restoreSpinner');
+      if (rs2) rs2.remove();
+      var dc2 = document.getElementById('detailContent');
+      Array.from(dc2.children).forEach(function(ch) { ch.style.display = ''; });
       document.getElementById('detailEmpty').style.display = '';
-      document.getElementById('detailContent').style.display = 'none';
+      dc2.style.display = 'none';
     }
   } catch (e) {
+    // Clean up spinner on error
+    var rs3 = document.getElementById('restoreSpinner');
+    if (rs3) rs3.remove();
+    var dc3 = document.getElementById('detailContent');
+    Array.from(dc3.children).forEach(function(ch) { ch.style.display = ''; });
+    dc3.style.display = 'none';
+    document.getElementById('detailEmpty').style.display = '';
     document.getElementById('listContainer').innerHTML = `<div style="padding:16px;color:#d13438;">Erreur: ${esc(e.message)}</div>`;
     console.error(e);
   }
@@ -1210,8 +1228,14 @@ async function selectCommande(no) {
     }
   }
 
+  // Remove restore spinner if present and restore children visibility
+  var rs = document.getElementById('restoreSpinner');
+  if (rs) rs.remove();
+  var dcEl = document.getElementById('detailContent');
+  Array.from(dcEl.children).forEach(function(ch) { ch.style.display = ''; });
+
   document.getElementById('detailEmpty').style.display = 'none';
-  document.getElementById('detailContent').style.display = 'flex';
+  dcEl.style.display = 'flex';
   document.getElementById('detailTitle').textContent = `${no} - ${currentCommande.NomClient || ''}`;
   document.getElementById('btnEdit').innerHTML = '<span class="action-icon">&#9998;</span> Modifier'; document.getElementById('btnEdit').classList.add('primary');
   document.getElementById('btnEdit').style.display = '';
