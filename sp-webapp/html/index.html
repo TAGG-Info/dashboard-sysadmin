@@ -825,9 +825,9 @@ async function uploadPJFromForm(input, noControleur, folderName) {
   input.disabled = true;
   if (nameDisplay) nameDisplay.textContent = 'Upload en cours...';
   try {
-    await uploadFileToDrive(noControleur, folderName, file);
-    toast('PJ ajoutée');
-    // Refresh PJ panel and general panel
+    const webUrl = await uploadFileToDrive(noControleur, folderName, file);
+    const filled = await autoFillPJField(folderName, webUrl);
+    toast(filled ? 'PJ ajoutée et champ mis à jour' : 'PJ ajoutée');
     if (currentCommande) {
       await renderPJ(currentCommande);
       renderGeneral(currentCommande);
@@ -1989,6 +1989,50 @@ const PJ_LABELS = {
   'PJ_BlMateriel': 'BL',
 };
 
+// Mapping PJ folder → SP list to auto-fill after upload
+// listKey: 'main' = CommandesControleur, otherwise = sub-list key
+// subKey: key in subData cache (for sub-lists)
+const PJ_FIELD_TARGET = {
+  PJ_CommandeFabricant:      { listKey: 'main' },
+  PJ_CommandeClientLogiciel: { listKey: 'main' },
+  PJ_CommandeFournisseur:    { listKey: 'main' },
+  PJ_FactureFournisseur:     { listKey: 'main' },
+  PJ_BlTransport:            { listKey: 'main' },
+  PJ_FicheMiseEnService:     { listKey: 'main' },
+  PJ_CommandeDestockage:     { listKey: 'main' },
+  PJ_BLReception:            { listKey: 'main' },
+  PJ_CommandeClientSup:      { listKey: 'main' },
+  PJ_CommandeFournisseurSup: { listKey: 'main' },
+  PJ_BlMateriel:             { listKey: 'main' },
+  PJ_FactureMateriel:        { listKey: 'factMateriel', subKey: 'factMat' },
+  PJ_FactureLicence:         { listKey: 'factLicence',  subKey: 'factLic' },
+  PJ_FactureMaintenance:     { listKey: 'maintenances', subKey: 'maintenances' },
+};
+
+// After uploading a PJ, auto-update the corresponding SP list field
+async function autoFillPJField(folderName, webUrl) {
+  const target = PJ_FIELD_TARGET[folderName];
+  if (!target || !currentCommande) return false;
+  try {
+    if (target.listKey === 'main') {
+      await updateListItem('main', currentCommande._spItemId, { [folderName]: webUrl });
+      currentCommande[folderName] = webUrl;
+    } else {
+      const sub = await loadSubData(currentCommande.NoControleur);
+      const items = sub[target.subKey] || [];
+      if (items.length === 0) return false;
+      // Update the most recently added sub-item
+      const item = items[items.length - 1];
+      await updateListItem(target.listKey, item._spItemId, { [folderName]: webUrl });
+      invalidateSubCache(currentCommande.NoControleur);
+    }
+    return true;
+  } catch (e) {
+    console.warn('[autoFillPJField]', e);
+    return false;
+  }
+}
+
 // Cache PJ per commande (from drive API)
 const pjCache = {};
 
@@ -2136,9 +2180,11 @@ async function uploadPJFromPanel(input) {
   input.disabled = true;
   if (nameDisplay) nameDisplay.textContent = 'Upload en cours...';
   try {
-    await uploadFileToDrive(currentCommande.NoControleur, folder, input.files[0]);
-    toast('PJ ajoutée');
+    const webUrl = await uploadFileToDrive(currentCommande.NoControleur, folder, input.files[0]);
+    const filled = await autoFillPJField(folder, webUrl);
+    toast(filled ? 'PJ ajoutée et champ mis à jour' : 'PJ ajoutée');
     await renderPJ(currentCommande);
+    if (filled) renderGeneral(currentCommande);
   } catch (e) {
     toast('Erreur: ' + e.message.substring(0, 80), 'error');
   }
