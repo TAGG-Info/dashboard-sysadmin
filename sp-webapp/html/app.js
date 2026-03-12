@@ -1440,23 +1440,28 @@ function renderSubPanel(panelId, schemaKey, items) {
     tableHtml = '<div class="pj-empty">Aucun(e) ' + schema.title.toLowerCase() + '</div>';
   } else {
     const visibleFields = schema.fields.filter(f => f[2] !== 'pj');
-    tableHtml = '<table class="gallery"><thead><tr>' + visibleFields.map(f => '<th>' + f[1] + '</th>').join('') + (isAdmin ? '<th></th>' : '') + '</tr></thead><tbody>'
+    const isMaint = schemaKey === 'maintenances';
+    tableHtml = '<table class="gallery"><thead><tr>'
+      + (isMaint ? '<th>Statut</th>' : '')
+      + visibleFields.map(f => '<th>' + f[1] + '</th>').join('') + (isAdmin ? '<th></th>' : '') + '</tr></thead><tbody>'
       + items.map(r => {
-        return '<tr>' + visibleFields.map(([field, , type]) => {
+        // Compute maintenance status badge
+        let statusBadge = '';
+        if (isMaint && r.DateFinMaintenance) {
+          const endDate = new Date(r.DateFinMaintenance);
+          const diff = (endDate - now) / (1000*60*60*24);
+          if (diff < 0) statusBadge = '<span class="maint-badge expired">Expiré</span>';
+          else if (diff <= 90) statusBadge = '<span class="maint-badge alert">Expire bientôt</span>';
+          else statusBadge = '<span class="maint-badge active">Actif</span>';
+        }
+        return '<tr>'
+        + (isMaint ? '<td>' + statusBadge + '</td>' : '')
+        + visibleFields.map(([field, , type]) => {
           let val = r[field];
           if (type === 'date') val = fmtDate(val);
           else if (type === 'currency') val = fmtCur(val);
-          let extra = '';
-          // Add dot for date fin maintenance
-          if (schemaKey === 'maintenances' && field === 'DateFinMaintenance' && val && val !== '-') {
-            const endDate = new Date(r[field]);
-            const diff = (endDate - now) / (1000*60*60*24);
-            if (diff < 0) extra = '<span class="maint-dot expired" title="Expiré"></span>';
-            else if (diff <= 90) extra = '<span class="maint-dot alert" title="Expire bientôt"></span>';
-            else extra = '<span class="maint-dot active" title="Actif"></span>';
-          }
-          const tdClass = type === 'currency' ? 'class="currency"' : extra ? 'style="white-space:nowrap"' : '';
-          return '<td ' + tdClass + '>' + extra + esc(val) + '</td>';
+          const tdClass = type === 'currency' ? 'class="currency"' : '';
+          return '<td ' + tdClass + '>' + esc(val) + '</td>';
         }).join('')
         + (isAdmin ? '<td><button class="btn-del" data-schema="' + schemaKey + '" data-item-id="' + esc(r._spItemId) + '" data-no="' + esc(currentCommande?.NoControleur) + '" title="Supprimer">&#128465;</button></td>' : '') + '</tr>';
       }).join('') + '</tbody></table>';

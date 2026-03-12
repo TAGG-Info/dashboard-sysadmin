@@ -429,10 +429,20 @@
   .dash-kpi.border-orange { border-left: 3px solid var(--orange); }
   .dash-kpi.border-purple { border-left: 3px solid var(--purple); }
   .dash-kpi-sub { font-size: 11px; color: var(--text-tertiary); margin-top: auto; }
-  .maint-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
-  .maint-dot.active { background: var(--green); }
-  .maint-dot.expired { background: var(--text-tertiary); }
-  .maint-dot.alert { background: var(--orange); }
+  .maint-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .maint-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .maint-badge.active { background: var(--green-soft); color: var(--green); }
+  .maint-badge.active::before { background: var(--green); }
+  .maint-badge.expired { background: var(--red-soft); color: var(--red); }
+  .maint-badge.expired::before { background: var(--red); }
+  .maint-badge.alert { background: var(--orange-soft); color: var(--orange); }
+  .maint-badge.alert::before { background: var(--orange); }
+  [data-theme="dark"] .maint-badge.active { box-shadow: 0 0 12px rgba(74,222,128,0.08); }
+  [data-theme="dark"] .maint-badge.expired { box-shadow: 0 0 12px rgba(248,113,113,0.08); }
+  [data-theme="dark"] .maint-badge.alert { box-shadow: 0 0 12px rgba(251,146,60,0.08); }
 
   /* ============ PJ ============ */
   .pj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
