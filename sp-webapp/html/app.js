@@ -320,6 +320,7 @@ async function graphDelete(url) {
 }
 
 async function uploadFileToDrive(noControleur, folderName, file) {
+  if (!isAdmin) return;
   const sid = await getSiteId();
   const folderPath = `PiecesJointes_Controleur/${encodeURIComponent(noControleur)}/${encodeURIComponent(folderName)}`;
   const safeFileName = file.name.replace(/[#%]/g, '_');
@@ -362,6 +363,7 @@ async function openSubPJ(webUrl) {
 
 // Upload a PJ from an inline form field (general edit or PJ tab)
 async function uploadPJFromForm(input, noControleur, folderName) {
+  if (!isAdmin) return;
   if (!input.files?.[0]) return;
   const file = input.files[0];
   const label = input.closest('.form-field, .pj-upload-section');
@@ -546,6 +548,7 @@ function getOptionsForField(field) {
 let adminCurrentTab = null;
 
 function openAdmin() {
+  if (!isAdmin) return;
   const modal = document.getElementById('adminModal');
   modal.classList.add('visible');
   const tabs = Object.entries(REF_LISTS);
@@ -741,6 +744,7 @@ function toggleBulkImport(listName) {
 }
 
 async function bulkImport(listName) {
+  if (!isAdmin) return;
   const textarea = document.getElementById('bulkImportText');
   const status = document.getElementById('bulkImportStatus');
   // Clean SharePoint UI noise from copy-paste
@@ -891,6 +895,7 @@ function editAccessItem(idx) {
 }
 
 async function saveAccessItem(idx) {
+  if (!isAdmin) return;
   const data = getAccessData();
   const a = data[idx];
   if (!a) return;
@@ -911,6 +916,7 @@ async function saveAccessItem(idx) {
 }
 
 async function addAccessItem() {
+  if (!isAdmin) return;
   const inputEmail = document.getElementById('accessNewEmail');
   const inputPrenom = document.getElementById('accessNewPrenom');
   const inputNom = document.getElementById('accessNewNom');
@@ -940,6 +946,7 @@ async function addAccessItem() {
 }
 
 async function removeAccessItem(itemId, idx) {
+  if (!isAdmin) return;
   const data = getAccessData();
   const email = data[idx]?.email;
   const label = getAccessLabel();
@@ -1591,6 +1598,7 @@ function showAddForm(containerId, schemaKey) {
 }
 
 async function saveSubRow(containerId, schemaKey) {
+  if (!isAdmin) return;
   if (!currentCommande?.NoControleur) return;
   const schema = SUB_SCHEMAS[schemaKey];
   const container = document.getElementById(`addForm_${containerId}`);
@@ -1860,6 +1868,7 @@ function renderPJButtons(buttons) {
 }
 
 async function deletePJ(idx) {
+  if (!isAdmin) return;
   const b = currentPJButtons[idx];
   if (!b || !b.driveItemId) return;
   if (!await customConfirm(`Supprimer "${b.name}" ?`)) return;
@@ -1879,6 +1888,7 @@ async function deletePJ(idx) {
 }
 
 async function uploadPJFromPanel(input) {
+  if (!isAdmin) return;
   const folder = document.getElementById('pjUploadFolder')?.value;
   if (!folder) { toast('Choisir un type de PJ', 'error'); input.value = ''; return; }
   if (!input.files?.[0] || !currentCommande) return;
@@ -2242,6 +2252,7 @@ function renderDiagTable() {
 }
 
 function openDiag() {
+  if (!isAdmin) return;
   document.getElementById('diagModal').classList.add('visible');
   renderDiagTable();
   if (Object.keys(diagnosticResults).length === 0) checkAllLists();
