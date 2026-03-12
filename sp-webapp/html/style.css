@@ -399,7 +399,7 @@
   .fact-kpi.accent-orange { border-left: 3px solid var(--orange); }
   .fact-kpi-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
   .fact-kpi-value { font-size: 22px; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono); letter-spacing: -1px; }
-  .fact-kpi-sub { font-size: 11px; color: var(--text-tertiary); }
+  .fact-kpi-sub { font-size: 11px; color: var(--text-tertiary); margin-top: auto; }
   .fact-section { margin-bottom: 24px; }
   .fact-section-header {
     display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
@@ -417,6 +417,7 @@
   .dash-kpi {
     background: var(--bg-surface); border-radius: 10px; padding: 14px 16px;
     border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: all 0.25s;
+    display: flex; flex-direction: column;
   }
   .dash-kpi:hover { box-shadow: var(--shadow-md); }
   .dash-kpi-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; margin-bottom: 4px; }
@@ -427,7 +428,7 @@
   .dash-kpi.border-green { border-left: 3px solid var(--green); }
   .dash-kpi.border-orange { border-left: 3px solid var(--orange); }
   .dash-kpi.border-purple { border-left: 3px solid var(--purple); }
-  .dash-kpi-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+  .dash-kpi-sub { font-size: 11px; color: var(--text-tertiary); margin-top: auto; }
   .maint-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
   .maint-dot.active { background: var(--green); }
   .maint-dot.expired { background: var(--text-tertiary); }
