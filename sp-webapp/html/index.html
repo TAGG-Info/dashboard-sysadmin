@@ -528,6 +528,7 @@ const FIELD_DISTINCT_MAP = {
   PaysExpedition: 'main',
   TypeCommandeFabricant: 'main',
   NomClient: 'main',
+  NomClientFinal: 'main',
   NomFournisseur: 'main',
   NomTransporteur: 'main',
 };
@@ -548,6 +549,7 @@ let distinctData = {};  // { fieldName: ['value1', 'value2', ...] }
 const GENERAL_SCHEMA = [
   { section: 'Commande Client', fields: [
     ['EtatCommande', 'État de la commande', 'select'],
+    ['DemandeurFabricant', 'Demandeur', 'select'],
     ['DateCommandeFabricant', 'Date de la commande Client', 'date'],
     ['NoCommandeFabricant', 'N° de commande Client', 'text'],
     ['NomClient', 'Client', 'suggest'],
@@ -1749,9 +1751,10 @@ function renderSubPanel(panelId, schemaKey, items) {
   if (items.length === 0) {
     tableHtml = '<div class="pj-empty">Aucun(e) ' + schema.title.toLowerCase() + '</div>';
   } else {
-    tableHtml = '<table class="gallery"><thead><tr>' + schema.fields.map(f => '<th>' + f[1] + '</th>').join('') + (isAdmin ? '<th></th>' : '') + '</tr></thead><tbody>'
+    const visibleFields = schema.fields.filter(f => f[2] !== 'pj');
+    tableHtml = '<table class="gallery"><thead><tr>' + visibleFields.map(f => '<th>' + f[1] + '</th>').join('') + (isAdmin ? '<th></th>' : '') + '</tr></thead><tbody>'
       + items.map(r => {
-        return '<tr>' + schema.fields.map(([field, , type]) => {
+        return '<tr>' + visibleFields.map(([field, , type]) => {
           let val = r[field];
           if (type === 'date') val = fmtDate(val);
           else if (type === 'currency') val = fmtCur(val);
@@ -1987,6 +1990,7 @@ const PJ_LABELS = {
   'PJ_CommandeClientSup': 'Commande client sup.',
   'PJ_CommandeFournisseurSup': 'Commande fournisseur sup.',
   'PJ_BlMateriel': 'BL Materiel',
+  'PJ_BLReception': 'BL réception',
 };
 
 // Mapping PJ folder → SP list to auto-fill after upload
@@ -2312,7 +2316,7 @@ function closePJModal() {
 }
 
 // Close modal on Escape
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { resolveConfirm(false); closePJModal(); closeAdmin(); closeDiag(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { resolveConfirm(false); closePJModal(); closeAdmin(); closeAdminsPanel(); closeDiag(); } });
 
 // ============ AUTOCOMPLETE ============
 function showAC(field) { filterAC(field); }
