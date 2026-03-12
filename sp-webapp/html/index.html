@@ -1757,32 +1757,32 @@ function renderList(items) {
     return;
   }
 
-  // Group by client
+  // Group by demandeur
   const groups = new Map();
   for (const c of items) {
-    const client = c.NomClient || '– Sans client –';
-    if (!groups.has(client)) groups.set(client, []);
-    groups.get(client).push(c);
+    const demandeur = c.DemandeurFabricant || '– Sans demandeur –';
+    if (!groups.has(demandeur)) groups.set(demandeur, []);
+    groups.get(demandeur).push(c);
   }
 
-  const clientCount = groups.size;
-  document.getElementById('listCount').innerHTML = '<span>' + items.length + ' commande(s) · ' + clientCount + ' client(s)</span>';
+  const groupCount = groups.size;
+  document.getElementById('listCount').innerHTML = '<span>' + items.length + ' commande(s) · ' + groupCount + ' demandeur(s)</span>';
 
   // If only one group or search active, auto-open all
   const searchActive = document.getElementById('searchInput').value.trim() !== ''
     || document.getElementById('filterEtat').value !== ''
     || (document.getElementById('filterDemandeur')?.value || '') !== '';
-  if (searchActive || clientCount <= 3) {
-    for (const client of groups.keys()) _openGroups.add(client);
+  if (searchActive || groupCount <= 3) {
+    for (const key of groups.keys()) _openGroups.add(key);
   }
 
   let html = '';
-  for (const [client, cmds] of groups) {
-    const isOpen = _openGroups.has(client);
-    html += '<div class="client-group' + (isOpen ? ' open' : '') + '" data-client="' + esc(client) + '">'
+  for (const [demandeur, cmds] of groups) {
+    const isOpen = _openGroups.has(demandeur);
+    html += '<div class="client-group' + (isOpen ? ' open' : '') + '" data-client="' + esc(demandeur) + '">'
       + '<div class="client-header' + (isOpen ? ' open' : '') + '" onclick="toggleGroup(this)">'
       + '<span class="chevron">▶</span>'
-      + '<span class="client-name">' + esc(client) + '</span>'
+      + '<span class="client-name">' + esc(demandeur) + '</span>'
       + '<span class="client-badge">' + cmds.length + '</span>'
       + '</div>'
       + '<div class="client-items">';
@@ -1790,11 +1790,12 @@ function renderList(items) {
       const isActive = c.NoControleur === currentCommande?.NoControleur;
       const metaParts = [];
       if (c.TypeControleur) metaParts.push(esc(c.TypeControleur));
-      if (c.DemandeurFabricant) metaParts.push(esc(c.DemandeurFabricant));
+      if (c.NomClient) metaParts.push(esc(c.NomClient));
       if (c.NoCommandeFabricant) metaParts.push(esc(c.NoCommandeFabricant));
       html += '<div class="list-item' + (isActive ? ' active' : '') + '" id="item-' + esc(c.NoControleur) + '" onclick="selectCommande(\'' + esc(c.NoControleur) + '\')">'
         + '<div class="list-item-header">'
         + '<span class="list-item-id">' + esc(c.NoControleur || '') + '</span>'
+        + '<span class="list-item-client">' + esc(c.NomClient || '–') + '</span>'
         + '</div>'
         + (metaParts.length ? '<div class="list-item-meta">' + metaParts.join('<span class="dot">·</span>') + '</div>' : '')
         + '<div class="list-item-status"><span class="status-badge ' + getStatusColor(c.EtatCommande) + '">' + esc(truncate(c.EtatCommande, 50)) + '</span></div>'
