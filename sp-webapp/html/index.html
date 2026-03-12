@@ -921,6 +921,7 @@ let currentTab = 'General';
 let editMode = false;
 let isNewCommande = false;
 let isAdmin = false;
+let currentUserDisplayName = ''; // 'Prénom NOM' from Admins list
 
 // ============ AUTH ============
 async function init() {
@@ -948,8 +949,9 @@ async function authenticate(account) {
     accessToken = tokenResponse.accessToken;
     document.getElementById('authScreen').style.display = 'none';
     document.getElementById('app').classList.add('visible');
-    document.getElementById('userName').textContent = account.username;
     isAdmin = await checkAdmin(account.username);
+    if (!currentUserDisplayName) currentUserDisplayName = account.name || account.username;
+    document.getElementById('userName').textContent = currentUserDisplayName;
     const rb = document.getElementById('roleBadge');
     if (rb) rb.textContent = isAdmin ? 'Admin' : 'Lecteur';
     applyAccessMode();
@@ -1148,7 +1150,13 @@ async function checkAdmin(email) {
     const safeEmail = email.replace(/'/g, "''");
     const url = `/sites/${sid}/lists/Admins/items?expand=fields&$top=1&$filter=fields/UserEmail eq '${safeEmail}'`;
     const data = await graphGet(url);
-    if (data.value && data.value.length > 0) return true;
+    if (data.value && data.value.length > 0) {
+      const f = data.value[0].fields || {};
+      if (f.Prenom || f.Nom) {
+        currentUserDisplayName = `${f.Prenom || ''} ${(f.Nom || '').toUpperCase()}`.trim();
+      }
+      return true;
+    }
     // Anti-lockout: if list is empty, grant admin
     const allUrl = `/sites/${sid}/lists/Admins/items?$top=1`;
     const allData = await graphGet(allUrl);
@@ -1509,7 +1517,7 @@ async function bulkImport(listName) {
 }
 
 // ============ ADMINS PANEL ============
-let adminsData = []; // [{ email, _spItemId }]
+let adminsData = []; // [{ email, prenom, nom, _spItemId }]
 
 function openAdminsPanel() {
   if (!isAdmin) return;
@@ -1526,7 +1534,7 @@ async function loadAdminsList() {
   body.innerHTML = '<div class="loading"><div class="spinner"></div> Chargement...</div>';
   try {
     const items = await getListItems('Admins');
-    adminsData = items.map(i => ({ email: i.UserEmail || i.Title || '', _spItemId: i._spItemId }));
+    adminsData = items.map(i => ({ email: i.UserEmail || i.Title || '', prenom: i.Prenom || '', nom: i.Nom || '', _spItemId: i._spItemId }));
     adminsData.sort((a, b) => a.email.localeCompare(b.email, 'fr'));
     renderAdminsList();
   } catch (e) {
@@ -1541,34 +1549,45 @@ function renderAdminsList() {
       <span class="admin-count">${adminsData.length} administrateur(s)</span>
     </div>
     <ul class="admin-list">
-      ${adminsData.map((a, i) => `
+      ${adminsData.map((a, i) => {
+        const displayName = (a.prenom || a.nom) ? `${a.prenom} ${a.nom.toUpperCase()}`.trim() : '';
+        return `
         <li data-idx="${i}">
-          <span class="admin-val">${esc(a.email)}</span>
+          <span class="admin-val">${displayName ? esc(displayName) + ' <span style="color:var(--text-tertiary);font-size:11px;">(' + esc(a.email) + ')</span>' : esc(a.email)}</span>
           <div class="admin-item-actions">
             <button class="admin-del" title="Retirer" onclick="removeAdmin('${esc(a._spItemId)}', ${i})">&#128465;</button>
           </div>
-        </li>
-      `).join('')}
+        </li>`;
+      }).join('')}
     </ul>
-    <div class="admin-add">
-      <input type="email" id="adminsNewEmail" placeholder="Email de l'utilisateur..." onkeydown="if(event.key==='Enter')addAdmin()">
+    <div class="admin-add" style="flex-wrap:wrap;">
+      <input type="text" id="adminsNewPrenom" placeholder="Prénom" style="flex:0 1 120px;">
+      <input type="text" id="adminsNewNom" placeholder="Nom" style="flex:0 1 120px;">
+      <input type="email" id="adminsNewEmail" placeholder="Email" style="flex:1;" onkeydown="if(event.key==='Enter')addAdmin()">
       <button class="btn btn-primary btn-sm" onclick="addAdmin()">Ajouter</button>
     </div>`;
 }
 
 async function addAdmin() {
-  const input = document.getElementById('adminsNewEmail');
-  const email = input.value.trim().toLowerCase();
+  const inputEmail = document.getElementById('adminsNewEmail');
+  const inputPrenom = document.getElementById('adminsNewPrenom');
+  const inputNom = document.getElementById('adminsNewNom');
+  const email = inputEmail.value.trim().toLowerCase();
+  const prenom = inputPrenom.value.trim();
+  const nom = inputNom.value.trim();
   if (!email) return;
   if (adminsData.some(a => a.email.toLowerCase() === email)) {
     toast('"' + email + '" existe déjà', 'error');
     return;
   }
   try {
-    const item = await createListItem('Admins', { UserEmail: email, Title: email });
-    adminsData.push({ email, _spItemId: item._spItemId });
+    const fields = { UserEmail: email, Title: email };
+    if (prenom) fields.Prenom = prenom;
+    if (nom) fields.Nom = nom;
+    const item = await createListItem('Admins', fields);
+    adminsData.push({ email, prenom, nom, _spItemId: item._spItemId });
     adminsData.sort((a, b) => a.email.localeCompare(b.email, 'fr'));
-    input.value = '';
+    inputEmail.value = ''; inputPrenom.value = ''; inputNom.value = '';
     renderAdminsList();
     toast('"' + email + '" ajouté aux admins', 'success');
   } catch (e) {
