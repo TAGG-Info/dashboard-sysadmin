@@ -1841,7 +1841,7 @@ function renderPJButtons(buttons) {
     return { cls: 'other', label: ext.toUpperCase().substring(0,3) || '?' };
   }
 
-  const html = '<div class="dash-kpis"><div class="dash-kpi"><div class="dash-kpi-label">Pièces jointes</div><div class="dash-kpi-value blue">' + buttons.length + '</div></div></div>'
+  const html = '<div class="gallery-header"><span class="gallery-count">' + buttons.length + '</span><span class="gallery-total">pièce(s) jointe(s)</span></div>'
     + '<div class="pj-grid">'
     + buttons.map((b, i) => {
       const icon = getFileIcon(b.mimeType, b.name);
