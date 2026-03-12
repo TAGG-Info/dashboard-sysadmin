@@ -1,14 +1,6 @@
 controleurs.tagginfo.fr {
     tls /etc/caddy/certs/wildcard.crt /etc/caddy/certs/wildcard.key
     reverse_proxy sp-webapp:80
-    header {
-        X-Content-Type-Options nosniff
-        X-Frame-Options SAMEORIGIN
-        Referrer-Policy strict-origin-when-cross-origin
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'self' https://graph.microsoft.com https://login.microsoftonline.com https://tagginfo.sharepoint.com; frame-src https://login.microsoftonline.com blob:; frame-ancestors 'none'"
-        Permissions-Policy "camera=(), microphone=(), geolocation=()"
-    }
 }
 
 dashboard.tagginfo.fr {
