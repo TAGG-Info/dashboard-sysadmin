@@ -104,11 +104,11 @@
   body {
     font-family: var(--font-body); background: var(--bg-root); color: var(--text-primary);
     font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased;
-    transition: background 0.3s, color 0.3s;
+    transition: background 0.15s, color 0.15s;
   }
 
   /* Auth screen */
-  .auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 20px; background: var(--bg-root); transition: background 0.3s; }
+  .auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 20px; background: var(--bg-root); transition: background 0.15s; }
   .auth-screen h1 { font-size: 28px; color: var(--text-primary); font-weight: 300; letter-spacing: -0.5px; }
   .auth-screen p { color: var(--text-secondary); font-size: 14px; }
   .auth-logo { width: 56px; height: 56px; background: var(--topbar-logo-bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 700; box-shadow: 0 4px 16px var(--accent-glow); }
@@ -125,7 +125,7 @@
     background: var(--topbar-bg); flex-shrink: 0; z-index: 10;
     border-bottom: 1px solid var(--topbar-border);
     box-shadow: var(--topbar-shadow);
-    transition: all 0.35s;
+    transition: all 0.15s;
   }
   .topbar-logo {
     width: 30px; height: 30px; border-radius: 8px;
@@ -203,7 +203,7 @@
   }
   .client-items { display: none; padding-left: 4px; }
   .client-group.open .client-items { display: block; }
-  .search-bar { padding: 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; background: var(--bg-surface); transition: all 0.35s; }
+  .search-bar { padding: 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; background: var(--bg-surface); transition: all 0.15s; }
   .search-row { display: flex; gap: 8px; align-items: center; }
   .search-input-wrap { flex: 1; position: relative; }
   .search-input-wrap input {
@@ -262,14 +262,14 @@
   .list-item-info { flex: 1; min-width: 0; }
 
   /* ============ DETAIL PANEL ============ */
-  .detail { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-root); transition: all 0.35s; }
+  .detail { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-root); transition: all 0.15s; }
   .detail-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-tertiary); font-size: 14px; gap: 12px; }
   .detail-empty::before { content: '\2190'; font-size: 32px; opacity: 0.2; }
 
   /* Detail header */
   .detail-header {
     padding: 14px 32px; background: var(--bg-surface); border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; flex-shrink: 0; transition: all 0.35s;
+    display: flex; align-items: center; flex-shrink: 0; transition: all 0.15s;
   }
   .detail-header-inner { display: flex; align-items: center; gap: 12px; max-width: 960px; width: 100%; }
   .btn-back { display: none; width: 36px; height: 36px; background: var(--bg-raised); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); font-size: 18px; cursor: pointer; align-items: center; justify-content: center; transition: all 0.15s; }
@@ -277,7 +277,7 @@
   .detail-title { color: var(--text-primary); font-size: 18px; font-weight: 700; flex: 1; letter-spacing: -0.4px; }
 
   /* Detail action bar */
-  .detail-actions { display: flex; align-items: center; gap: 8px; padding: 8px 32px; background: var(--bg-surface); border-bottom: 1px solid var(--border); flex-shrink: 0; transition: all 0.35s; }
+  .detail-actions { display: flex; align-items: center; gap: 8px; padding: 8px 32px; background: var(--bg-surface); border-bottom: 1px solid var(--border); flex-shrink: 0; transition: all 0.15s; }
   .detail-actions-inner { display: flex; align-items: center; gap: 8px; max-width: 960px; width: 100%; }
   .btn-action {
     display: inline-flex; align-items: center; gap: 5px; padding: 7px 16px;
@@ -295,7 +295,7 @@
   /* ============ TABS ============ */
   .tabs {
     display: flex; background: var(--bg-surface); border-bottom: 1px solid var(--border);
-    height: 40px; flex-shrink: 0; padding: 0 32px; transition: all 0.35s;
+    height: 40px; flex-shrink: 0; padding: 0 32px; transition: all 0.15s;
   }
   .tab {
     flex: none; padding: 0 18px; display: flex; align-items: center; justify-content: center;
@@ -307,7 +307,7 @@
   [data-theme="dark"] .tab.active { text-shadow: 0 0 16px rgba(96,165,250,0.4); }
 
   /* ============ TAB CONTENT ============ */
-  .tab-content { flex: 1; overflow-y: auto; background: var(--bg-root); transition: background 0.35s; }
+  .tab-content { flex: 1; overflow-y: auto; background: var(--bg-root); transition: background 0.15s; }
   .tab-panel { display: none; padding: 24px 32px; max-width: 960px; }
   .tab-panel.active { display: block; }
 
