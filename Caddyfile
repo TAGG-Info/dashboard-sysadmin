@@ -1,3 +1,17 @@
+controleur.tagginfo.fr {
+    tls /etc/caddy/certs/wildcard.crt /etc/caddy/certs/wildcard.key
+    reverse_proxy sp-webapp:80
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options SAMEORIGIN
+        Referrer-Policy strict-origin-when-cross-origin
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        # CSP adapté MSAL : autorise CDN MSAL, Graph API, login Azure AD
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://alcdn.msauth.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://graph.microsoft.com https://login.microsoftonline.com; frame-src https://login.microsoftonline.com; frame-ancestors 'none'"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    }
+}
+
 dashboard.tagginfo.fr {
     tls /etc/caddy/certs/wildcard.crt /etc/caddy/certs/wildcard.key
     reverse_proxy dashboard:3000
