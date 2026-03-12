@@ -1757,13 +1757,14 @@ function renderList(items) {
     return;
   }
 
-  // Group by demandeur
-  const groups = new Map();
+  // Group by demandeur (sorted alphabetically)
+  const groupsUnsorted = new Map();
   for (const c of items) {
     const demandeur = c.DemandeurFabricant || '– Sans demandeur –';
-    if (!groups.has(demandeur)) groups.set(demandeur, []);
-    groups.get(demandeur).push(c);
+    if (!groupsUnsorted.has(demandeur)) groupsUnsorted.set(demandeur, []);
+    groupsUnsorted.get(demandeur).push(c);
   }
+  const groups = new Map([...groupsUnsorted.entries()].sort((a, b) => a[0].localeCompare(b[0], 'fr')));
 
   const groupCount = groups.size;
   document.getElementById('listCount').innerHTML = '<span>' + items.length + ' commande(s) · ' + groupCount + ' demandeur(s)</span>';
