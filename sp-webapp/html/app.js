@@ -233,9 +233,12 @@ async function authenticate(account) {
     const rb = document.getElementById('roleBadge');
     if (rb) rb.textContent = isAdmin ? 'Admin' : 'Lecteur';
     applyAccessMode();
-    // If restoring a commande, show spinner instead of "Sélectionnez une commande"
+    // If restoring a commande, hide empty state and show loading in detail
     if (sessionStorage.getItem('selectedCommande')) {
-      document.getElementById('detailEmpty').innerHTML = '<div class="loading"><div class="spinner"></div> Chargement...</div>';
+      document.getElementById('detailEmpty').style.display = 'none';
+      var dc = document.getElementById('detailContent');
+      dc.style.display = 'flex';
+      dc.innerHTML = '<div class="loading" style="flex:1;"><div class="spinner"></div> Chargement...</div>';
     }
     await loadData();
   } catch (e) {
@@ -515,7 +518,8 @@ async function loadData() {
       if (savedTab !== 'General') switchTab(savedTab);
     } else {
       // Reset empty state if commande not found
-      document.getElementById('detailEmpty').innerHTML = 'Sélectionnez une commande';
+      document.getElementById('detailEmpty').style.display = '';
+      document.getElementById('detailContent').style.display = 'none';
     }
   } catch (e) {
     document.getElementById('listContainer').innerHTML = `<div style="padding:16px;color:#d13438;">Erreur: ${esc(e.message)}</div>`;
