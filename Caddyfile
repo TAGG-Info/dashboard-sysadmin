@@ -1,4 +1,4 @@
-controleur.tagginfo.fr {
+controleurs.tagginfo.fr {
     tls /etc/caddy/certs/wildcard.crt /etc/caddy/certs/wildcard.key
     reverse_proxy sp-webapp:80
     header {
