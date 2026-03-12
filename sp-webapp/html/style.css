@@ -355,6 +355,7 @@
   .gallery-header { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; }
   .gallery-count { font-size: 14px; font-weight: 600; color: var(--accent); }
   .gallery-total { font-size: 13px; color: var(--text-secondary); }
+  .table-scroll { overflow-x: auto; border-radius: 10px; }
   table.gallery {
     width: 100%; border-collapse: collapse; background: var(--bg-surface);
     border-radius: 10px; overflow: hidden; border: 1px solid var(--border);
