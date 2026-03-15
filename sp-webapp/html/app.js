@@ -45,7 +45,6 @@ const FIELD_DISTINCT_MAP = {
   PaysExpedition: 'main',
   TypeCommandeFabricant: 'main',
   NomClient: 'main',
-  NomClientFinal: 'main',
   NomFournisseur: 'main',
   NomTransporteur: 'main',
 };
@@ -86,7 +85,7 @@ const GENERAL_SCHEMA = [
     ['CommentaireCommandeFournisseur', 'Commentaire', 'textarea'],
   ]},
   { section: 'Expedition', fields: [
-    ['NomClientFinal', 'Nom du client final', 'suggest'],
+    ['NomClient', 'Client', 'readonly'],
     ['AdresseClient', 'Adresse', 'textarea'],
     ['PaysExpedition', 'Pays', 'suggest'],
     ['NomContact', 'Contact - Nom', 'text'],
@@ -1314,9 +1313,7 @@ function renderGeneral(c) {
             const links = pjFiles.map(function(pf) { return '<a class="pj-inline" href="#" onclick="openPJByDriveId(\'' + pf.driveItemId + '\');return false;"><span class="pj-icon">&#128206;</span><span class="pj-name">' + esc(pf.name) + '</span></a>'; }).join('');
             return '<div class="form-field"><label>' + label + '</label><div class="pj-stack">' + links + '</div></div>';
           }
-          let raw = c[field];
-          // Fallback: show NomClient when NomClientFinal is empty
-          if (field === 'NomClientFinal' && !raw && c.NomClient) raw = c.NomClient;
+          const raw = c[field];
           let display;
           if (type === 'date') display = fmtDate(raw);
           else if (type === 'currency') display = fmtCur(raw);
@@ -1337,6 +1334,10 @@ function renderGeneralEdit(c, isNew) {
     ${GENERAL_SCHEMA.map(s => `
       <div class="form-section">${s.section}</div>
       ${s.fields.map(([field, label, type]) => {
+        if (type === 'readonly') {
+          const display = stripHtml(c[field]) || '-';
+          return `<div class="form-field"><label>${label}</label><div class="value${!display || display === '-' ? ' empty' : ''}">${esc(display)}</div></div>`;
+        }
         if (type === 'pj') {
           const pjFiles = getPJFilesForField(c.NoControleur, field);
           const fileLinks = pjFiles.length > 0
