@@ -73,8 +73,8 @@ const GENERAL_SCHEMA = [
     ['GarantieCommande', 'Garantie', 'select'],
     ['TypeControleur', 'Type de controleur', 'select'],
     ['NoControleur', 'N° de controleur', 'text'],
-    ['MontantCommandeMateriel', 'Montant commande matériel', 'currency'],
-    ['PJ_CommandeFabricant', 'Commande materiel', 'pj'],
+    ['MontantCommandeMateriel', 'Montant commande', 'currency'],
+    ['PJ_CommandeFabricant', 'Commande', 'pj'],
     ['CommentaireCommandeClient', 'Commentaire', 'textarea'],
   ]},
   { section: 'Commande Fournisseur', fields: [
