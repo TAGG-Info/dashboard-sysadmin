@@ -1635,6 +1635,7 @@ function renderSubTable(schemaKey, items) {
             const fileName = decodeURIComponent(val.split('/').pop() || 'Fichier');
             return `<td><a class="pj-inline" href="#" onclick="openSubPJ(decodeURIComponent('${encodeURIComponent(val)}'));return false;"><span class="pj-icon">&#128206;</span><span class="pj-name">${esc(fileName)}</span></a></td>`;
           }
+          if (type === 'textarea') val = stripHtml(val);
           return `<td ${type === 'currency' ? 'class="currency"' : ''}>${esc(val)}</td>`;
         }).join('')}
         ${isAdmin ? `<td><button class="btn-edit" data-schema="${schemaKey}" data-item-json="${esc(JSON.stringify(r))}" title="Modifier">&#9998;</button> <button class="btn-del" onclick="deleteSubRow('${schemaKey}','${r._spItemId}','${esc(currentCommande?.NoControleur)}')" title="Supprimer">&#128465;</button></td>` : ''}
