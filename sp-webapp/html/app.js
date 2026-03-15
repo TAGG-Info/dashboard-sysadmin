@@ -1314,7 +1314,9 @@ function renderGeneral(c) {
             const links = pjFiles.map(function(pf) { return '<a class="pj-inline" href="#" onclick="openPJByDriveId(\'' + pf.driveItemId + '\');return false;"><span class="pj-icon">&#128206;</span><span class="pj-name">' + esc(pf.name) + '</span></a>'; }).join('');
             return '<div class="form-field"><label>' + label + '</label><div class="pj-stack">' + links + '</div></div>';
           }
-          const raw = c[field];
+          let raw = c[field];
+          // Fallback: show NomClient when NomClientFinal is empty
+          if (field === 'NomClientFinal' && !raw && c.NomClient) raw = c.NomClient;
           let display;
           if (type === 'date') display = fmtDate(raw);
           else if (type === 'currency') display = fmtCur(raw);
