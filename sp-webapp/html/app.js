@@ -1344,9 +1344,7 @@ function renderGeneralEdit(c, isNew) {
             : '<span class="pj-empty-inline">Aucune PJ</span>';
           return `<div class="form-field"><label>${label}</label>${fileLinks}</div>`;
         }
-        let raw = c[field] ?? '';
-        // Auto-fill NomClientFinal with NomClient if empty
-        if (field === 'NomClientFinal' && !raw && c.NomClient) raw = c.NomClient;
+        const raw = c[field] ?? '';
         const readonly = field === 'NoControleur' && !isNew ? 'readonly' : '';
         let input;
         if (type === 'textarea') {
