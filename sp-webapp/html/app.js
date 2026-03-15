@@ -1747,7 +1747,7 @@ function showEditSubForm(panelId, schemaKey, itemData) {
         ${schema.fields.map(([field, label, type]) => {
           const raw = itemData[field] ?? '';
           let input;
-          if (type === 'textarea') input = `<textarea name="${field}">${esc(raw)}</textarea>`;
+          if (type === 'textarea') input = `<textarea name="${field}">${esc(stripHtml(raw))}</textarea>`;
           else if (type === 'date') {
             const val = raw ? toInputDate(raw) : '';
             input = `<input type="date" name="${field}" value="${val}">`;
