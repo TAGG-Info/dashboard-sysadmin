@@ -24,8 +24,7 @@ const REF_LISTS = {
   MaterielControleur: { column: 'TypeMateriel',     label: 'Types de matériel' },
   GarantieMateriel:   { column: 'GarantieMateriel', label: 'Garanties materiel' },
   TypeControleur:     { column: 'TypeControleur',   label: 'Types de controleur' },
-  TypeLicenceMachine: { column: 'TypeLicenceMachine', label: 'Types de licence machine' },
-  OptionsLicence:     { column: 'OptionsLicence',   label: 'Options licence' },
+  TypeMaintenance:    { column: 'TypeMaintenance',  label: 'Options licence' },
   TypeLicence:        { column: 'TypeLicence',      label: 'Types de licence' },
   EtatCommande:       { column: 'EtatCommande',     label: 'États de commande' },
 };
@@ -35,8 +34,8 @@ const FIELD_REF_MAP = {
   DemandeurFabricant: 'Demandeurs',
   DemandeurDestockage: 'Demandeurs',
   TypeControleur: 'TypeControleur',
-  TypeLicenceMachine: 'TypeLicenceMachine',
-  OptionsLicence: 'OptionsLicence',
+  TypeMachineLicence: 'TypeLicence',
+  OptionPDF: 'TypeMaintenance',
   GarantieCommande: 'GarantieMateriel',
   EtatCommande: 'EtatCommande',
 };
@@ -102,9 +101,9 @@ const GENERAL_SCHEMA = [
   ]},
   { section: 'Licence', fields: [
     ['IDMachineLicence', 'ID de la machine', 'text'],
-    ['TypeLicenceMachine', 'Type de licence', 'select'],
+    ['TypeMachineLicence', 'Type de licence', 'select'],
     ['IDDungleIPDS', 'ID du dungle IPDS', 'text'],
-    ['OptionsLicence', 'Options', 'multiselect'],
+    ['OptionPDF', 'Options', 'multiselect'],
     ['PJ_FicheMiseEnService', 'Fiche de mise en service', 'pj'],
   ]},
   { section: 'Destockage', fields: [
