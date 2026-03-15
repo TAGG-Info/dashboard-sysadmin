@@ -35,7 +35,7 @@ const FIELD_REF_MAP = {
   DemandeurDestockage: 'Demandeurs',
   TypeControleur: 'TypeControleur',
   TypeMachineLicence: 'TypeLicence',
-  OptionPDF: 'TypeMaintenance',
+  CommentaireLicence: 'TypeMaintenance',
   GarantieCommande: 'GarantieMateriel',
   EtatCommande: 'EtatCommande',
 };
@@ -103,7 +103,7 @@ const GENERAL_SCHEMA = [
     ['IDMachineLicence', 'ID de la machine', 'text'],
     ['TypeMachineLicence', 'Type de licence', 'select'],
     ['IDDungleIPDS', 'ID du dungle IPDS', 'text'],
-    ['OptionPDF', 'Options', 'multiselect'],
+    ['CommentaireLicence', 'Options', 'multiselect'],
     ['PJ_FicheMiseEnService', 'Fiche de mise en service', 'pj'],
   ]},
   { section: 'Destockage', fields: [
@@ -1414,11 +1414,6 @@ async function saveGeneral(e) {
         }
         fields[field] = val;
       }
-    }
-
-    // Auto-fill NomClientFinal with NomClient if empty
-    if (!fields.NomClientFinal && fields.NomClient) {
-      fields.NomClientFinal = fields.NomClient;
     }
 
     if (isNewCommande) {
