@@ -24,8 +24,8 @@ const REF_LISTS = {
   MaterielControleur: { column: 'TypeMateriel',     label: 'Types de matériel' },
   GarantieMateriel:   { column: 'GarantieMateriel', label: 'Garanties materiel' },
   TypeControleur:     { column: 'TypeControleur',   label: 'Types de controleur' },
-  TypeMachine:        { column: 'TypeMachine',      label: 'Types de machine' },
-  TypeMaintenance:    { column: 'TypeMaintenance',  label: 'Types de maintenance' },
+  TypeLicenceMachine: { column: 'TypeLicenceMachine', label: 'Types de licence machine' },
+  OptionsLicence:     { column: 'OptionsLicence',   label: 'Options licence' },
   TypeLicence:        { column: 'TypeLicence',      label: 'Types de licence' },
   EtatCommande:       { column: 'EtatCommande',     label: 'États de commande' },
 };
@@ -35,7 +35,8 @@ const FIELD_REF_MAP = {
   DemandeurFabricant: 'Demandeurs',
   DemandeurDestockage: 'Demandeurs',
   TypeControleur: 'TypeControleur',
-  TypeMachineLicence: 'TypeMachine',
+  TypeLicenceMachine: 'TypeLicenceMachine',
+  OptionsLicence: 'OptionsLicence',
   GarantieCommande: 'GarantieMateriel',
   EtatCommande: 'EtatCommande',
 };
@@ -54,7 +55,6 @@ const FIELD_DISTINCT_MAP = {
 const SUB_FIELD_REF_MAP = {
   TypeMateriel: 'MaterielControleur',
   GarantieMateriel: 'GarantieMateriel',
-  TypeMaintenance: 'TypeMaintenance',
   TypeLicence: 'TypeLicence',
 };
 
@@ -76,10 +76,6 @@ const GENERAL_SCHEMA = [
     ['NoControleur', 'N° de controleur', 'text'],
     ['MontantCommandeMateriel', 'Montant commande matériel', 'currency'],
     ['PJ_CommandeFabricant', 'Commande materiel', 'pj'],
-    ['MontantCommandeLogiciel', 'Montant commande logiciel', 'currency'],
-    ['PJ_CommandeClientLogiciel', 'Commande logiciel', 'pj'],
-    ['MontantCommandePDF', 'Montant commande PDF', 'currency'],
-    ['MontantCommandeClient', 'Total commande', 'currency'],
     ['CommentaireCommandeClient', 'Commentaire', 'textarea'],
   ]},
   { section: 'Commande Fournisseur', fields: [
@@ -88,11 +84,6 @@ const GENERAL_SCHEMA = [
     ['NomFournisseur', 'Fournisseur', 'suggest'],
     ['MontantCommandeFournisseur', 'Montant de la commande', 'currency'],
     ['PJ_CommandeFournisseur', 'Commande fournisseur', 'pj'],
-    ['NoFactureFournisseur', 'N° de facture fournisseur', 'text'],
-    ['DateReceptionFactureFournisseur', 'Date de facture', 'date'],
-    ['NoFactureChronoFournisseur', 'N° de facture chrono', 'text'],
-    ['MontantFactureFournisseur', 'Montant de la facture HT', 'currency'],
-    ['PJ_FactureFournisseur', 'Facture fournisseur', 'pj'],
     ['CommentaireCommandeFournisseur', 'Commentaire', 'textarea'],
   ]},
   { section: 'Expedition', fields: [
@@ -111,12 +102,10 @@ const GENERAL_SCHEMA = [
   ]},
   { section: 'Licence', fields: [
     ['IDMachineLicence', 'ID de la machine', 'text'],
-    ['TypeMachineLicence', 'Type de machine', 'select'],
+    ['TypeLicenceMachine', 'Type de licence', 'select'],
     ['IDDungleIPDS', 'ID du dungle IPDS', 'text'],
-    ['OptionPDF', 'Option PDF', 'boolean'],
-    ['MontantOptionPDF', 'Montant', 'currency'],
+    ['OptionsLicence', 'Options', 'multiselect'],
     ['PJ_FicheMiseEnService', 'Fiche de mise en service', 'pj'],
-    ['CommentaireLicence', 'Commentaire', 'textarea'],
   ]},
   { section: 'Destockage', fields: [
     ['DateCommandeDestockage', 'Date', 'date'],
@@ -138,13 +127,13 @@ const SUB_SCHEMAS = {
     ['PJ_BLReception', 'BL', 'pj'],
   ]},
   maintenances: { list: 'maintenances', title: 'Maintenance', fields: [
-    ['TypeMaintenance', 'Type de maintenance', 'select'],
     ['DateDebutMaintenance', 'Date de début', 'date'],
     ['DateFinMaintenance', 'Date de fin', 'date'],
     ['NoFactureMaintenance', 'N° de facture TagG', 'text'],
     ['DateFactureMaintenance', 'Date de la facture', 'date'],
     ['MontantFactureMaintenance', 'Montant de la facture', 'currency'],
     ['DateAlerteMaintenance', 'Date alerte', 'date'],
+    ['PJ_FactureMaintenance', 'Facture', 'pj'],
   ]},
   factMat: { list: 'factMateriel', title: 'Facturation Hardware', fields: [
     ['NoFactureMateriel', 'N° de facture TagG', 'text'],
@@ -1312,9 +1301,8 @@ function toggleEdit() {
 function renderGeneral(c) {
   // Summary KPIs at top
   const summaryHtml = '<div class="dash-kpis">'
-    + '<div class="dash-kpi"><div class="dash-kpi-label">Commande client</div><div class="dash-kpi-value blue">' + fmtCur(c.MontantCommandeClient) + '</div></div>'
+    + '<div class="dash-kpi"><div class="dash-kpi-label">Commande client</div><div class="dash-kpi-value blue">' + fmtCur(c.MontantCommandeMateriel) + '</div></div>'
     + '<div class="dash-kpi border-orange"><div class="dash-kpi-label">Commande fournisseur</div><div class="dash-kpi-value">' + fmtCur(c.MontantCommandeFournisseur) + '</div></div>'
-    + '<div class="dash-kpi border-green"><div class="dash-kpi-label">Marge</div><div class="dash-kpi-value ' + ((parseFloat(c.MontantCommandeClient)||0) - (parseFloat(c.MontantCommandeFournisseur)||0) >= 0 ? 'green' : 'orange') + '">' + fmtCur((parseFloat(c.MontantCommandeClient)||0) - (parseFloat(c.MontantCommandeFournisseur)||0)) + '</div></div>'
     + '</div>';
 
   const formHtml = '<div class="form-grid">'
@@ -1332,6 +1320,7 @@ function renderGeneral(c) {
           if (type === 'date') display = fmtDate(raw);
           else if (type === 'currency') display = fmtCur(raw);
           else if (type === 'boolean') display = raw ? 'Oui' : 'Non';
+          else if (type === 'multiselect') display = raw || '-';
           else display = stripHtml(raw);
           return '<div class="form-field"><label>' + label + '</label>'
             + '<div class="value ' + (!display ? 'empty' : '') + ' ' + (type === 'currency' && display && display !== '-' ? 'currency' : '') + '">' + esc(display || '-') + '</div></div>';
@@ -1354,7 +1343,9 @@ function renderGeneralEdit(c, isNew) {
             : '<span class="pj-empty-inline">Aucune PJ</span>';
           return `<div class="form-field"><label>${label}</label>${fileLinks}</div>`;
         }
-        const raw = c[field] ?? '';
+        let raw = c[field] ?? '';
+        // Auto-fill NomClientFinal with NomClient if empty
+        if (field === 'NomClientFinal' && !raw && c.NomClient) raw = c.NomClient;
         const readonly = field === 'NoControleur' && !isNew ? 'readonly' : '';
         let input;
         if (type === 'textarea') {
@@ -1370,6 +1361,10 @@ function renderGeneralEdit(c, isNew) {
         } else if (type === 'select') {
           const opts = getOptionsForField(field);
           input = `<select name="${field}"><option value="">-- Choisir --</option>${opts.map(o => `<option value="${esc(o)}" ${o === String(raw) ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+        } else if (type === 'multiselect') {
+          const opts = getOptionsForField(field);
+          const selected = raw ? String(raw).split(', ') : [];
+          input = `<div class="multiselect-group" data-field="${field}">${opts.map(o => `<label class="multiselect-label"><input type="checkbox" name="${field}" value="${esc(o)}" ${selected.includes(o) ? 'checked' : ''}> ${esc(o)}</label>`).join('')}</div>`;
         } else if (type === 'suggest') {
           const dlId = 'ac_' + field;
           input = `<div style="position:relative;">
@@ -1404,7 +1399,10 @@ async function saveGeneral(e) {
         const el = form.elements[field];
         if (!el) continue;
         let val = el.value;
-        if (type === 'currency' || type === 'number') {
+        if (type === 'multiselect') {
+          const checks = form.querySelectorAll(`input[name="${field}"]:checked`);
+          val = Array.from(checks).map(cb => cb.value).join(', ') || null;
+        } else if (type === 'currency' || type === 'number') {
           val = val ? parseFloat(val) : null;
         } else if (type === 'boolean') {
           val = val === 'true';
@@ -1415,6 +1413,11 @@ async function saveGeneral(e) {
         }
         fields[field] = val;
       }
+    }
+
+    // Auto-fill NomClientFinal with NomClient if empty
+    if (!fields.NomClientFinal && fields.NomClient) {
+      fields.NomClientFinal = fields.NomClient;
     }
 
     if (isNewCommande) {
@@ -1485,10 +1488,13 @@ function renderSubPanel(panelId, schemaKey, items) {
     tableHtml = '<div class="pj-empty">Aucun(e) ' + schema.title.toLowerCase() + '</div>';
   } else {
     const visibleFields = schema.fields.filter(f => f[2] !== 'pj');
+    const pjFields = schema.fields.filter(f => f[2] === 'pj');
     const isMaint = schemaKey === 'maintenances';
     tableHtml = '<table class="gallery"><thead><tr>'
       + (isMaint ? '<th>Statut</th>' : '')
-      + visibleFields.map(f => '<th>' + f[1] + '</th>').join('') + (isAdmin ? '<th></th>' : '') + '</tr></thead><tbody>'
+      + visibleFields.map(f => '<th>' + f[1] + '</th>').join('')
+      + pjFields.map(f => '<th>' + f[1] + '</th>').join('')
+      + (isAdmin ? '<th></th>' : '') + '</tr></thead><tbody>'
       + items.map(r => {
         // Compute maintenance status badge
         let statusBadge = '';
@@ -1508,7 +1514,13 @@ function renderSubPanel(panelId, schemaKey, items) {
           const tdClass = type === 'currency' ? 'class="currency"' : '';
           return '<td ' + tdClass + '>' + esc(val) + '</td>';
         }).join('')
-        + (isAdmin ? '<td><button class="btn-del" data-schema="' + schemaKey + '" data-item-id="' + esc(r._spItemId) + '" data-no="' + esc(currentCommande?.NoControleur) + '" title="Supprimer">&#128465;</button></td>' : '') + '</tr>';
+        + pjFields.map(([field]) => {
+          const pjFiles = getPJFilesForField(currentCommande?.NoControleur, field);
+          if (pjFiles.length === 0) return '<td><span class="pj-empty-inline">-</span></td>';
+          const links = pjFiles.map(pf => '<a class="pj-inline" href="#" onclick="openPJByDriveId(\'' + pf.driveItemId + '\');return false;" title="' + esc(pf.name) + '"><span class="pj-icon">&#128206;</span><span class="pj-name">' + esc(pf.name) + '</span></a>').join('');
+          return '<td>' + links + '</td>';
+        }).join('')
+        + (isAdmin ? '<td><button class="btn-edit" data-schema="' + schemaKey + '" data-item-id="' + esc(r._spItemId) + '" data-item-json="' + esc(JSON.stringify(r)) + '" title="Modifier">&#9998;</button> <button class="btn-del" data-schema="' + schemaKey + '" data-item-id="' + esc(r._spItemId) + '" data-no="' + esc(currentCommande?.NoControleur) + '" title="Supprimer">&#128465;</button></td>' : '') + '</tr>';
       }).join('') + '</tbody></table>';
   }
 
@@ -1516,8 +1528,14 @@ function renderSubPanel(panelId, schemaKey, items) {
   panel.innerHTML = kpisHtml + tableHtml
     + '<div id="addForm_' + panelId + '"></div>'
     + (isAdmin ? '<button class="btn-action" onclick="showAddForm(\'' + panelId + '\',\'' + schemaKey + '\')" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter</button>' : '');
-  // Event delegation for delete buttons (onclick écrase le précédent, évite l'accumulation)
+  // Event delegation for edit and delete buttons
   panel.onclick = function(e) {
+    const editBtn = e.target.closest('.btn-edit[data-schema]');
+    if (editBtn) {
+      const itemData = JSON.parse(editBtn.dataset.itemJson);
+      showEditSubForm(panelId, editBtn.dataset.schema, itemData);
+      return;
+    }
     const btn = e.target.closest('.btn-del[data-schema]');
     if (btn) deleteSubRow(btn.dataset.schema, btn.dataset.itemId, btn.dataset.no);
   };
@@ -1569,6 +1587,14 @@ function renderFactures(factMat, factLic) {
       ${isAdmin ? '<button class="btn-action" onclick="showAddForm(\'panelFactures_lic\',\'factLic\')" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter licence</button>' : ''}
     </div>
   `;
+  // Event delegation for edit buttons in factures tables
+  document.getElementById('panelFactures').onclick = function(e) {
+    const editBtn = e.target.closest('.btn-edit[data-schema]');
+    if (editBtn) {
+      const itemData = JSON.parse(editBtn.dataset.itemJson);
+      showEditSubForm(null, editBtn.dataset.schema, itemData);
+    }
+  };
 }
 
 function renderCmdSup(cmdClient, cmdFourn) {
@@ -1579,7 +1605,6 @@ function renderCmdSup(cmdClient, cmdFourn) {
     '<div class="dash-kpis">'
     + '<div class="dash-kpi"><div class="dash-kpi-label">Cmd Client Sup.</div><div class="dash-kpi-value blue">' + fmtCur(sumClient) + '</div><div class="dash-kpi-sub">' + cmdClient.length + ' commande(s)</div></div>'
     + '<div class="dash-kpi border-orange"><div class="dash-kpi-label">Cmd Fournisseur Sup.</div><div class="dash-kpi-value">' + fmtCur(sumFourn) + '</div><div class="dash-kpi-sub">' + cmdFourn.length + ' commande(s)</div></div>'
-    + '<div class="dash-kpi border-green"><div class="dash-kpi-label">Marge Sup.</div><div class="dash-kpi-value ' + (sumClient - sumFourn >= 0 ? 'green' : 'orange') + '">' + fmtCur(sumClient - sumFourn) + '</div></div>'
     + '</div>'
     + '<div class="fact-section"><div class="fact-section-header"><span class="fact-section-title">Client <span class="badge">' + cmdClient.length + '</span></span><span class="fact-section-total">' + fmtCur(sumClient) + '</span></div>'
     + renderSubTable('cmdClient', cmdClient)
@@ -1589,6 +1614,14 @@ function renderCmdSup(cmdClient, cmdFourn) {
     + renderSubTable('cmdFourn', cmdFourn)
     + '<div id="addForm_panelCmdSup_fr"></div>'
     + (isAdmin ? '<button class="btn-action" onclick="showAddForm(&apos;panelCmdSup_fr&apos;,&apos;cmdFourn&apos;)" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter fournisseur</button>' : '') + '</div>';
+  // Event delegation for edit buttons in cmd sup tables
+  document.getElementById('panelCmdSup').onclick = function(e) {
+    const editBtn = e.target.closest('.btn-edit[data-schema]');
+    if (editBtn) {
+      const itemData = JSON.parse(editBtn.dataset.itemJson);
+      showEditSubForm(null, editBtn.dataset.schema, itemData);
+    }
+  };
 }
 
 function renderSubTable(schemaKey, items) {
@@ -1609,7 +1642,7 @@ function renderSubTable(schemaKey, items) {
           }
           return `<td ${type === 'currency' ? 'class="currency"' : ''}>${esc(val)}</td>`;
         }).join('')}
-        ${isAdmin ? `<td><button class="btn-del" onclick="deleteSubRow('${schemaKey}','${r._spItemId}','${esc(currentCommande?.NoControleur)}')" title="Supprimer">&#128465;</button></td>` : ''}
+        ${isAdmin ? `<td><button class="btn-edit" data-schema="${schemaKey}" data-item-json="${esc(JSON.stringify(r))}" title="Modifier">&#9998;</button> <button class="btn-del" onclick="deleteSubRow('${schemaKey}','${r._spItemId}','${esc(currentCommande?.NoControleur)}')" title="Supprimer">&#128465;</button></td>` : ''}
       </tr>
     `).join('')}</tbody>
   </table>`;
@@ -1682,6 +1715,108 @@ async function saveSubRow(containerId, schemaKey) {
     invalidateSubCache(currentCommande.NoControleur);
     toast('Ligne ajoutée');
     // Reload sub-data and re-render
+    const sub = await loadSubData(currentCommande.NoControleur);
+    renderAfterSubChange(sub);
+  } catch (err) {
+    console.error(err);
+    toast('Erreur: ' + err.message.substring(0, 80), 'error');
+    container.innerHTML = '';
+  }
+}
+
+// ============ EDIT ROW FORM ============
+function showEditSubForm(panelId, schemaKey, itemData) {
+  if (!isAdmin) return;
+  const schema = SUB_SCHEMAS[schemaKey];
+  // Find the correct container: for renderSubPanel use panelId, for renderSubTable find closest panel
+  let containerId = panelId;
+  if (!containerId) {
+    // Find container by schema - map schemaKey to panel
+    const panelMap = { receptions: 'panelReceptions', maintenances: 'panelMaintenances', factMat: 'panelFactures', factLic: 'panelFactures', cmdClient: 'panelCmdSup', cmdFourn: 'panelCmdSup' };
+    containerId = panelMap[schemaKey] || 'panelGeneral';
+  }
+  // Use the existing addForm container or create one
+  let container = document.getElementById(`addForm_${containerId}`);
+  // For factMat/factLic/cmdClient/cmdFourn which use sub-containers
+  if (!container) {
+    const subMap = { factMat: 'panelFactures_mat', factLic: 'panelFactures_lic', cmdClient: 'panelCmdSup_cl', cmdFourn: 'panelCmdSup_fr' };
+    if (subMap[schemaKey]) container = document.getElementById(`addForm_${subMap[schemaKey]}`);
+  }
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="add-form">
+      <h4>Modifier ${schema.title}</h4>
+      <div class="add-form-grid">
+        ${schema.fields.map(([field, label, type]) => {
+          const raw = itemData[field] ?? '';
+          let input;
+          if (type === 'textarea') input = `<textarea name="${field}">${esc(raw)}</textarea>`;
+          else if (type === 'date') {
+            const val = raw ? toInputDate(raw) : '';
+            input = `<input type="date" name="${field}" value="${val}">`;
+          }
+          else if (type === 'currency') {
+            const val = raw != null && raw !== '' ? parseFloat(raw) || '' : '';
+            input = `<input type="number" step="0.01" name="${field}" value="${val}">`;
+          }
+          else if (type === 'select') {
+            const opts = getOptionsForField(field);
+            input = `<select name="${field}"><option value="">-- Choisir --</option>${opts.map(o => `<option value="${esc(o)}" ${o === String(raw) ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+          }
+          else if (type === 'pj') {
+            const pjFiles = getPJFilesForField(currentCommande?.NoControleur, field);
+            const existingLinks = pjFiles.length > 0
+              ? pjFiles.map(pf => `<a class="pj-inline" href="#" onclick="openPJByDriveId('${pf.driveItemId}');return false;"><span class="pj-icon">&#128206;</span><span class="pj-name">${esc(pf.name)}</span></a>`).join('')
+              : '';
+            input = `${existingLinks}<label class="btn-file-label"><input type="file" name="${field}" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" onchange="this.closest('label').nextElementSibling.textContent=this.files[0]?.name||''">&#128206; Choisir un fichier</label><span class="file-name-display pj-empty-inline"></span>`;
+          }
+          else input = `<input type="text" name="${field}" value="${esc(raw)}">`;
+          return `<div class="form-field"><label>${label}</label>${input}</div>`;
+        }).join('')}
+      </div>
+      <div class="add-form-actions">
+        <button class="btn btn-primary" onclick="updateSubRow('${container.id}','${schemaKey}','${itemData._spItemId}')">Modifier</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('${container.id}').innerHTML=''">Annuler</button>
+      </div>
+    </div>
+  `;
+}
+
+async function updateSubRow(containerId, schemaKey, spItemId) {
+  if (!isAdmin) return;
+  if (!currentCommande?.NoControleur) return;
+  const schema = SUB_SCHEMAS[schemaKey];
+  const container = document.getElementById(containerId);
+
+  // Collect file inputs before replacing DOM
+  const fileUploads = [];
+  for (const [field, , type] of schema.fields) {
+    if (type !== 'pj') continue;
+    const el = container.querySelector(`[name="${field}"]`);
+    if (el?.files?.[0]) fileUploads.push({ field, file: el.files[0] });
+  }
+
+  const fields = {};
+  for (const [field, , type] of schema.fields) {
+    if (type === 'pj') continue;
+    const el = container.querySelector(`[name="${field}"]`);
+    if (!el) continue;
+    let val = el.value;
+    if (type === 'currency') val = val ? parseFloat(val) : null;
+    else if (type === 'date') val = val ? val + 'T00:00:00Z' : null;
+    else val = val || null;
+    fields[field] = val;
+  }
+
+  try {
+    container.innerHTML = '<div class="loading"><div class="spinner"></div> Modification...</div>';
+    for (const { field, file } of fileUploads) {
+      fields[field] = await uploadFileToDrive(currentCommande.NoControleur, field, file);
+    }
+    await updateListItem(schema.list, spItemId, fields);
+    invalidateSubCache(currentCommande.NoControleur);
+    toast('Ligne modifiée');
     const sub = await loadSubData(currentCommande.NoControleur);
     renderAfterSubChange(sub);
   } catch (err) {
