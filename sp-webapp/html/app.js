@@ -185,7 +185,7 @@ async function loadConfig() {
       authority: `https://login.microsoftonline.com/${CONFIG.tenantId}`,
       redirectUri: window.location.origin + CONFIG.redirectUri,
     },
-    cache: { cacheLocation: 'memoryStorage' }
+    cache: { cacheLocation: 'memoryStorage', storeAuthStateInCookie: true }
   };
   msalInstance = new msal.PublicClientApplication(msalConfig);
 }
