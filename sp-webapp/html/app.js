@@ -2,10 +2,12 @@
 // ============ CONFIG ============
 const GRAPH_BASE = 'https://graph.microsoft.com/v1.0';
 
+// CONFIG loaded from /config.json at startup (see initApp)
 const CONFIG = {
-  clientId: 'bfe4e208-6801-4e19-9325-21a3d333ff98',
-  tenantId: '57f51722-d719-49b3-ad2e-a65959ef8a91',
-  siteUrl: 'tagginfo.sharepoint.com:/sites/TechResearchPWF',
+  clientId: '',
+  tenantId: '',
+  siteUrl: '',
+  redirectUri: '/index.html',
   scopes: ['Sites.ReadWrite.All'],
   lists: {
     main: 'CommandesControleur',
@@ -166,17 +168,27 @@ const TABS = [
 ];
 
 // ============ MSAL ============
-const msalConfig = {
-  auth: {
-    clientId: CONFIG.clientId,
-    authority: `https://login.microsoftonline.com/${CONFIG.tenantId}`,
-    redirectUri: window.location.origin + window.location.pathname,
-  },
-  cache: { cacheLocation: 'sessionStorage' }
-};
-const msalInstance = new msal.PublicClientApplication(msalConfig);
+let msalInstance = null;
 let accessToken = null;
 let siteId = null;
+
+async function loadConfig() {
+  const res = await fetch('/config.json');
+  const cfg = await res.json();
+  CONFIG.clientId = cfg.clientId;
+  CONFIG.tenantId = cfg.tenantId;
+  CONFIG.siteUrl = cfg.siteUrl;
+  CONFIG.redirectUri = cfg.redirectUri || '/index.html';
+  const msalConfig = {
+    auth: {
+      clientId: CONFIG.clientId,
+      authority: `https://login.microsoftonline.com/${CONFIG.tenantId}`,
+      redirectUri: window.location.origin + CONFIG.redirectUri,
+    },
+    cache: { cacheLocation: 'memoryStorage' }
+  };
+  msalInstance = new msal.PublicClientApplication(msalConfig);
+}
 
 // Data
 let allCommandes = [];
@@ -245,7 +257,11 @@ async function authenticate(account) {
   }
 }
 
-function logout() { sessionStorage.removeItem('selectedCommande'); sessionStorage.removeItem('selectedTab'); msalInstance.logoutRedirect(); }
+function logout() {
+  sessionStorage.removeItem('selectedCommande');
+  sessionStorage.removeItem('selectedTab');
+  msalInstance.logoutRedirect();
+}
 
 // ============ THEME ============
 function toggleTheme() {
@@ -443,8 +459,8 @@ async function checkAdmin(email) {
     const allData = await graphGet(allUrl);
     return !(allData.value && allData.value.length > 0);
   } catch (e) {
-    console.warn('Admin check failed, defaulting to admin:', e);
-    return true;
+    console.warn('Admin check failed, defaulting to read-only:', e);
+    return false;
   }
 }
 
@@ -1310,7 +1326,7 @@ function renderGeneral(c) {
           if (type === 'pj') {
             const pjFiles = getPJFilesForField(c.NoControleur, field);
             if (pjFiles.length === 0) return '<div class="form-field"><label>' + label + '</label><div class="pj-empty-inline">Aucune PJ</div></div>';
-            const links = pjFiles.map(function(pf) { return '<a class="pj-inline" href="#" onclick="openPJByDriveId(\'' + pf.driveItemId + '\');return false;"><span class="pj-icon">&#128206;</span><span class="pj-name">' + esc(pf.name) + '</span></a>'; }).join('');
+            const links = pjFiles.map(function(pf) { return '<a class="pj-inline" href="#" data-drive-id="' + esc(pf.driveItemId) + '"><span class="pj-icon">&#128206;</span><span class="pj-name">' + esc(pf.name) + '</span></a>'; }).join('');
             return '<div class="form-field"><label>' + label + '</label><div class="pj-stack">' + links + '</div></div>';
           }
           const raw = c[field];
@@ -1341,7 +1357,7 @@ function renderGeneralEdit(c, isNew) {
         if (type === 'pj') {
           const pjFiles = getPJFilesForField(c.NoControleur, field);
           const fileLinks = pjFiles.length > 0
-            ? '<div class="pj-stack">' + pjFiles.map(pf => `<a class="pj-inline" href="#" onclick="openPJByDriveId('${pf.driveItemId}');return false;"><span class="pj-icon">&#128206;</span><span class="pj-name">${esc(pf.name)}</span></a>`).join('') + '</div>'
+            ? '<div class="pj-stack">' + pjFiles.map(pf => `<a class="pj-inline" href="#" data-drive-id="${esc(pf.driveItemId)}"><span class="pj-icon">&#128206;</span><span class="pj-name">${esc(pf.name)}</span></a>`).join('') + '</div>'
             : '<span class="pj-empty-inline">Aucune PJ</span>';
           return `<div class="form-field"><label>${label}</label>${fileLinks}</div>`;
         }
@@ -1512,7 +1528,7 @@ function renderSubPanel(panelId, schemaKey, items) {
         + pjFields.map(([field]) => {
           const pjFiles = getPJFilesForField(currentCommande?.NoControleur, field);
           if (pjFiles.length === 0) return '<td><span class="pj-empty-inline">-</span></td>';
-          const links = pjFiles.map(pf => '<a class="pj-inline" href="#" onclick="openPJByDriveId(\'' + pf.driveItemId + '\');return false;" title="' + esc(pf.name) + '"><span class="pj-icon">&#128206;</span><span class="pj-name">' + esc(pf.name) + '</span></a>').join('');
+          const links = pjFiles.map(pf => '<a class="pj-inline" href="#" data-drive-id="' + esc(pf.driveItemId) + '" title="' + esc(pf.name) + '"><span class="pj-icon">&#128206;</span><span class="pj-name">' + esc(pf.name) + '</span></a>').join('');
           return '<td>' + links + '</td>';
         }).join('')
         + (isAdmin ? '<td><button class="btn-edit" data-schema="' + schemaKey + '" data-item-id="' + esc(r._spItemId) + '" data-item-json="' + esc(JSON.stringify(r)) + '" title="Modifier">&#9998;</button> <button class="btn-del" data-schema="' + schemaKey + '" data-item-id="' + esc(r._spItemId) + '" data-no="' + esc(currentCommande?.NoControleur) + '" title="Supprimer">&#128465;</button></td>' : '') + '</tr>';
@@ -1763,7 +1779,7 @@ function showEditSubForm(panelId, schemaKey, itemData) {
           else if (type === 'pj') {
             const pjFiles = getPJFilesForField(currentCommande?.NoControleur, field);
             const existingLinks = pjFiles.length > 0
-              ? pjFiles.map(pf => `<a class="pj-inline" href="#" onclick="openPJByDriveId('${pf.driveItemId}');return false;"><span class="pj-icon">&#128206;</span><span class="pj-name">${esc(pf.name)}</span></a>`).join('')
+              ? pjFiles.map(pf => `<a class="pj-inline" href="#" data-drive-id="${esc(pf.driveItemId)}"><span class="pj-icon">&#128206;</span><span class="pj-name">${esc(pf.name)}</span></a>`).join('')
               : '';
             input = `${existingLinks}<label class="btn-file-label"><input type="file" name="${field}" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" onchange="this.closest('label').nextElementSibling.textContent=this.files[0]?.name||''">&#128206; Choisir un fichier</label><span class="file-name-display pj-empty-inline"></span>`;
           }
@@ -2132,7 +2148,11 @@ async function openPJModal(idx) {
       if (window._currentBlobUrl) URL.revokeObjectURL(window._currentBlobUrl);
       const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
       window._currentBlobUrl = blobUrl;
-      body.innerHTML = `<iframe src="${blobUrl}" style="width:100%;height:100%;border:none;"></iframe>`;
+      body.textContent = '';
+      const iframe = document.createElement('iframe');
+      iframe.src = blobUrl;
+      iframe.style.cssText = 'width:100%;height:100%;border:none;';
+      body.appendChild(iframe);
     } catch {
       body.innerHTML = `<div class="modal-download"><div class="file-icon">&#128196;</div><p>Impossible de charger le PDF</p><a class="btn btn-primary" href="${downloadUrl}" download="${esc(b.name)}">Télécharger</a></div>`;
     }
@@ -2145,7 +2165,11 @@ async function openPJModal(idx) {
       if (window._currentBlobUrl) URL.revokeObjectURL(window._currentBlobUrl);
       const blobUrl = URL.createObjectURL(blob);
       window._currentBlobUrl = blobUrl;
-      body.innerHTML = `<img src="${blobUrl}" alt="${esc(b.name)}">`;
+      body.textContent = '';
+      const img = document.createElement('img');
+      img.src = blobUrl;
+      img.alt = b.name;
+      body.appendChild(img);
     } catch {
       body.innerHTML = `<div class="modal-download"><div class="file-icon">&#128247;</div><p>Impossible de charger l'image</p><a class="btn btn-primary" href="${downloadUrl}" download="${esc(b.name)}">Télécharger</a></div>`;
     }
@@ -2162,7 +2186,11 @@ async function openPJModal(idx) {
       if (window._currentBlobUrl) URL.revokeObjectURL(window._currentBlobUrl);
       const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
       window._currentBlobUrl = blobUrl;
-      body.innerHTML = `<iframe src="${blobUrl}" style="width:100%;height:100%;border:none;"></iframe>`;
+      body.textContent = '';
+      const iframe2 = document.createElement('iframe');
+      iframe2.src = blobUrl;
+      iframe2.style.cssText = 'width:100%;height:100%;border:none;';
+      body.appendChild(iframe2);
     } catch {
       // Fallback: open in Office Online in new tab
       const embedUrl = b.webUrl.includes('?') ? b.webUrl + '&web=1' : b.webUrl + '?web=1';
@@ -2581,5 +2609,18 @@ function resolveConfirm(val) {
   if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
 }
 
+// Event delegation for PJ inline links (data-drive-id)
+document.addEventListener('click', function(e) {
+  const link = e.target.closest('a[data-drive-id]');
+  if (link) {
+    e.preventDefault();
+    openPJByDriveId(link.dataset.driveId);
+  }
+});
+
 // ============ INIT ============
-init();
+loadConfig().then(() => init()).catch(e => {
+  console.error('Failed to load config:', e);
+  const el = document.getElementById('authError');
+  if (el) { el.textContent = 'Erreur de configuration'; el.style.display = 'block'; }
+});
