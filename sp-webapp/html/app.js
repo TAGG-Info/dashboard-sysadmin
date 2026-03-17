@@ -1316,9 +1316,39 @@ function toggleEdit() {
 async function deleteCommande() {
   if (!currentCommande) return;
   const no = currentCommande.NoControleur;
-  if (!await customConfirm(`Supprimer la commande "${no}" ?\n\nLes sous-données liées (réceptions, factures, etc.) ne seront pas supprimées.`)) return;
+  if (!await customConfirm(`Supprimer la commande "${no}" et toutes ses données liées ?\n\n(réceptions, maintenances, factures, commandes sup, PJ)`)) return;
   try {
+    const sid = await getSiteId();
+    toast(`Suppression de "${no}" en cours...`, 'info');
+
+    // 1. Delete all sub-list items linked to this NoControleur
+    const subLists = ['receptions', 'maintenances', 'factMateriel', 'factLicence', 'cmdClientSup', 'cmdFournSup'];
+    for (const listKey of subLists) {
+      try {
+        const items = await getFilteredListItems(listKey, no);
+        for (const item of items) {
+          await deleteListItem(listKey, item._spItemId);
+        }
+      } catch (e) {
+        console.warn(`Erreur suppression sous-données ${listKey}:`, e);
+      }
+    }
+
+    // 2. Delete PJ folder in Drive (PiecesJointes_Controleur/{NoControleur})
+    try {
+      const folderPath = `PiecesJointes_Controleur/${encodeURIComponent(no)}`;
+      const folder = await graphGet(`/sites/${sid}/drive/root:/${folderPath}`);
+      if (folder && folder.id) {
+        await graphDelete(`/sites/${sid}/drive/items/${folder.id}`);
+      }
+    } catch (e) {
+      console.warn('Erreur suppression dossier PJ:', e);
+    }
+
+    // 3. Delete the main commande item
     await deleteListItem('main', currentCommande._spItemId);
+
+    // 4. Cleanup local state
     allCommandes = allCommandes.filter(c => c.NoControleur !== no);
     delete subData[no];
     delete pjCache[no];
@@ -1328,7 +1358,7 @@ async function deleteCommande() {
     document.getElementById('detailContent').style.display = 'none';
     document.getElementById('detailEmpty').style.display = '';
     renderList(allCommandes);
-    toast(`Commande "${no}" supprimée`, 'success');
+    toast(`Commande "${no}" et ses données supprimées`, 'success');
   } catch (e) {
     toast('Erreur suppression: ' + e.message, 'error');
   }
