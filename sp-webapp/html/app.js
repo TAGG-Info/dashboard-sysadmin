@@ -514,8 +514,15 @@ async function loadData() {
     const [commandes] = await Promise.all([getListItems('main'), loadRefLists()]);
     // Deduplicate by NoControleur (keep latest _spItemId in case of SP duplicates)
     const seen = new Map();
+    const dupes = [];
     for (const c of commandes) {
-      if (c.NoControleur) seen.set(c.NoControleur, c);
+      if (!c.NoControleur) continue;
+      if (seen.has(c.NoControleur)) dupes.push({ no: c.NoControleur, spItemId: c._spItemId, kept: seen.get(c.NoControleur)._spItemId });
+      seen.set(c.NoControleur, c);
+    }
+    if (dupes.length > 0) {
+      console.warn(`⚠️ ${dupes.length} doublon(s) détecté(s) dans CommandesControleur:`);
+      console.table(dupes.map(d => ({ NoControleur: d.no, 'ID supprimable': d.spItemId, 'ID gardé': d.kept })));
     }
     allCommandes = [...seen.values()];
     allCommandes.sort((a, b) => (b.NoControleur || '').localeCompare(a.NoControleur || ''));
