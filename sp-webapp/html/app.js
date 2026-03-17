@@ -185,7 +185,7 @@ async function loadConfig() {
       authority: `https://login.microsoftonline.com/${CONFIG.tenantId}`,
       redirectUri: window.location.origin + CONFIG.redirectUri,
     },
-    cache: { cacheLocation: 'memoryStorage', storeAuthStateInCookie: true }
+    cache: { cacheLocation: 'sessionStorage' }
   };
   msalInstance = new msal.PublicClientApplication(msalConfig);
 }
@@ -1192,6 +1192,7 @@ function newCommande() {
   document.getElementById('detailTitle').textContent = 'Nouvelle commande';
   document.getElementById('btnEdit').textContent = '';
   document.getElementById('btnEdit').style.display = 'none';
+  document.getElementById('btnDelete').style.display = 'none';
 
   document.getElementById('sidebar').classList.add('hidden');
   document.getElementById('detail').classList.add('visible');
@@ -1242,6 +1243,7 @@ async function selectCommande(no) {
   document.getElementById('detailTitle').textContent = `${no} - ${currentCommande.NomClient || ''}`;
   document.getElementById('btnEdit').innerHTML = '<span class="action-icon">&#9998;</span> Modifier'; document.getElementById('btnEdit').classList.add('primary');
   document.getElementById('btnEdit').style.display = '';
+  document.getElementById('btnDelete').style.display = isAdmin ? '' : 'none';
 
   document.getElementById('sidebar').classList.add('hidden');
   document.getElementById('detail').classList.add('visible');
@@ -1308,6 +1310,27 @@ function toggleEdit() {
     btnEdit.innerHTML = '<span class="action-icon">&#9998;</span> Modifier';
     btnEdit.classList.add('primary');
     renderGeneral(currentCommande);
+  }
+}
+
+async function deleteCommande() {
+  if (!isAdmin || !currentCommande) return;
+  const no = currentCommande.NoControleur;
+  if (!await customConfirm(`Supprimer la commande "${no}" ?\n\nLes sous-données liées (réceptions, factures, etc.) ne seront pas supprimées.`)) return;
+  try {
+    await deleteListItem('main', currentCommande._spItemId);
+    allCommandes = allCommandes.filter(c => c.NoControleur !== no);
+    delete subData[no];
+    delete pjCache[no];
+    sessionStorage.removeItem('selectedCommande');
+    currentCommande = null;
+    editMode = false;
+    document.getElementById('detailContent').style.display = 'none';
+    document.getElementById('detailEmpty').style.display = '';
+    renderList(allCommandes);
+    toast(`Commande "${no}" supprimée`, 'success');
+  } catch (e) {
+    toast('Erreur suppression: ' + e.message, 'error');
   }
 }
 
