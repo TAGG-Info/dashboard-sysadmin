@@ -1243,7 +1243,7 @@ async function selectCommande(no) {
   document.getElementById('detailTitle').textContent = `${no} - ${currentCommande.NomClient || ''}`;
   document.getElementById('btnEdit').innerHTML = '<span class="action-icon">&#9998;</span> Modifier'; document.getElementById('btnEdit').classList.add('primary');
   document.getElementById('btnEdit').style.display = '';
-  document.getElementById('btnDelete').style.display = isAdmin ? '' : 'none';
+  document.getElementById('btnDelete').style.display = '';
 
   document.getElementById('sidebar').classList.add('hidden');
   document.getElementById('detail').classList.add('visible');
@@ -1314,7 +1314,7 @@ function toggleEdit() {
 }
 
 async function deleteCommande() {
-  if (!isAdmin || !currentCommande) return;
+  if (!currentCommande) return;
   const no = currentCommande.NoControleur;
   if (!await customConfirm(`Supprimer la commande "${no}" ?\n\nLes sous-données liées (réceptions, factures, etc.) ne seront pas supprimées.`)) return;
   try {
