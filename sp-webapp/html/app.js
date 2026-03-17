@@ -512,7 +512,12 @@ function cleanFieldsForWrite(fields) {
 async function loadData() {
   try {
     const [commandes] = await Promise.all([getListItems('main'), loadRefLists()]);
-    allCommandes = commandes;
+    // Deduplicate by NoControleur (keep latest _spItemId in case of SP duplicates)
+    const seen = new Map();
+    for (const c of commandes) {
+      if (c.NoControleur) seen.set(c.NoControleur, c);
+    }
+    allCommandes = [...seen.values()];
     allCommandes.sort((a, b) => (b.NoControleur || '').localeCompare(a.NoControleur || ''));
     buildDistinctData();
     buildEtatFilter();
