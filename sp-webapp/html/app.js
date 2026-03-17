@@ -96,9 +96,6 @@ const GENERAL_SCHEMA = [
     ['DateExpedition', 'Date d\'expédition', 'date'],
     ['PJ_BlTransport', 'BL', 'pj'],
     ['NomTransporteur', 'Transporteur', 'suggest'],
-    ['NoSuiviTransport', 'N° de suivi', 'text'],
-    ['MontantTransport', 'Montant du transport', 'currency'],
-    ['MontantTransportFact', 'Montant facture', 'currency'],
   ]},
   { section: 'Licence', fields: [
     ['IDMachineLicence', 'ID de la machine', 'text'],
