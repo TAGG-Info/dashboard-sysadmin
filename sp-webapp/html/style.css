@@ -290,6 +290,8 @@
   .btn-action.primary:hover { background: var(--accent-hover); box-shadow: 0 4px 12px var(--accent-glow); }
   [data-theme="dark"] .btn-action.primary { background: var(--accent-muted); border-color: var(--accent-muted); }
   [data-theme="dark"] .btn-action.primary:hover { box-shadow: 0 4px 20px rgba(59,130,246,0.3); }
+  .btn-action.danger { background: var(--red); color: white; border-color: var(--red); }
+  .btn-action.danger:hover { background: #b91c1c; box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
   .btn-action .action-icon { font-size: 14px; line-height: 1; }
 
   /* ============ TABS ============ */
