@@ -194,8 +194,15 @@ let currentCommande = null;
 let currentTab = 'General';
 let editMode = false;
 let isNewCommande = false;
-let isAdmin = false;
-let currentUserDisplayName = ''; // 'Prénom NOM' from Admins list
+let userRole = 'reader'; // 'admin' | 'tech' | 'reader'
+let currentUserDisplayName = ''; // 'Prénom NOM' from Admins/Technicien list
+
+// Permission helpers
+const isAdmin = () => userRole === 'admin';
+const isTech  = () => userRole === 'tech';
+const canEdit = () => userRole === 'admin' || userRole === 'tech';
+const canEditSub = (schemaKey) => userRole === 'admin' || (userRole === 'tech' && schemaKey === 'receptions');
+const ROLE_LABELS = { admin: 'Admin', tech: 'Technicien', reader: 'Lecteur' };
 
 // ============ AUTH ============
 async function init() {
@@ -223,11 +230,11 @@ async function authenticate(account) {
     accessToken = tokenResponse.accessToken;
     document.getElementById('authScreen').style.display = 'none';
     document.getElementById('app').classList.add('visible');
-    isAdmin = await checkAdmin(account.username);
+    userRole = await checkUserRole(account.username);
     if (!currentUserDisplayName) currentUserDisplayName = account.name || account.username;
     document.getElementById('userName').textContent = currentUserDisplayName;
     const rb = document.getElementById('roleBadge');
-    if (rb) rb.textContent = isAdmin ? 'Admin' : 'Lecteur';
+    if (rb) { rb.textContent = ROLE_LABELS[userRole]; rb.dataset.role = userRole; }
     applyAccessMode();
     // If restoring a commande, hide empty state and show loading spinner overlay
     if (sessionStorage.getItem('selectedCommande')) {
@@ -334,7 +341,7 @@ async function graphDelete(url) {
 }
 
 async function uploadFileToDrive(noControleur, folderName, file) {
-  if (!isAdmin) return;
+  if (!canEdit()) return;
   const sid = await getSiteId();
   const folderPath = `PiecesJointes_Controleur/${encodeURIComponent(noControleur)}/${encodeURIComponent(folderName)}`;
   const safeFileName = file.name.replace(/[#%]/g, '_');
@@ -377,7 +384,7 @@ async function openSubPJ(webUrl) {
 
 // Upload a PJ from an inline form field (general edit or PJ tab)
 async function uploadPJFromForm(input, noControleur, folderName) {
-  if (!isAdmin) return;
+  if (!canEdit()) return;
   if (!input.files?.[0]) return;
   const file = input.files[0];
   const label = input.closest('.form-field, .pj-upload-section');
@@ -437,43 +444,64 @@ async function getFilteredListItems(listKey, noControleur) {
   return items.map(i => ({ ...i.fields, _spItemId: i.id }));
 }
 
-// ============ ADMIN CHECK ============
-async function checkAdmin(email) {
+// ============ ROLE CHECK ============
+async function checkUserRole(email) {
   try {
     const sid = await getSiteId();
     const safeEmail = email.replace(/'/g, "''");
-    const url = `/sites/${sid}/lists/Admins/items?expand=fields&$top=1&$filter=fields/UserEmail eq '${safeEmail}'`;
-    const data = await graphGet(url);
-    if (data.value && data.value.length > 0) {
-      const f = data.value[0].fields || {};
+    // Check Admins list first
+    const adminUrl = `/sites/${sid}/lists/Admins/items?expand=fields&$top=1&$filter=fields/UserEmail eq '${safeEmail}'`;
+    const adminData = await graphGet(adminUrl);
+    if (adminData.value && adminData.value.length > 0) {
+      const f = adminData.value[0].fields || {};
       if (f.Prenom || f.Nom) {
         currentUserDisplayName = `${f.Prenom || ''} ${(f.Nom || '').toUpperCase()}`.trim();
       }
-      return true;
+      return 'admin';
     }
-    // Anti-lockout: if list is empty, grant admin
+    // Check Technicien list
+    try {
+      const techUrl = `/sites/${sid}/lists/Technicien/items?expand=fields&$top=1&$filter=fields/UserEmail eq '${safeEmail}'`;
+      const techData = await graphGet(techUrl);
+      if (techData.value && techData.value.length > 0) {
+        const f = techData.value[0].fields || {};
+        if (f.Prenom || f.Nom) {
+          currentUserDisplayName = `${f.Prenom || ''} ${(f.Nom || '').toUpperCase()}`.trim();
+        }
+        return 'tech';
+      }
+    } catch (e) {
+      console.warn('Technicien list check failed:', e);
+    }
+    // Anti-lockout: if Admins list is empty, grant admin
     const allUrl = `/sites/${sid}/lists/Admins/items?$top=1`;
     const allData = await graphGet(allUrl);
-    return !(allData.value && allData.value.length > 0);
+    if (!(allData.value && allData.value.length > 0)) return 'admin';
+    return 'reader';
   } catch (e) {
-    console.warn('Admin check failed, defaulting to read-only:', e);
-    return false;
+    console.warn('Role check failed, defaulting to read-only:', e);
+    return 'reader';
   }
 }
 
 function applyAccessMode() {
-  // Hide edit buttons in read-only mode
+  // Buttons visible to admin + tech (edit, new commande)
   const editElements = [
     document.getElementById('btnEdit'),
     document.querySelector('.btn-new'),
+  ];
+  editElements.forEach(el => { if (el) el.style.display = canEdit() ? '' : 'none'; });
+
+  // Buttons visible to admin only (admin panel, access panel)
+  const adminOnly = [
     document.querySelector('button[onclick="openAdmin()"]'),
     document.getElementById('btnAdmins'),
   ];
-  editElements.forEach(el => { if (el) el.style.display = isAdmin ? '' : 'none'; });
+  adminOnly.forEach(el => { if (el) el.style.display = isAdmin() ? '' : 'none'; });
 
   // Role badge in topbar (styled via .role-badge CSS class)
   const badge = document.getElementById('roleBadge');
-  if (badge) badge.textContent = isAdmin ? 'Admin' : 'Lecteur';
+  if (badge) { badge.textContent = ROLE_LABELS[userRole]; badge.dataset.role = userRole; }
 }
 
 // ============ WRITE OPERATIONS ============
@@ -596,7 +624,7 @@ function getOptionsForField(field) {
 let adminCurrentTab = null;
 
 function openAdmin() {
-  if (!isAdmin) return;
+  if (!isAdmin()) return;
   const modal = document.getElementById('adminModal');
   modal.classList.add('visible');
   const tabs = Object.entries(REF_LISTS);
@@ -792,7 +820,7 @@ function toggleBulkImport(listName) {
 }
 
 async function bulkImport(listName) {
-  if (!isAdmin) return;
+  if (!isAdmin()) return;
   const textarea = document.getElementById('bulkImportText');
   const status = document.getElementById('bulkImportStatus');
   // Clean SharePoint UI noise from copy-paste
@@ -846,13 +874,14 @@ async function bulkImport(listName) {
   toast(`${added} élément(s) ajouté(s)`, 'success');
 }
 
-// ============ ACCESS PANEL (Admins + Utilisateurs) ============
+// ============ ACCESS PANEL (Admins + Techniciens + Utilisateurs) ============
 let adminsData = []; // [{ email, prenom, nom, _spItemId }]
+let techData = [];   // [{ email, prenom, nom, _spItemId }]
 let usersData = [];  // [{ email, prenom, nom, _spItemId }]
-let accessActiveTab = 'admins'; // 'admins' | 'users'
+let accessActiveTab = 'admins'; // 'admins' | 'techs' | 'users'
 
 function openAdminsPanel() {
-  if (!isAdmin) return;
+  if (!isAdmin()) return;
   document.getElementById('adminsModal').classList.add('visible');
   renderAccessTabs();
   loadAccessTab();
@@ -865,6 +894,7 @@ function closeAdminsPanel() {
 function renderAccessTabs() {
   document.getElementById('accessTabs').innerHTML = [
     { key: 'admins', label: 'Administrateurs', count: adminsData.length },
+    { key: 'techs', label: 'Techniciens', count: techData.length },
     { key: 'users', label: 'Utilisateurs', count: usersData.length },
   ].map(t => `<div class="admin-tab ${t.key === accessActiveTab ? 'active' : ''}" onclick="switchAccessTab('${t.key}')">${t.label} (${t.count})</div>`).join('');
 }
@@ -878,12 +908,12 @@ function switchAccessTab(tab) {
 async function loadAccessTab() {
   const body = document.getElementById('adminsBody');
   body.innerHTML = '<div class="loading"><div class="spinner"></div> Chargement...</div>';
-  const listName = accessActiveTab === 'admins' ? 'Admins' : 'Utilisateurs';
+  const listName = accessActiveTab === 'admins' ? 'Admins' : accessActiveTab === 'techs' ? 'Technicien' : 'Utilisateurs';
   try {
     const items = await getListItems(listName);
     const data = items.map(i => ({ email: i.UserEmail || i.Title || '', prenom: i.Prenom || '', nom: i.Nom || '', _spItemId: i._spItemId }));
     data.sort((a, b) => a.email.localeCompare(b.email, 'fr'));
-    if (accessActiveTab === 'admins') adminsData = data; else usersData = data;
+    if (accessActiveTab === 'admins') adminsData = data; else if (accessActiveTab === 'techs') techData = data; else usersData = data;
     renderAccessTabs();
     renderAccessList();
   } catch (e) {
@@ -891,9 +921,9 @@ async function loadAccessTab() {
   }
 }
 
-function getAccessData() { return accessActiveTab === 'admins' ? adminsData : usersData; }
-function getAccessLabel() { return accessActiveTab === 'admins' ? 'administrateur' : 'utilisateur'; }
-function getAccessListName() { return accessActiveTab === 'admins' ? 'Admins' : 'Utilisateurs'; }
+function getAccessData() { return accessActiveTab === 'admins' ? adminsData : accessActiveTab === 'techs' ? techData : usersData; }
+function getAccessLabel() { return accessActiveTab === 'admins' ? 'administrateur' : accessActiveTab === 'techs' ? 'technicien' : 'utilisateur'; }
+function getAccessListName() { return accessActiveTab === 'admins' ? 'Admins' : accessActiveTab === 'techs' ? 'Technicien' : 'Utilisateurs'; }
 
 function renderAccessList() {
   const body = document.getElementById('adminsBody');
@@ -943,7 +973,7 @@ function editAccessItem(idx) {
 }
 
 async function saveAccessItem(idx) {
-  if (!isAdmin) return;
+  if (!isAdmin()) return;
   const data = getAccessData();
   const a = data[idx];
   if (!a) return;
@@ -964,7 +994,7 @@ async function saveAccessItem(idx) {
 }
 
 async function addAccessItem() {
-  if (!isAdmin) return;
+  if (!isAdmin()) return;
   const inputEmail = document.getElementById('accessNewEmail');
   const inputPrenom = document.getElementById('accessNewPrenom');
   const inputNom = document.getElementById('accessNewNom');
@@ -994,7 +1024,7 @@ async function addAccessItem() {
 }
 
 async function removeAccessItem(itemId, idx) {
-  if (!isAdmin) return;
+  if (!isAdmin()) return;
   const data = getAccessData();
   const email = data[idx]?.email;
   const label = getAccessLabel();
@@ -1191,7 +1221,7 @@ function toggleGroup(headerEl) {
 
 // ============ NEW COMMANDE ============
 function newCommande() {
-  if (!isAdmin) return;
+  if (!canEdit()) return;
   isNewCommande = true;
   editMode = true;
   currentCommande = { NoControleur: '' };
@@ -1251,8 +1281,8 @@ async function selectCommande(no) {
   dcEl.style.display = 'flex';
   document.getElementById('detailTitle').textContent = `${no} - ${currentCommande.NomClient || ''}`;
   document.getElementById('btnEdit').innerHTML = '<span class="action-icon">&#9998;</span> Modifier'; document.getElementById('btnEdit').classList.add('primary');
-  document.getElementById('btnEdit').style.display = '';
-  document.getElementById('btnDelete').style.display = '';
+  document.getElementById('btnEdit').style.display = canEdit() ? '' : 'none';
+  document.getElementById('btnDelete').style.display = isAdmin() ? '' : 'none';
 
   document.getElementById('sidebar').classList.add('hidden');
   document.getElementById('detail').classList.add('visible');
@@ -1308,7 +1338,7 @@ function switchTab(id) {
 
 // ============ TOGGLE EDIT ============
 function toggleEdit() {
-  if (!currentCommande || !isAdmin) return;
+  if (!currentCommande || !canEdit()) return;
   editMode = !editMode;
   const btnEdit = document.getElementById('btnEdit');
   if (editMode) {
@@ -1464,7 +1494,7 @@ function renderGeneralEdit(c, isNew) {
 
 async function saveGeneral(e) {
   e.preventDefault();
-  if (!isAdmin) return;
+  if (!canEdit()) return;
   const form = document.getElementById('formGeneral');
   const btn = document.getElementById('btnSaveGeneral');
   btn.disabled = true;
@@ -1567,7 +1597,7 @@ function renderSubPanel(panelId, schemaKey, items) {
       + (isMaint ? '<th>Statut</th>' : '')
       + visibleFields.map(f => '<th>' + f[1] + '</th>').join('')
       + pjFields.map(f => '<th>' + f[1] + '</th>').join('')
-      + (isAdmin ? '<th></th>' : '') + '</tr></thead><tbody>'
+      + (canEditSub(schemaKey) ? '<th></th>' : '') + '</tr></thead><tbody>'
       + items.map(r => {
         // Compute maintenance status badge
         let statusBadge = '';
@@ -1593,14 +1623,14 @@ function renderSubPanel(panelId, schemaKey, items) {
           const links = pjFiles.map(pf => '<a class="pj-inline" href="#" data-drive-id="' + esc(pf.driveItemId) + '" title="' + esc(pf.name) + '"><span class="pj-icon">&#128206;</span><span class="pj-name">' + esc(pf.name) + '</span></a>').join('');
           return '<td>' + links + '</td>';
         }).join('')
-        + (isAdmin ? '<td><button class="btn-edit" data-schema="' + schemaKey + '" data-item-id="' + esc(r._spItemId) + '" data-item-json="' + esc(JSON.stringify(r)) + '" title="Modifier">&#9998;</button> <button class="btn-del" data-schema="' + schemaKey + '" data-item-id="' + esc(r._spItemId) + '" data-no="' + esc(currentCommande?.NoControleur) + '" title="Supprimer">&#128465;</button></td>' : '') + '</tr>';
+        + (canEditSub(schemaKey) ? '<td><button class="btn-edit" data-schema="' + schemaKey + '" data-item-id="' + esc(r._spItemId) + '" data-item-json="' + esc(JSON.stringify(r)) + '" title="Modifier">&#9998;</button> <button class="btn-del" data-schema="' + schemaKey + '" data-item-id="' + esc(r._spItemId) + '" data-no="' + esc(currentCommande?.NoControleur) + '" title="Supprimer">&#128465;</button></td>' : '') + '</tr>';
       }).join('') + '</tbody></table>';
   }
 
   const panel = document.getElementById(panelId);
   panel.innerHTML = kpisHtml + tableHtml
     + '<div id="addForm_' + panelId + '"></div>'
-    + (isAdmin ? '<button class="btn-action" onclick="showAddForm(\'' + panelId + '\',\'' + schemaKey + '\')" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter</button>' : '');
+    + (canEditSub(schemaKey) ? '<button class="btn-action" onclick="showAddForm(\'' + panelId + '\',\'' + schemaKey + '\')" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter</button>' : '');
   // Event delegation for edit and delete buttons
   panel.onclick = function(e) {
     const editBtn = e.target.closest('.btn-edit[data-schema]');
@@ -1647,7 +1677,7 @@ function renderFactures(factMat, factLic) {
       </div>
       ${renderSubTable('factMat', factMat)}
       <div id="addForm_panelFactures_mat"></div>
-      ${isAdmin ? '<button class="btn-action" onclick="showAddForm(\'panelFactures_mat\',\'factMat\')" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter materiel</button>' : ''}
+      ${isAdmin() ? '<button class="btn-action" onclick="showAddForm(\'panelFactures_mat\',\'factMat\')" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter materiel</button>' : ''}
     </div>
 
     <div class="fact-section">
@@ -1657,7 +1687,7 @@ function renderFactures(factMat, factLic) {
       </div>
       ${renderSubTable('factLic', factLic)}
       <div id="addForm_panelFactures_lic"></div>
-      ${isAdmin ? '<button class="btn-action" onclick="showAddForm(\'panelFactures_lic\',\'factLic\')" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter licence</button>' : ''}
+      ${isAdmin() ? '<button class="btn-action" onclick="showAddForm(\'panelFactures_lic\',\'factLic\')" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter licence</button>' : ''}
     </div>
   `;
   // Event delegation for edit buttons in factures tables
@@ -1682,11 +1712,11 @@ function renderCmdSup(cmdClient, cmdFourn) {
     + '<div class="fact-section"><div class="fact-section-header"><span class="fact-section-title">Client <span class="badge">' + cmdClient.length + '</span></span><span class="fact-section-total">' + fmtCur(sumClient) + '</span></div>'
     + renderSubTable('cmdClient', cmdClient)
     + '<div id="addForm_panelCmdSup_cl"></div>'
-    + (isAdmin ? '<button class="btn-action" onclick="showAddForm(&apos;panelCmdSup_cl&apos;,&apos;cmdClient&apos;)" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter client</button>' : '') + '</div>'
+    + (isAdmin() ? '<button class="btn-action" onclick="showAddForm(&apos;panelCmdSup_cl&apos;,&apos;cmdClient&apos;)" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter client</button>' : '') + '</div>'
     + '<div class="fact-section"><div class="fact-section-header green"><span class="fact-section-title">Fournisseur <span class="badge">' + cmdFourn.length + '</span></span><span class="fact-section-total">' + fmtCur(sumFourn) + '</span></div>'
     + renderSubTable('cmdFourn', cmdFourn)
     + '<div id="addForm_panelCmdSup_fr"></div>'
-    + (isAdmin ? '<button class="btn-action" onclick="showAddForm(&apos;panelCmdSup_fr&apos;,&apos;cmdFourn&apos;)" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter fournisseur</button>' : '') + '</div>';
+    + (isAdmin() ? '<button class="btn-action" onclick="showAddForm(&apos;panelCmdSup_fr&apos;,&apos;cmdFourn&apos;)" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter fournisseur</button>' : '') + '</div>';
   // Event delegation for edit buttons in cmd sup tables
   document.getElementById('panelCmdSup').onclick = function(e) {
     const editBtn = e.target.closest('.btn-edit[data-schema]');
@@ -1701,7 +1731,7 @@ function renderSubTable(schemaKey, items) {
   const schema = SUB_SCHEMAS[schemaKey];
   if (items.length === 0) return `<div class="pj-empty">Aucun(e) ${schema.title.toLowerCase()}</div>`;
   return `<table class="gallery">
-    <thead><tr>${schema.fields.map(f => `<th>${f[1]}</th>`).join('')}${isAdmin ? '<th></th>' : ''}</tr></thead>
+    <thead><tr>${schema.fields.map(f => `<th>${f[1]}</th>`).join('')}${canEditSub(schemaKey) ? '<th></th>' : ''}</tr></thead>
     <tbody>${items.map(r => `
       <tr>
         ${schema.fields.map(([field, , type]) => {
@@ -1716,7 +1746,7 @@ function renderSubTable(schemaKey, items) {
           if (type === 'textarea') val = stripHtml(val);
           return `<td ${type === 'currency' ? 'class="currency"' : ''}>${esc(val)}</td>`;
         }).join('')}
-        ${isAdmin ? `<td><button class="btn-edit" data-schema="${schemaKey}" data-item-json="${esc(JSON.stringify(r))}" title="Modifier">&#9998;</button> <button class="btn-del" onclick="deleteSubRow('${schemaKey}','${r._spItemId}','${esc(currentCommande?.NoControleur)}')" title="Supprimer">&#128465;</button></td>` : ''}
+        ${canEditSub(schemaKey) ? `<td><button class="btn-edit" data-schema="${schemaKey}" data-item-json="${esc(JSON.stringify(r))}" title="Modifier">&#9998;</button> <button class="btn-del" onclick="deleteSubRow('${schemaKey}','${r._spItemId}','${esc(currentCommande?.NoControleur)}')" title="Supprimer">&#128465;</button></td>` : ''}
       </tr>
     `).join('')}</tbody>
   </table>`;
@@ -1724,7 +1754,7 @@ function renderSubTable(schemaKey, items) {
 
 // ============ ADD ROW FORM ============
 function showAddForm(containerId, schemaKey) {
-  if (!isAdmin) return;
+  if (!canEditSub(schemaKey)) return;
   const schema = SUB_SCHEMAS[schemaKey];
   const container = document.getElementById(`addForm_${containerId}`);
   if (!container) return;
@@ -1755,7 +1785,7 @@ function showAddForm(containerId, schemaKey) {
 }
 
 async function saveSubRow(containerId, schemaKey) {
-  if (!isAdmin) return;
+  if (!canEditSub(schemaKey)) return;
   if (!currentCommande?.NoControleur) return;
   const schema = SUB_SCHEMAS[schemaKey];
   const container = document.getElementById(`addForm_${containerId}`);
@@ -1800,7 +1830,7 @@ async function saveSubRow(containerId, schemaKey) {
 
 // ============ EDIT ROW FORM ============
 function showEditSubForm(panelId, schemaKey, itemData) {
-  if (!isAdmin) return;
+  if (!canEditSub(schemaKey)) return;
   const schema = SUB_SCHEMAS[schemaKey];
   // Find the correct container: for renderSubPanel use panelId, for renderSubTable find closest panel
   let containerId = panelId;
@@ -1858,7 +1888,7 @@ function showEditSubForm(panelId, schemaKey, itemData) {
 }
 
 async function updateSubRow(containerId, schemaKey, spItemId) {
-  if (!isAdmin) return;
+  if (!canEditSub(schemaKey)) return;
   if (!currentCommande?.NoControleur) return;
   const schema = SUB_SCHEMAS[schemaKey];
   const container = document.getElementById(containerId);
@@ -1901,7 +1931,7 @@ async function updateSubRow(containerId, schemaKey, spItemId) {
 }
 
 async function deleteSubRow(schemaKey, itemId, noControleur) {
-  if (!isAdmin) return;
+  if (!canEditSub(schemaKey)) return;
   if (!await customConfirm('Supprimer cette ligne ?')) return;
   const schema = SUB_SCHEMAS[schemaKey];
   try {
@@ -2108,7 +2138,7 @@ function renderPJButtons(buttons) {
         + '<div class="pj-icon ' + icon.cls + '">' + icon.label + '</div>'
         + '<div class="pj-card-info"><div class="pj-card-label">' + esc(b.label) + '</div><div class="pj-card-name">' + esc(b.name) + '</div></div>'
         + '</a>'
-        + (isAdmin ? '<button class="pj-del" title="Supprimer" onclick="deletePJ(' + i + ')">&#128465;</button>' : '')
+        + (canEdit() ? '<button class="pj-del" title="Supprimer" onclick="deletePJ(' + i + ')">&#128465;</button>' : '')
         + '</div>';
     }).join('')
     + '</div>';
@@ -2127,7 +2157,7 @@ function renderPJButtons(buttons) {
 }
 
 async function deletePJ(idx) {
-  if (!isAdmin) return;
+  if (!canEdit()) return;
   const b = currentPJButtons[idx];
   if (!b || !b.driveItemId) return;
   if (!await customConfirm(`Supprimer "${b.name}" ?`)) return;
@@ -2147,7 +2177,7 @@ async function deletePJ(idx) {
 }
 
 async function uploadPJFromPanel(input) {
-  if (!isAdmin) return;
+  if (!canEdit()) return;
   const folder = document.getElementById('pjUploadFolder')?.value;
   if (!folder) { toast('Choisir un type de PJ', 'error'); input.value = ''; return; }
   if (!input.files?.[0] || !currentCommande) return;
@@ -2565,6 +2595,7 @@ const DIAG_LISTS = [
   }))},
   { section: 'Gestion des accès', entries: [
     { key: 'admins',       spName: () => 'Admins',        role: 'Administrateurs' },
+    { key: 'technicien',   spName: () => 'Technicien',    role: 'Techniciens' },
     { key: 'utilisateurs', spName: () => 'Utilisateurs',  role: 'Utilisateurs' },
   ]},
 ];
@@ -2648,7 +2679,7 @@ function renderDiagTable() {
 }
 
 function openDiag() {
-  if (!isAdmin) return;
+  if (!isAdmin()) return;
   document.getElementById('diagModal').classList.add('visible');
   renderDiagTable();
   if (Object.keys(diagnosticResults).length === 0) checkAllLists();

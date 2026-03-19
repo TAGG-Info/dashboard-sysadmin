@@ -144,6 +144,8 @@
     background: var(--accent-soft); color: var(--accent);
   }
   [data-theme="dark"] .role-badge { box-shadow: 0 0 10px rgba(96,165,250,0.15); }
+  .role-badge[data-role="tech"] { background: rgba(16,185,129,0.12); color: #10b981; }
+  .role-badge[data-role="reader"] { background: rgba(156,163,175,0.12); color: #9ca3af; }
   .btn-topbar {
     background: var(--topbar-btn-bg); color: var(--topbar-btn-text); border: 1px solid var(--topbar-border);
     padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
