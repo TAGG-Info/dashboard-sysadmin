@@ -341,7 +341,7 @@ async function graphDelete(url) {
 }
 
 async function uploadFileToDrive(noControleur, folderName, file) {
-  if (!canEdit()) return;
+  if (!canEdit()) throw new Error('Permission refusée');
   const sid = await getSiteId();
   const folderPath = `PiecesJointes_Controleur/${encodeURIComponent(noControleur)}/${encodeURIComponent(folderName)}`;
   const safeFileName = file.name.replace(/[#%]/g, '_');
@@ -1524,7 +1524,7 @@ async function saveGeneral(e) {
     }
 
     if (isNewCommande) {
-      if (!fields.NoControleur) { toast('Le N° de contrôleur est requis', 'error'); return; }
+      if (!fields.NoControleur) { toast('Le N° de contrôleur est requis', 'error'); btn.disabled = false; return; }
       fields.Title = fields.NoControleur;
       const created = await createListItem('main', fields);
       allCommandes.unshift(created);
@@ -1677,7 +1677,7 @@ function renderFactures(factMat, factLic) {
       </div>
       ${renderSubTable('factMat', factMat)}
       <div id="addForm_panelFactures_mat"></div>
-      ${isAdmin() ? '<button class="btn-action" onclick="showAddForm(\'panelFactures_mat\',\'factMat\')" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter materiel</button>' : ''}
+      ${canEditSub('factMat') ? '<button class="btn-action" onclick="showAddForm(\'panelFactures_mat\',\'factMat\')" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter materiel</button>' : ''}
     </div>
 
     <div class="fact-section">
@@ -1687,7 +1687,7 @@ function renderFactures(factMat, factLic) {
       </div>
       ${renderSubTable('factLic', factLic)}
       <div id="addForm_panelFactures_lic"></div>
-      ${isAdmin() ? '<button class="btn-action" onclick="showAddForm(\'panelFactures_lic\',\'factLic\')" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter licence</button>' : ''}
+      ${canEditSub('factLic') ? '<button class="btn-action" onclick="showAddForm(\'panelFactures_lic\',\'factLic\')" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter licence</button>' : ''}
     </div>
   `;
   // Event delegation for edit buttons in factures tables
@@ -1712,11 +1712,11 @@ function renderCmdSup(cmdClient, cmdFourn) {
     + '<div class="fact-section"><div class="fact-section-header"><span class="fact-section-title">Client <span class="badge">' + cmdClient.length + '</span></span><span class="fact-section-total">' + fmtCur(sumClient) + '</span></div>'
     + renderSubTable('cmdClient', cmdClient)
     + '<div id="addForm_panelCmdSup_cl"></div>'
-    + (isAdmin() ? '<button class="btn-action" onclick="showAddForm(&apos;panelCmdSup_cl&apos;,&apos;cmdClient&apos;)" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter client</button>' : '') + '</div>'
+    + (canEditSub('cmdClient') ? '<button class="btn-action" onclick="showAddForm(&apos;panelCmdSup_cl&apos;,&apos;cmdClient&apos;)" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter client</button>' : '') + '</div>'
     + '<div class="fact-section"><div class="fact-section-header green"><span class="fact-section-title">Fournisseur <span class="badge">' + cmdFourn.length + '</span></span><span class="fact-section-total">' + fmtCur(sumFourn) + '</span></div>'
     + renderSubTable('cmdFourn', cmdFourn)
     + '<div id="addForm_panelCmdSup_fr"></div>'
-    + (isAdmin() ? '<button class="btn-action" onclick="showAddForm(&apos;panelCmdSup_fr&apos;,&apos;cmdFourn&apos;)" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter fournisseur</button>' : '') + '</div>';
+    + (canEditSub('cmdFourn') ? '<button class="btn-action" onclick="showAddForm(&apos;panelCmdSup_fr&apos;,&apos;cmdFourn&apos;)" style="margin-top:10px;"><span class="action-icon">+</span> Ajouter fournisseur</button>' : '') + '</div>';
   // Event delegation for edit buttons in cmd sup tables
   document.getElementById('panelCmdSup').onclick = function(e) {
     const editBtn = e.target.closest('.btn-edit[data-schema]');
@@ -2062,8 +2062,14 @@ async function renderPJ(c) {
     pjCache[c.NoControleur] = buttons;
     renderPJButtons(buttons);
   } catch (e) {
-    pjCache[c.NoControleur] = [];
-    renderPJButtons([]);
+    // 404 = dossier PJ pas encore créé (normal pour nouvelle commande)
+    if (e.message?.includes('404')) {
+      pjCache[c.NoControleur] = [];
+      renderPJButtons([]);
+    } else {
+      console.warn('[PJ] Erreur chargement:', e);
+      document.getElementById('panelPJ').innerHTML = '<div class="pj-empty" style="color:var(--text-tertiary)">Erreur chargement PJ — changez d\'onglet pour réessayer</div>';
+    }
   }
 }
 
@@ -2154,7 +2160,7 @@ function renderPJButtons(buttons) {
 
   const folderOptions = Object.entries(PJ_LABELS)
     .map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
-  const uploadSection = currentCommande ? `<div class="pj-upload-section">
+  const uploadSection = currentCommande && canEdit() ? `<div class="pj-upload-section">
     <select id="pjUploadFolder" style="padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:12px;color:var(--text-primary);background:var(--bg-surface);">
       <option value="">-- Type de PJ --</option>${folderOptions}
     </select>
@@ -2178,7 +2184,7 @@ async function deletePJ(idx) {
       pjCache[currentCommande.NoControleur] = pjCache[currentCommande.NoControleur].filter(p => p.driveItemId !== b.driveItemId);
     }
     renderPJButtons(pjCache[currentCommande?.NoControleur] || []);
-    renderGeneral(currentCommande);
+    if (currentCommande) renderGeneral(currentCommande);
     toast('"' + b.name + '" supprimé', 'success');
   } catch (e) {
     toast('Erreur: ' + e.message, 'error');
