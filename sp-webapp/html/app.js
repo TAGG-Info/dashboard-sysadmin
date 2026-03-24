@@ -1618,10 +1618,10 @@ function renderSubPanel(panelId, schemaKey, items) {
           return '<td ' + tdClass + '>' + esc(val) + '</td>';
         }).join('')
         + pjFields.map(([field]) => {
-          const pjFiles = getPJFilesForField(currentCommande?.NoControleur, field);
-          if (pjFiles.length === 0) return '<td><span class="pj-empty-inline">-</span></td>';
-          const links = pjFiles.map(pf => '<a class="pj-inline" href="#" data-drive-id="' + esc(pf.driveItemId) + '" title="' + esc(pf.name) + '"><span class="pj-icon">&#128206;</span><span class="pj-name">' + esc(pf.name) + '</span></a>').join('');
-          return '<td>' + links + '</td>';
+          const val = r[field];
+          if (!val) return '<td><span class="pj-empty-inline">-</span></td>';
+          const fileName = decodeURIComponent(val.split('/').pop() || 'Fichier');
+          return '<td><a class="pj-inline" href="#" onclick="openSubPJ(decodeURIComponent(\'' + encodeURIComponent(val) + '\'));return false;" title="' + esc(fileName) + '"><span class="pj-icon">&#128206;</span><span class="pj-name">' + esc(fileName) + '</span></a></td>';
         }).join('')
         + (canEditSub(schemaKey) ? '<td><button class="btn-edit" data-schema="' + schemaKey + '" data-item-id="' + esc(r._spItemId) + '" data-item-json="' + esc(JSON.stringify(r)) + '" title="Modifier">&#9998;</button> <button class="btn-del" data-schema="' + schemaKey + '" data-item-id="' + esc(r._spItemId) + '" data-no="' + esc(currentCommande?.NoControleur) + '" title="Supprimer">&#128465;</button></td>' : '') + '</tr>';
       }).join('') + '</tbody></table>';
