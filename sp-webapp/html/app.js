@@ -361,10 +361,14 @@ async function openSubPJ(webUrl) {
   try {
     const sid = await getSiteId();
     const decoded = decodeURIComponent(webUrl);
-    const marker = '/Shared Documents/';
-    const idx = decoded.indexOf(marker);
-    if (idx === -1) { window.open(webUrl, '_blank'); return; }
-    const relPath = decoded.substring(idx + marker.length);
+    // Support both English and French SharePoint document library paths
+    const markers = ['/Shared Documents/', '/Documents partages/', '/Shared%20Documents/', '/Documents%20partages/'];
+    let relPath = null;
+    for (const marker of markers) {
+      const idx = decoded.indexOf(marker);
+      if (idx !== -1) { relPath = decoded.substring(idx + marker.length); break; }
+    }
+    if (relPath === null) { window.open(webUrl, '_blank'); return; }
     const encodedPath = relPath.split('/').map(encodeURIComponent).join('/');
     const item = await graphGet(`/sites/${sid}/drive/root:/${encodedPath}`);
     const b = {
