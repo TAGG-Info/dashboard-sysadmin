@@ -1991,8 +1991,39 @@ const PJ_FIELD_TARGET = {
   PJ_FactureMaintenance:     { listKey: 'maintenances', subKey: 'maintenances' },
 };
 
+// Sub-item PJ: which sub-schemas map to which PJ folder
+const SUB_PJ_FOLDERS = {
+  PJ_FactureMateriel:    { subKey: 'factMat',       labelFn: r => `Hardware — ${r.NoFactureMateriel || '?'} — ${fmtDate(r.DateFactureMateriel) || '?'}` },
+  PJ_FactureLicence:     { subKey: 'factLic',       labelFn: r => `Licence — ${r.NoFactureLicence || '?'} — ${fmtDate(r.DateFactureLicence) || '?'}` },
+  PJ_FactureMaintenance: { subKey: 'maintenances',  labelFn: r => `Maintenance — ${fmtDate(r.DateDebutMaintenance) || '?'} → ${fmtDate(r.DateFinMaintenance) || '?'}` },
+};
+
+// When user selects a PJ type, show sub-item picker if needed
+async function onPJFolderChange() {
+  const folder = document.getElementById('pjUploadFolder')?.value;
+  const subSelect = document.getElementById('pjSubItemSelect');
+  if (!subSelect) return;
+  const subPJ = SUB_PJ_FOLDERS[folder];
+  if (!subPJ || !currentCommande) {
+    subSelect.style.display = 'none';
+    subSelect.innerHTML = '';
+    return;
+  }
+  const sub = await loadSubData(currentCommande.NoControleur);
+  const items = sub[subPJ.subKey] || [];
+  if (items.length === 0) {
+    subSelect.style.display = 'none';
+    subSelect.innerHTML = '';
+    toast('Aucune ligne ' + subPJ.subKey + ' — ajoutez-en une d\'abord', 'error');
+    return;
+  }
+  subSelect.innerHTML = '<option value="">-- Choisir la ligne --</option>'
+    + items.map((r, i) => `<option value="${i}">${esc(subPJ.labelFn(r))}</option>`).join('');
+  subSelect.style.display = '';
+}
+
 // After uploading a PJ, auto-update the corresponding SP list field
-async function autoFillPJField(folderName, webUrl) {
+async function autoFillPJField(folderName, webUrl, subItemIndex) {
   const target = PJ_FIELD_TARGET[folderName];
   if (!target || !currentCommande) return false;
   try {
@@ -2003,8 +2034,9 @@ async function autoFillPJField(folderName, webUrl) {
       const sub = await loadSubData(currentCommande.NoControleur);
       const items = sub[target.subKey] || [];
       if (items.length === 0) return false;
-      // Update the most recently added sub-item
-      const item = items[items.length - 1];
+      const idx = subItemIndex != null ? subItemIndex : items.length - 1;
+      const item = items[idx];
+      if (!item) return false;
       await updateListItem(target.listKey, item._spItemId, { [folderName]: webUrl });
       invalidateSubCache(currentCommande.NoControleur);
     }
@@ -2161,9 +2193,10 @@ function renderPJButtons(buttons) {
   const folderOptions = Object.entries(PJ_LABELS)
     .map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
   const uploadSection = currentCommande && canEdit() ? `<div class="pj-upload-section">
-    <select id="pjUploadFolder" style="padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:12px;color:var(--text-primary);background:var(--bg-surface);">
+    <select id="pjUploadFolder" onchange="onPJFolderChange()" style="padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:12px;color:var(--text-primary);background:var(--bg-surface);">
       <option value="">-- Type de PJ --</option>${folderOptions}
     </select>
+    <select id="pjSubItemSelect" style="display:none;padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:12px;color:var(--text-primary);background:var(--bg-surface);"></select>
     <label class="btn-file-label"><input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" onchange="uploadPJFromPanel(this)">&#128206; Ajouter une PJ</label>
     <span class="file-name-display pj-empty-inline"></span>
   </div>` : '';
@@ -2195,13 +2228,21 @@ async function uploadPJFromPanel(input) {
   if (!canEdit()) return;
   const folder = document.getElementById('pjUploadFolder')?.value;
   if (!folder) { toast('Choisir un type de PJ', 'error'); input.value = ''; return; }
+  // For sub-table PJ, require a line selection
+  const subSelect = document.getElementById('pjSubItemSelect');
+  const subPJ = SUB_PJ_FOLDERS[folder];
+  let subItemIndex = null;
+  if (subPJ) {
+    if (!subSelect || subSelect.value === '') { toast('Choisir la ligne à associer', 'error'); input.value = ''; return; }
+    subItemIndex = parseInt(subSelect.value, 10);
+  }
   if (!input.files?.[0] || !currentCommande) return;
   const nameDisplay = input.closest('.pj-upload-section')?.querySelector('.file-name-display');
   input.disabled = true;
   if (nameDisplay) nameDisplay.textContent = 'Upload en cours...';
   try {
     const webUrl = await uploadFileToDrive(currentCommande.NoControleur, folder, input.files[0]);
-    const filled = await autoFillPJField(folder, webUrl);
+    const filled = await autoFillPJField(folder, webUrl, subItemIndex);
     toast(filled ? 'PJ ajoutée et champ mis à jour' : 'PJ ajoutée');
     await renderPJ(currentCommande);
     if (filled) renderGeneral(currentCommande);
