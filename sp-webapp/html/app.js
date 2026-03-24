@@ -2037,6 +2037,7 @@ async function autoFillPJField(folderName, webUrl, subItemIndex) {
       const idx = subItemIndex != null ? subItemIndex : items.length - 1;
       const item = items[idx];
       if (!item) return false;
+      console.log('[autoFillPJField]', folderName, 'idx:', idx, 'spItemId:', item._spItemId, 'sur', items.length, 'items');
       await updateListItem(target.listKey, item._spItemId, { [folderName]: webUrl });
       invalidateSubCache(currentCommande.NoControleur);
     }
@@ -2245,7 +2246,14 @@ async function uploadPJFromPanel(input) {
     const filled = await autoFillPJField(folder, webUrl, subItemIndex);
     toast(filled ? 'PJ ajoutée et champ mis à jour' : 'PJ ajoutée');
     await renderPJ(currentCommande);
-    if (filled) renderGeneral(currentCommande);
+    if (filled) {
+      renderGeneral(currentCommande);
+      // Re-render sub-tables if PJ was linked to a sub-item
+      if (SUB_PJ_FOLDERS[folder]) {
+        const freshSub = await loadSubData(currentCommande.NoControleur);
+        renderSubPanel(freshSub);
+      }
+    }
   } catch (e) {
     toast('Erreur: ' + e.message.substring(0, 80), 'error');
   }
