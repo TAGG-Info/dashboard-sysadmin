@@ -2248,11 +2248,12 @@ async function uploadPJFromPanel(input) {
     await renderPJ(currentCommande);
     if (filled) {
       renderGeneral(currentCommande);
-      // Re-render sub-tables if PJ was linked to a sub-item
-      if (SUB_PJ_FOLDERS[folder]) {
-        const freshSub = await loadSubData(currentCommande.NoControleur);
-        renderSubPanel(freshSub);
-      }
+      // Re-render all sub-tables with fresh data
+      const freshSub = await loadSubData(currentCommande.NoControleur);
+      renderSubPanel('panelReceptions', 'receptions', freshSub.receptions);
+      renderSubPanel('panelMaintenances', 'maintenances', freshSub.maintenances);
+      renderFactures(freshSub.factMat, freshSub.factLic);
+      renderCmdSup(freshSub.cmdClient, freshSub.cmdFourn);
     }
   } catch (e) {
     toast('Erreur: ' + e.message.substring(0, 80), 'error');
