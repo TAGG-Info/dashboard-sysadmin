@@ -2117,7 +2117,16 @@ let currentPJButtons = [];
 function renderPJButtons(buttons) {
   currentPJButtons = buttons;
   if (buttons.length === 0) {
-    document.getElementById('panelPJ').innerHTML = '<div class="pj-empty">Aucune pièce jointe</div>';
+    const folderOpts = Object.entries(PJ_LABELS)
+      .map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+    const upload = currentCommande && canEdit() ? `<div class="pj-upload-section">
+      <select id="pjUploadFolder" style="padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:12px;color:var(--text-primary);background:var(--bg-surface);">
+        <option value="">-- Type de PJ --</option>${folderOpts}
+      </select>
+      <label class="btn-file-label"><input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" onchange="uploadPJFromPanel(this)">&#128206; Ajouter une PJ</label>
+      <span class="file-name-display pj-empty-inline"></span>
+    </div>` : '';
+    document.getElementById('panelPJ').innerHTML = '<div class="pj-empty">Aucune pièce jointe</div>' + upload;
     return;
   }
 
