@@ -148,10 +148,12 @@ const SUB_SCHEMAS = {
   cmdClient: { list: 'cmdClientSup', title: 'Commande supplémentaire Client', fields: [
     ['MontantCommandeClientSup', 'Montant commande', 'currency'],
     ['CommentaireCommandeClientSup', 'Commentaire', 'textarea'],
+    ['PJ_CommandeClientSup', 'PJ', 'pj'],
   ]},
   cmdFourn: { list: 'cmdFournSup', title: 'Commande supplémentaire Fournisseur', fields: [
     ['MontantCommandeFournisseurSup', 'Montant commande', 'currency'],
     ['CommentaireCommandeFournisseurSup', 'Commentaire', 'textarea'],
+    ['PJ_CommandeFournisseurSup', 'PJ', 'pj'],
   ]},
 };
 
@@ -1987,8 +1989,8 @@ const PJ_FIELD_TARGET = {
   PJ_FicheMiseEnService:     { listKey: 'main' },
   PJ_CommandeDestockage:     { listKey: 'main' },
   PJ_BLReception:            { listKey: 'main' },
-  PJ_CommandeClientSup:      { listKey: 'main' },
-  PJ_CommandeFournisseurSup: { listKey: 'main' },
+  PJ_CommandeClientSup:      { listKey: 'cmdClientSup',  subKey: 'cmdClient' },
+  PJ_CommandeFournisseurSup: { listKey: 'cmdFournSup',   subKey: 'cmdFourn' },
   PJ_BlMateriel:             { listKey: 'main' },
   PJ_FactureMateriel:        { listKey: 'factMateriel', subKey: 'factMat' },
   PJ_FactureLicence:         { listKey: 'factLicence',  subKey: 'factLic' },
@@ -1997,9 +1999,11 @@ const PJ_FIELD_TARGET = {
 
 // Sub-item PJ: which sub-schemas map to which PJ folder
 const SUB_PJ_FOLDERS = {
-  PJ_FactureMateriel:    { subKey: 'factMat',       labelFn: r => `Hardware — ${r.NoFactureMateriel || '?'} — ${fmtDate(r.DateFactureMateriel) || '?'}` },
-  PJ_FactureLicence:     { subKey: 'factLic',       labelFn: r => `Licence — ${r.NoFactureLicence || '?'} — ${fmtDate(r.DateFactureLicence) || '?'}` },
-  PJ_FactureMaintenance: { subKey: 'maintenances',  labelFn: r => `Maintenance — ${fmtDate(r.DateDebutMaintenance) || '?'} → ${fmtDate(r.DateFinMaintenance) || '?'}` },
+  PJ_FactureMateriel:        { subKey: 'factMat',       labelFn: r => `Hardware — ${r.NoFactureMateriel || '?'} — ${fmtDate(r.DateFactureMateriel) || '?'}` },
+  PJ_FactureLicence:         { subKey: 'factLic',       labelFn: r => `Licence — ${r.NoFactureLicence || '?'} — ${fmtDate(r.DateFactureLicence) || '?'}` },
+  PJ_FactureMaintenance:     { subKey: 'maintenances',  labelFn: r => `Maintenance — ${fmtDate(r.DateDebutMaintenance) || '?'} → ${fmtDate(r.DateFinMaintenance) || '?'}` },
+  PJ_CommandeClientSup:      { subKey: 'cmdClient',     labelFn: r => `Client — ${fmtCur(r.MontantCommandeClientSup)} — ${r.CommentaireCommandeClientSup || '?'}` },
+  PJ_CommandeFournisseurSup: { subKey: 'cmdFourn',      labelFn: r => `Fournisseur — ${fmtCur(r.MontantCommandeFournisseurSup)} — ${r.CommentaireCommandeFournisseurSup || '?'}` },
 };
 
 // When user selects a PJ type, show sub-item picker if needed
