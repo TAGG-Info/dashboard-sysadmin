@@ -192,6 +192,7 @@ async function loadConfig() {
 // Data
 let allCommandes = [];
 let subData = {};
+let factureIndex = new Map(); // NoControleur -> Set of lowercased invoice numbers (for search)
 let currentCommande = null;
 let currentTab = 'General';
 let editMode = false;
@@ -563,6 +564,8 @@ async function loadData() {
     buildDistinctData();
     buildEtatFilter();
     renderList(allCommandes);
+    // Index des numéros de facture en arrière-plan (recherche par N° de facture)
+    buildFactureIndex();
     // Restore selection after F5
     var savedNo = sessionStorage.getItem('selectedCommande');
     if (savedNo && allCommandes.find(c => c.NoControleur === savedNo)) {
@@ -1074,6 +1077,41 @@ function invalidateSubCache(noControleur) {
   delete subData[noControleur];
 }
 
+// Charge les 3 listes de facturation et indexe les N° de facture par NoControleur.
+// Fire-and-forget au démarrage : la recherche par facture devient active une fois l'index prêt.
+async function buildFactureIndex() {
+  const FACTURE_FIELDS = {
+    factMateriel: 'NoFactureMateriel',
+    factLicence: 'NoFactureLicence',
+    maintenances: 'NoFactureMaintenance',
+  };
+  try {
+    const listKeys = Object.keys(FACTURE_FIELDS);
+    const results = await Promise.all(
+      listKeys.map(k => getListItems(k).catch(e => {
+        console.error(`[buildFactureIndex] ERREUR "${k}":`, e);
+        return [];
+      }))
+    );
+    const idx = new Map();
+    listKeys.forEach((k, i) => {
+      const field = FACTURE_FIELDS[k];
+      for (const row of results[i]) {
+        const no = row.NoControleur;
+        const fac = row[field];
+        if (!no || !fac) continue;
+        if (!idx.has(no)) idx.set(no, new Set());
+        idx.get(no).add(String(fac).toLowerCase());
+      }
+    });
+    factureIndex = idx;
+    // Réapplique le filtre si une recherche est déjà en cours (peut désormais matcher une facture)
+    if (document.getElementById('searchInput')?.value.trim()) _doFilterList();
+  } catch (e) {
+    console.error('[buildFactureIndex] erreur:', e);
+  }
+}
+
 // ============ LIST VIEW ============
 function buildEtatFilter() {
   const etats = [...new Set(allCommandes.map(c => c.EtatCommande).filter(Boolean))].sort();
@@ -1111,11 +1149,20 @@ function _doFilterList() {
   const etat = document.getElementById('filterEtat').value;
   const demandeur = document.getElementById('filterDemandeur')?.value || '';
   const filtered = allCommandes.filter(c => {
+    const matchFacture = () => {
+      const facs = factureIndex.get(c.NoControleur);
+      if (!facs) return false;
+      for (const f of facs) if (f.includes(search)) return true;
+      return false;
+    };
     const matchSearch = !search ||
       (c.NoControleur || '').toLowerCase().includes(search) ||
       (c.NomClient || '').toLowerCase().includes(search) ||
       (c.NoCommandeFabricant || '').toLowerCase().includes(search) ||
-      (c.TypeControleur || '').toLowerCase().includes(search);
+      (c.NoCommandeFournisseur || '').toLowerCase().includes(search) ||
+      (c.NomFournisseur || '').toLowerCase().includes(search) ||
+      (c.TypeControleur || '').toLowerCase().includes(search) ||
+      matchFacture();
     return matchSearch && (!etat || c.EtatCommande === etat) && (!demandeur || c.DemandeurFabricant === demandeur);
   });
   renderList(filtered);
