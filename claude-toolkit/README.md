@@ -1,81 +1,73 @@
-# Claude Toolkit — Skills & Commandes
+# Claude Toolkit — un pack par repo
 
-Pack de skills Claude Code taillé pour tes projets (dashboard-sysadmin, 7DS-Origin-Bots,
-media-stack, pdf-compare, Optralis…). Une fois installés, les skills sont invocables en
-tapant `/nom-du-skill` dans Claude Code, et Claude peut aussi les déclencher tout seul
-quand le contexte correspond à leur description.
+Skills Claude Code **sur-mesure par repo**, écrits après analyse du code réel de chaque
+projet (architecture, conventions, commandes CI exactes, pièges connus). Chaque pack
+contient un `CLAUDE.md` (contexte permanent du repo) et des skills invocables en
+`/nom-du-skill`.
 
 > Ce dossier vit sur une branche `claude/...` de dashboard-sysadmin uniquement parce que
-> l'environnement d'exécution l'exigeait. Récupère-le, installe-le, puis supprime la branche.
+> la session devait cibler un repo. Récupère les packs, installe-les chacun dans leur
+> repo, puis supprime la branche.
 
 ---
 
-## Installation
-
-### 1. Pack global (toutes sessions, tous projets)
-
-À copier dans `~/.claude/` sur ta machine :
+## Installation — dans chaque repo concerné
 
 ```bash
-cp -r claude-toolkit/global/skills/* ~/.claude/skills/
-# Optionnel : tes préférences perso (fusionne si tu as déjà un fichier)
-cat claude-toolkit/global/CLAUDE.md >> ~/.claude/CLAUDE.md
+# Exemple pour pdf-compare (pareil pour les autres)
+cd pdf-compare
+mkdir -p .claude
+cp -r <toolkit>/pdf-compare/skills .claude/skills
+cp <toolkit>/pdf-compare/CLAUDE.md ./CLAUDE.md
+git add .claude CLAUDE.md && git commit -m "chore: add Claude Code config"
 ```
 
-### 2. Packs par projet
-
-À copier dans le dossier `.claude/` de chaque repo concerné (et à committer avec le repo,
-comme ça toute session Claude Code — locale ou web — en profite) :
-
-```bash
-# Dans dashboard-sysadmin
-cp -r claude-toolkit/projects/dashboard-sysadmin/skills .claude/skills
-cp claude-toolkit/projects/dashboard-sysadmin/CLAUDE.md ./CLAUDE.md
-
-# Dans 7DS-Origin-Bots (et 7DS-Origin si pertinent)
-cp -r claude-toolkit/projects/discord-bots/skills .claude/skills
-```
+Committés dans le repo, les packs profitent à toutes les sessions (locales, web, et
+collègues qui clonent). Si un `CLAUDE.md` existe déjà, fusionne au lieu d'écraser.
 
 ---
 
-## Contenu
+## `dashboard-sysadmin/` — dashboard NOC Next.js 16
 
-### Skills globaux (`~/.claude/skills/`)
-
-| Skill | Usage |
-|---|---|
-| `/commit` | Commit propre : analyse du diff, message conventionnel, découpage si nécessaire |
-| `/check` | Quality gate complet auto-détecté (tsc, eslint, vitest, build, ruff/pytest…) |
-| `/fix-ci` | Diagnostique le dernier run GitHub Actions en échec et le répare |
-| `/docker-debug` | Debug méthodique d'une stack docker compose (media-stack, dashboard…) |
-| `/release` | Version bump + changelog + tag, adapté au type de projet |
-
-### Skills projet — dashboard-sysadmin
+Basé sur : factory `createApiRoute`, cache SWR Redis + circuit breaker, multi-instances,
+CI tsc→eslint→vitest→build, stack Docker/Caddy.
 
 | Skill | Usage |
 |---|---|
-| `/new-source` | Ajouter une intégration API complète (client lib, cache, route, UI) en suivant les patterns existants |
-| `/api-route` | Créer une route API conforme (api-handler, auth, rate-limit, cache, zod) |
-| `/new-widget` | Créer un composant dashboard shadcn/Recharts conforme aux conventions UI |
+| `/new-source` | Ajouter une 7ᵉ intégration (config-types → client ky → routes → hook → UI → settings → tests) |
+| `/api-route` | Route API conforme : factory pour les sources, auth+zod+rate-limit pour le reste |
+| `/new-widget` | Widget shadcn/Recharts avec les états obligatoires (loading, stale, source down, multi-instances) |
+| `/check` | Rejoue exactement la CI en local (+ `--fix`, `--e2e`) |
+| `/deploy-docker` | Debug/préparation de la stack compose (app + Redis + Caddy, config chiffrée) |
 
-### Skills projet — bots Discord (7DS-Origin-Bots)
+## `pdf-compare/` — CLI Python de diff visuel PDF
+
+Basé sur : pipeline cli→comparator→renderer→differ→stats→reporter, CI matrice Python
+3.9–3.12, exit codes contractuels, double versioning pyproject/`__init__.py`.
 
 | Skill | Usage |
 |---|---|
-| `/new-discord-command` | Scaffolder une slash command Discord complète (definition, handler, permissions) |
+| `/check` | pytest --cov comme la CI + black/flake8/mypy, avec garde-fou compat 3.9 |
+| `/new-output-format` | Ajouter un format de rapport (CSV, Markdown…) sans toucher au comportement par défaut |
+| `/release` | Bump synchronisé des 2 fichiers de version + CHANGELOG Keep a Changelog + tag |
 
-### Fichiers CLAUDE.md
+## `7ds-origin-bots/` — monorepo pnpm de 4 bots Discord
 
-- `global/CLAUDE.md` — tes préférences perso (langue, style de réponse, habitudes git)
-- `projects/dashboard-sysadmin/CLAUDE.md` — conventions du repo pour que Claude soit
-  efficace dès la première requête (architecture, commandes, patterns à respecter)
+Basé sur : pattern maison `build<Nom>Command`/`handle<Nom>Command` câblé à la main dans
+`index.ts`, ESM avec imports `.js`, textes FR + `flags: 64`, PM2 ecosystem.
+
+| Skill | Usage |
+|---|---|
+| `/new-command` | Slash command complète : fichier commande + les 3 points de câblage dans index.ts |
+| `/new-bot` | 5ᵉ bot dans le workspace : package, tsconfig, index, .env.example, entrée PM2 |
+| `/deploy` | Build workspace + reload PM2 + diagnostic d'un bot qui crash en boucle |
 
 ---
 
-## Rappels utiles
+## Repos non couverts (et pourquoi)
 
-- Les skills **projet** (committés dans `.claude/skills/` du repo) sont partagés : un
-  collègue qui clone le repo les a aussi.
-- Tu peux passer des arguments : `/new-source zabbix`, `/fix-ci`, `/commit --amend`…
-- Pour créer un nouveau skill rapidement : crée `.claude/skills/mon-skill/SKILL.md` avec
-  un frontmatter `description:` et des instructions en markdown. C'est tout.
+- **7DS-Origin, media-stack, RustDesk, Optralis** : privés et hors du scope de cette
+  session — lecture refusée, impossible de faire du sur-mesure honnête. Pour avoir leur
+  pack : lance une session Claude Code directement dans ces repos et demande le même
+  travail (le `CLAUDE.md` de chaque pack ici sert de modèle de ce qu'il faut produire).
+- **StudiTok** : repo vide à ce jour.
